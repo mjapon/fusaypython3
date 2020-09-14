@@ -1,0 +1,138 @@
+{% extends "layoutf.jinja2" %}
+
+{% block content %}
+<header>
+    <nav class="navbar fixed-top navbar-expand-lg navbar-light bgfusay">
+        <a class="navbar-brand p-0" href="/"><img
+                src="{{request.static_url('fusayrepo:static/assets/logotbsmall.png')}}" alt="Fusay"></a>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse text-center" id="navigation">
+            <ul class="navbar-nav mx-auto mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link enlaces">¿Quiénes somos?</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link enlaces">Servicios</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link enlaces">Eventos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link enlaces">TeleMedicina</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link enlaces">Blog</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link enlaces" href="#modalContacto" data-toggle="modal" data-target="#modalContacto">Contacto</a>
+                </li>
+                <!--
+                <li class="nav-item">
+                    <span class="nav-link colorfusay  active"> <i class="fa fa-whatsapp"></i> (+593) 99 024 4830 </span>
+                </li>
+                -->
+            </ul>
+            <ul class="navbar-nav">
+
+                <li class="nav-item ">
+                    <button class="btn btn-primary"> Ingresar</button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</header>
+<div class="container-fluid">
+    <div class="portada">
+        <div class="row">
+            <div class="col">
+                <h1>Fundaci[on Salud y Vida Nueva</h1>
+                <h2>Centro de curacion</h2>
+                <p>
+                    Canalizar proyectos interdisciplinario para fomentar el desarrollo integral, intercultural
+                    para el pueblo Saraguro
+                </p>
+
+            </div>
+            <div class="col">
+                <div class="text-center">
+                    <img class="img-responsive" src="{{request.static_url('fusayrepo:static/assets/quienessomos.jpg')}}"
+                         alt="Fusay">
+                </div>
+
+            </div>
+        </div>
+
+
+
+        <!--
+        <div class="row">
+            <div class="col">
+                <img src="{{request.static_url('fusayrepo:static/assets/jaimesf.png')}}" alt="Fusay">
+            </div>
+            <div class="col">
+                <div class="centradoflex">
+                    <h1 class="display-5"> Fundación Salud y Vida Nueva </h1>
+                    <h2 class="display-6"> Centro de Curación </h2>
+                </div>
+            </div>
+        </div>
+        -->
+    </div>
+
+</div>
+
+
+<section class="pb-0 overflow-hidden" id="sec_quiensomos">
+    <div class="container-fluid">
+        <div class="col-lg-12 text-center">
+            <p class="subtitle colorfusay tituloFusay">¿Quiénes Somos?</p>
+            <hr>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-lg-6 col-md-5 text-center text-md-left mb-4 mb-md-0">
+                <img src="{{request.static_url('fusayrepo:static/assets/quienessomos.jpg')}}" class="img-fluid"
+                     alt="Fusay">
+            </div>
+            <div class="col-lg-6 col-md-7 text-center text-md-left">
+                <p class="mb-4 text-justify ">
+                    Somos una entidad de derecho privado, constituida el 22 de Septiembre del 2004,
+                    mediante Acuerdo Ministerial No 1447, con el objetivo de impulsar, estimular e inter-relacionar
+                    el desarollo de la salud preventiva con la atención integrada de salud, mediante acciones de
+                    intervención como:
+                    promoción, prevención, recuperación y rehabilitación con medicinas naturales, ancestrales y
+                    convencionales,
+                    para el desarrollo de los pueblos indígenas y campesinos.
+                </p>
+            </div>
+        </div>
+        <br>
+        <div class="card-deck">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title font-italic font-weight-bold ">MISIÓN</h5>
+                    <p class="card-text font-italic ">
+                        Propiciar una convivencia intercultural en la dinámica de las relaciones que desarrolla
+                        la Fundación Salud y Vida Nueva hacia la construcción del buen vivir
+                    </p>
+                </div>
+            </div>
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title font-italic font-weight-bold">VISIÓN</h5>
+                    <p class="card-text font-italic ">
+                        Canalizar proyectos interdisciplinario para fomentar el desarrollo integral, intercultural
+                        para el pueblo Saraguro
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+{% endblock content %}

@@ -1,0 +1,64 @@
+ng build --aot --output-hashing=all
+
+
+COMANDOS DB EJECUCION SERVIDOR DIGITALOCEAN:
+su - postgres
+psql imprentadb postgres
+\i ruta del archivo
+\dt --->LISTA LAS TABLAS
+
+
+
+-- So la pacientes esta embarazada (Esta embarazada
+-- edad gestacional - en semanas
+-- #http://www.clinicavespucio.cl/calculo-de-fecha-de-parto/   --Revisar pagina
+-- https://es.slideshare.net/HUGOGERARDOTELLES/clculo-de-semanas-de-gestacin?next_slideshow=1
+
+
+ng build --prod --aot --outputHashing=all
+
+
+try_files $uri $uri/ /index.html =404;
+expires       0;
+add_header    Cache-Control  public;
+add_header    Cache-Control  no-store;
+add_header    Cache-Control  no-cache;
+
+
+empNombreComercial
+
+
+ESPMO_RO    Rehabilitación oral
+ESPMO_PR    Periodoncia
+ESPMO_END   Endodoncia
+ESPMO_ODP   Odontopediatría
+ESPMO_ORT   Ortodoncia
+ESPMO_IMO   Implantología oral
+ESPMO_OEC   Odontología estética o cosmética
+ESPMO_OPR   Odontología preventiva
+ESPMO_PF    Odontología forense
+ESPMO_CM    Cirugía maxilofacial
+
+
+med_id     serial  not null
+per_id     integer not null,
+med_fecreg timestamp default now()
+
+
+medesp_id     serial            not null
+med_id        integer           not null,
+esp_id        integer           not null,
+medesp_estado integer default 0 not null
+
+VENTTK_ROD,
+VENTTK_JAI,
+VENTTK_DIA
+
+
+'[
+    {"label":"Fecha", "field":"vt_fechareg"},
+    {"label":"Rubro", "field":"ic_nombre"},
+    {"label":"Monto", "field":"vt_monto"},
+    {"label":"Estado", "field":"vt_estado"},
+    {"label":"Observación", "field":"vt_obs"}
+]'

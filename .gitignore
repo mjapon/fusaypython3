@@ -1,0 +1,8 @@
+.idea/
+env/
+env/*
+.idea/*
+fusayrepo.egg-info/
+fusayrepo.egg-info/*
+.DS_Store
+

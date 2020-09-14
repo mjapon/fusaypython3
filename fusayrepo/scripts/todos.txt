@@ -1,0 +1,8 @@
+TODO: Agregar la opcion de registro de datos de EMBARAZADAS
+TODO: Agregar la opción de envio de correos a la aplicacion(correo de receta médica y recordatorio de cita medica, fecha de proxima cita)
+TODO: Agregar la opcion de creación de citas médicas
+TODO: Agregar la opciòn de visualización de odontograma
+TODO: Agregar el nombre de la empresa en la cabecera de la aplicación
+TODO: Agregar la opcion de edicion de la historia clinica
+TODO: Agregar la opcion de anulacion de historia
+TODO: En tickets agrgar visualización de reporte
