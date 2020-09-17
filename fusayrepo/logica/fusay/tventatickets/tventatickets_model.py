@@ -22,3 +22,5 @@ class TVentaTickets(Declarative, JsonAlchemy):
     vt_tipo = Column(Integer, nullable=False)
     vt_estado = Column(Integer, nullable=False)#--0- borrador, 1- confirmado, 2- anulado
     vt_obs = Column(Text)
+    vt_clase = Column(Integer, default=1)
+    vt_fecha = Column(Date, nullable=False)

@@ -1,0 +1,2 @@
+INSERT INTO fusay.titemconfig ( ic_nombre, ic_code, ic_padre, tipic_id, ic_fechacrea, ic_usercrea, ic_estado, ic_nota, catic_id, clsic_id, ic_useractualiza, ic_fechaactualiza) VALUES ('PRESTAMOS', 'GAST_PREM', null, 4, current_date, null, 1, null, 1, 2, null, null);
+INSERT INTO fusay.titemconfig ( ic_nombre, ic_code, ic_padre, tipic_id, ic_fechacrea, ic_usercrea, ic_estado, ic_nota, catic_id, clsic_id, ic_useractualiza, ic_fechaactualiza) VALUES ('SERVICIOS BÁSICOS', 'GAST_SERVB', null, 4, current_date, null, 1, null, 1, 2, null, null);

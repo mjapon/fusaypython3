@@ -5,6 +5,7 @@ INSERT INTO fusay.titemconfig ( ic_nombre, ic_code, ic_padre, tipic_id, ic_fecha
 INSERT INTO fusay.titemconfig ( ic_nombre, ic_code, ic_padre, tipic_id, ic_fechacrea, ic_usercrea, ic_estado, ic_nota, catic_id, clsic_id, ic_useractualiza, ic_fechaactualiza) VALUES ('VENTA DE TICKETS DIANA', 'VENTTK_DIA', null, 4, current_date, null, 1, null, 1, null, null, null);
 
 
+
 create table fusay.tventatickets
 (
 	vt_id serial not null,
@@ -45,4 +46,8 @@ INSERT INTO fusay.tgrid (grid_id, grid_nombre, grid_basesql, grid_columnas, grid
     {"label":"Estado", "field":"estadodesc"},
     {"label":"Observación", "field":"vt_obs"}
 ]', current_timestamp, '["vt_id", "vt_fechareg", "vt_monto", "vt_tipo", "ic_nombre", "vt_estado", "estadodesc", "vt_obs"]');
+
+
+
+
 

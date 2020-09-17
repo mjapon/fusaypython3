@@ -1,5 +1,8 @@
-ng build --aot --output-hashing=all
+ng build --prod --aot --output-hashing=all
 
+ruta aplicacion typescript:
+cd /Users/mjapon/dev/FUSAY/ngsyscontabfact/ngfusayfactcontab
+ng serve --host=0.0.0.0
 
 COMANDOS DB EJECUCION SERVIDOR DIGITALOCEAN:
 su - postgres
@@ -8,25 +11,24 @@ psql imprentadb postgres
 \dt --->LISTA LAS TABLAS
 
 
+https://www.codingforentrepreneurs.com/blog/hello-linux-setup-gunicorn-and-supervisor
+nueva ruta de la aplicacion:
+sudo supervisorctl status fusay-gunicorn
+sudo supervisorctl restart fusay-gunicorn
+
 
 -- So la pacientes esta embarazada (Esta embarazada
 -- edad gestacional - en semanas
 -- #http://www.clinicavespucio.cl/calculo-de-fecha-de-parto/   --Revisar pagina
 -- https://es.slideshare.net/HUGOGERARDOTELLES/clculo-de-semanas-de-gestacin?next_slideshow=1
 
-
 ng build --prod --aot --outputHashing=all
-
 
 try_files $uri $uri/ /index.html =404;
 expires       0;
 add_header    Cache-Control  public;
 add_header    Cache-Control  no-store;
 add_header    Cache-Control  no-cache;
-
-
-empNombreComercial
-
 
 ESPMO_RO    Rehabilitación oral
 ESPMO_PR    Periodoncia
@@ -54,11 +56,15 @@ VENTTK_ROD,
 VENTTK_JAI,
 VENTTK_DIA
 
-
-'[
+[
     {"label":"Fecha", "field":"vt_fechareg"},
     {"label":"Rubro", "field":"ic_nombre"},
     {"label":"Monto", "field":"vt_monto"},
     {"label":"Estado", "field":"vt_estado"},
     {"label":"Observación", "field":"vt_obs"}
-]'
+]
+
+
+
+private dateFormatPipe: DateFormatPipe,
+fechaProxCita = this.dateFormatPipe.transform(this.form.datosconsulta.cosm_fechaproxcita);
