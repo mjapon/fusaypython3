@@ -22,6 +22,9 @@ class TConsultaMedicaRest(TokenView):
         if accion == 'form':
             form = tconsultam_dao.get_form()
             return {'status': 200, 'form': form}
+        elif accion == 'form_odonto':
+            form = tconsultam_dao.get_form_odonto()
+            return {'status': 200, 'form': form}
 
         elif accion == 'cie10data':
             cie10data = tconsultam_dao.get_cie10data()
@@ -41,9 +44,9 @@ class TConsultaMedicaRest(TokenView):
         elif accion == 'galertexfis':
             valor = self.get_request_param('valor')
             categ = self.get_request_param('categ')
-            #1-tension arterial
-            #3-indice de masa corporal
-            result, color = tconsultam_dao.buscar_categoria_valor(valor,int(categ))
+            # 1-tension arterial
+            # 3-indice de masa corporal
+            result, color = tconsultam_dao.buscar_categoria_valor(valor, int(categ))
             return {'status': 200, 'result': result, 'color': color}
 
     def collection_post(self):
@@ -52,6 +55,11 @@ class TConsultaMedicaRest(TokenView):
             tconsultam_dao = TConsultaMedicaDao(self.dbsession)
             formdata = self.get_request_json_body()
             msg, cosm_id = tconsultam_dao.registrar(form=formdata, usercrea=self.get_user_id())
-            return {'status': 200, 'msg': msg, 'ccm':cosm_id}
+            return {'status': 200, 'msg': msg, 'ccm': cosm_id}
+        elif 'anular' == accion:
+            tconsultam_dao = TConsultaMedicaDao(self.dbsession)
+            formdata = self.get_request_json_body()
+            tconsultam_dao.anular(cosm_id=formdata['cosm_id'])
+            return {'status': 200, 'msg': 'Registro anulado exitosamente'}
         else:
             raise ErrorValidacionExc(u'Ninguna acción especificada')

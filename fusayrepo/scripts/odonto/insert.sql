@@ -91,3 +91,40 @@ create unique index tmedicoespe_medesp_id_uindex
 alter table fusay.tmedicoespe
 	add constraint tmedicoespe_pk
 		primary key (medesp_id);
+
+
+alter table fusay.tconsultam_cats
+	add catcm_tipo int default 1 not null;
+
+comment on column fusay.tconsultam_cats.catcm_tipo is '1- Medico
+2- Odontologo';
+
+SELECT setval('fusay.tconsultam_cats_catcm_id_seq', COALESCE((SELECT MAX(catcm_id)+1 FROM fusay.tconsultam_cats), 1), false);
+
+INSERT INTO fusay.tconsultam_cats (catcm_id, catcm_nombre, catcm_valor, catcm_tipo) VALUES (nextval('fusay.tconsultam_cats_catcm_id_seq'), 'ANTCDETS_ODNTO', 'ANTECEDENTES', 2);
+--INSERT INTO fusay.tconsultam_cats (catcm_id, catcm_nombre, catcm_valor, catcm_tipo) VALUES (nextval('fusay.tconsultam_cats_catcm_id_seq'), 'REVXSISTEMAS_ODONTO', 'ANTECEDENTES', 2);
+
+SELECT setval('fusay.tconsultam_tiposval_cmtv_id_seq', COALESCE((SELECT MAX(cmtv_id)+1 FROM fusay.tconsultam_tiposval), 1), false);
+
+INSERT INTO fusay.tconsultam_tiposval (cmtv_id, cmtv_cat, cmtv_nombre, cmtv_valor, cmtv_tinput, cmtv_orden, cmtv_unidad) select nextval('fusay.tconsultam_tiposval_cmtv_id_seq'), catcm_id, 'ANT_PERSONALES', 'PERSONALES', 2, 1, null  from fusay.tconsultam_cats where catcm_nombre = 'ANTCDETS_ODNTO';
+INSERT INTO fusay.tconsultam_tiposval (cmtv_id, cmtv_cat, cmtv_nombre, cmtv_valor, cmtv_tinput, cmtv_orden, cmtv_unidad) select nextval('fusay.tconsultam_tiposval_cmtv_id_seq'), catcm_id, 'ANT_FAMILIARES', 'FAMILIARES', 2, 1, null  from fusay.tconsultam_cats where catcm_nombre = 'ANTCDETS_ODNTO';
+
+
+alter table fusay.tconsultamedica
+	add cosm_tipo int default 1 not null;
+
+
+alter table fusay.tconsultamedica
+	add cosm_estado int default 1 not null;
+
+comment on column fusay.tconsultamedica.cosm_estado is '1- valido
+2- anulado';
+
+
+comment on column fusay.tconsultamedica.cosm_tipo is '1- medica
+2- odontologica';
+
+
+
+
+

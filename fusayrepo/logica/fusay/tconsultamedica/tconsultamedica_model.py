@@ -34,7 +34,8 @@ class TConsultaMedica(Declarative, JsonAlchemy):
     cosm_diagnosticoal = Column(Text)
     cosm_fechaproxcita = Column(Date)
     cosm_diagnosticos = Column(String(50))
-
+    cosm_tipo = Column(Integer, default=1)#1-medica, 2-odontologica
+    cosm_estado = Column(Integer, default=1)#1-valido, 2-anulado
 
 
 class TConsultaMedicaValores(Declarative, JsonAlchemy):

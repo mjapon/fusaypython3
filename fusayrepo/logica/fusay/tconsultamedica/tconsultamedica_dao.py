@@ -60,7 +60,8 @@ class TConsultaMedicaDao(BaseDao):
             'user_crea': '',
             'cosm_diagnostico': None,
             'cosm_diagnosticoal': '',
-            'cosm_fechaproxcita': ''
+            'cosm_fechaproxcita': '',
+            'cosm_tipo': 1
         }
 
         return {
@@ -69,6 +70,60 @@ class TConsultaMedicaDao(BaseDao):
             'antecedentes': form_antecedentes,
             'examsfisicos': form_examsfisicos,
             'revxsistemas': form_revxsistemas
+        }
+
+    def get_form_odonto(self):
+        form_antecedentes = self.get_form_valores(5)
+        form_examsfisicos = self.get_form_valores(3)
+        # form_examdiagnostico = self.get_form_valores(4)
+        form_paciente = {
+            'per_id': 0,
+            'per_ciruc': '',
+            'per_nombres': '',
+            'per_apellidos': '',
+            'per_direccion': '',
+            'per_telf': '',
+            'per_movil': '',
+            'per_email': '',
+            'per_fecreg': '',
+            'per_tipo': 1,
+            'per_lugnac': None,
+            'per_nota': '',
+            'per_fechanac': '',
+            'per_genero': None,
+            'per_estadocivil': 1,
+            'per_lugresidencia': None,
+            'per_ocupacion': None,
+            'per_edad': 0
+        }
+
+        form_datosconsulta = {
+            'cosm_id': 0,
+            'pac_id': 0,
+            'med_id': 0,
+            'cosm_fechacita': fechas.get_str_fecha_actual(),
+            'cosm_fechacrea': '',
+            'cosm_motivo': '',
+            'cosm_enfermactual': '',
+            'cosm_hallazgoexamfis': '',
+            'cosm_exmscompl': '',
+            'cosm_tratamiento': '',
+            'cosm_receta': '',
+            'cosm_indicsreceta': '',
+            'cosm_recomendaciones': '',
+            'user_crea': '',
+            'cosm_diagnostico': None,
+            'cosm_diagnosticoal': '',
+            'cosm_fechaproxcita': '',
+            'cosm_tipo': 2
+        }
+
+        return {
+            'paciente': form_paciente,
+            'datosconsulta': form_datosconsulta,
+            'antecedentes': form_antecedentes,
+            'examsfisicos': form_examsfisicos,
+            'odontograma': {}
         }
 
     def get_antecedentes_personales(self, per_ciruc):
@@ -105,6 +160,19 @@ class TConsultaMedicaDao(BaseDao):
             historias_fecha.append(item)
 
         return historias_fecha
+
+    def get_entity_byid(self, cosm_id):
+        return self.dbsession.query(TConsultaMedica).filter(TConsultaMedica.cosm_id == cosm_id).first()
+
+    def anular(self, cosm_id):
+        tconsultamedica = self.get_entity_byid(cosm_id)
+        if tconsultamedica is not None:
+            if tconsultamedica.cosm_estado == 1:
+                tconsultamedica.cosm_estado = 2
+            else:
+                raise ErrorValidacionExc('Esta historia ya ha sido anulada')
+        else:
+            raise ErrorValidacionExc('No existe ningún registro de historia clínica con el código:{0}'.format(cosm_id))
 
     def get_datos_historia(self, cosm_id):
         """
@@ -336,12 +404,17 @@ class TConsultaMedicaDao(BaseDao):
         tconsultamedica.cosm_receta = datosconsulta['cosm_receta']
         tconsultamedica.cosm_indicsreceta = datosconsulta['cosm_indicsreceta']
         tconsultamedica.cosm_recomendaciones = datosconsulta['cosm_recomendaciones']
+        cosm_tipo = 1
+        if 'cosm_tipo' in datosconsulta:
+            cosm_tipo = datosconsulta['cosm_tipo']
+
+        tconsultamedica.cosm_tipo = cosm_tipo
 
         # datosconsulta.diagnosticos se debe registrar un array de diagnosticos
         diagnosticos_array = datosconsulta['diagnosticos']
         diagnosticos = self.procesar_array_diags(diagnosticos_array)
         first_diagnostico = None
-        if diagnosticos_array is not None and len(diagnosticos_array)>0:
+        if diagnosticos_array is not None and len(diagnosticos_array) > 0:
             first_diagnostico = self.get_cod_diagnostico(diagnosticos_array[0])
 
         if not cadenas.es_nonulo_novacio(diagnosticos):
