@@ -35,6 +35,10 @@ class TConsultaMedicaRest(TokenView):
             items = tconsultam_dao.get_historia_porpaciente(per_ciruc=ciruc)
             antecedespers = tconsultam_dao.get_antecedentes_personales(per_ciruc=ciruc)
             return {'status': 200, 'items': items, 'antpers': antecedespers}
+        elif accion == 'odontograma':
+            ciruc = self.get_request_param('ciruc')
+            odontograma = tconsultam_dao.get_odontograma(per_ciruc=ciruc)
+            return {'status': 200, 'odontograma': odontograma}
 
         elif accion == 'findhistbycod':
             codhistoria = self.get_request_param('codhistoria')

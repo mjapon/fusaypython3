@@ -32,6 +32,7 @@ class GeneraTokenUtil(object):
 
 if __name__ == '__main__':
 
+    """
     clave = "MANUELJAPON123"
     encoded_jwt = jwt.encode({'some': 'payload'}, clave, algorithm='HS256')
 
@@ -43,3 +44,14 @@ if __name__ == '__main__':
     print('decoded jwt')
     print(decoded_value)
     print(type(decoded_value))
+    """
+
+    permisorolmap = set()
+
+    permisorolmap.add(1)
+    permisorolmap.add(2)
+    permisorolmap.add(3)
+
+    print (permisorolmap)
+
+    print (5 in permisorolmap)

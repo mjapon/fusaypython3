@@ -175,6 +175,7 @@ class TokenView(PyramidView):
         self.emp_esquema = datostoken['emp_esquema']
         self.user_id = datostoken['us_id']
         self.sec_id = datostoken['sec_id']
+        self.request.headers['emp_codigo'] = self.emp_codigo
 
         self.change_dbschema(self.emp_esquema)
 

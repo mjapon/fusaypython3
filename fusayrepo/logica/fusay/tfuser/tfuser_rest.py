@@ -7,12 +7,14 @@ import logging
 
 from cornice.resource import resource
 
+from fusayrepo.logica.fusay.tfuser.tfuser_model import TFuser
+from fusayrepo.logica.fusay.tfuserrol.tfuserrol_dao import TFuserRolDao
 from fusayrepo.logica.tempresa.empresa_dao import TEmpresaDao
 from fusayrepo.logica.fusay.tfuser.tfuser_dao import TFuserDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.utils import cadenas
 from fusayrepo.utils.generatokenutil import GeneraTokenUtil
-from fusayrepo.utils.pyramidutil import DbComunView
+from fusayrepo.utils.pyramidutil import DbComunView, TokenView
 
 log = logging.getLogger(__name__)
 
@@ -56,10 +58,39 @@ class TFuserRest(DbComunView):
                 return {'autenticado': autenticado}
 
 
+@resource(collection_path='/api/tfusertoken', path='/api/tfusertoken/{us_id}', cors_origins=('*',))
+class TFuserTokenRest(TokenView):
+
+    def collection_post(self):
+        accion = self.get_request_param('accion')
+        if accion == 'setroles':
+            tfuserroldao = TFuserRolDao(self.dbsession)
+            form = self.get_json_body()
+            us_id = form['us_id']
+            roles = form['roles']
+            tfuserroldao.editar(us_id, roles)
+            return {'status': 200, 'msg': 'Operación Exitosa'}
+
+    def collection_get(self):
+        accion = self.get_request_param('accion')
+        if accion == 'listar':
+            tfuserdao = TFuserDao(self.dbsession)
+            usuarios = tfuserdao.listargrid()
+            return {'status': 200, 'items': usuarios}
+
     def get(self):
         us_id = self.get_request_matchdict('us_id')
-        fuserdao = TFuserDao(self.dbsession)
-        res = fuserdao.get_user(us_id)
-        return res
-
-
+        accion = self.get_request_param('accion')
+        if accion == 'formedita':
+            fuserroldao = TFuserRolDao(self.dbsession)
+            form_edita = fuserroldao.get_form_editar(us_id=us_id)
+            return {'status': 200, 'formedita': form_edita}
+        elif accion == 'lpermisos':
+            fuserroldao = TFuserRolDao(self.dbsession)
+            permisos = fuserroldao.listar_permisos(us_id)
+            return {'status': 200, 'permisos': permisos}
+        elif accion == 'gmenu':
+            fuserroldao = TFuserRolDao(self.dbsession)
+            permisos = fuserroldao.listar_permisos(us_id)
+            menu = fuserroldao.build_menu(permisos)
+            return {'status': 200, 'menu': menu}

@@ -61,7 +61,8 @@ class TConsultaMedicaDao(BaseDao):
             'cosm_diagnostico': None,
             'cosm_diagnosticoal': '',
             'cosm_fechaproxcita': '',
-            'cosm_tipo': 1
+            'cosm_tipo': 1,
+            'cosm_odontograma': ''
         }
 
         return {
@@ -219,7 +220,8 @@ class TConsultaMedicaDao(BaseDao):
                     coalesce(lv.lval_nombre, '') as ocupacion,
                     cie.cie_valor ciediagnostico, 
                     get_diagnosticos(historia.cosm_diagnosticos) as diagnosticos,
-                    cie.cie_key ciekey from tconsultamedica historia
+                    cie.cie_key ciekey,
+                    historia.cosm_odontograma  from tconsultamedica historia
         join tpersona paciente on historia.pac_id = paciente.per_id
         left join tcie10 cie on  historia.cosm_diagnostico = cie.cie_id
         left join tlistavalores lv on paciente.per_ocupacion = lv.lval_id
@@ -242,7 +244,6 @@ class TConsultaMedicaDao(BaseDao):
                       'cosm_diagnosticoal',
                       'user_crea',
                       'cosm_fechaproxcita',
-
                       'per_id',
                       'per_ciruc',
                       'per_nombres',
@@ -264,7 +265,8 @@ class TConsultaMedicaDao(BaseDao):
                       'ocupacion',
                       'ciediagnostico',
                       'diagnosticos',
-                      'ciekey')
+                      'ciekey',
+                      'cosm_odontograma')
 
         datos_cita_medica = self.first(sql, tupla_desc)
 
@@ -305,6 +307,18 @@ class TConsultaMedicaDao(BaseDao):
 
         return self.all(sql, tupla_desc)
 
+    def get_odontograma(self, per_ciruc):
+        sql = u"""select historia.cosm_id, historia.cosm_fechacrea, paciente.per_ciruc, 
+                                paciente.per_nombres||' '||paciente.per_apellidos as paciente, historia.cosm_odontograma                                 
+                                from tconsultamedica historia
+                                join tpersona paciente on historia.pac_id = paciente.per_id and 
+                                paciente.per_ciruc = '{0}' order by historia.cosm_id desc""".format(per_ciruc)
+        tupla_desc = ('cosm_id', 'cosm_fechacrea', 'per_ciruc', 'paciente', 'cosm_odontograma')
+
+        respuesta = self.all(sql, tupla_desc)
+        if respuesta is not None and len(respuesta) > 0:
+            return respuesta[0]
+
     def get_ultima_atencion_paciente(self, per_ciruc):
         sql = u"""select historia.cosm_id, historia.cosm_fechacrea, paciente.per_ciruc, 
                         paciente.per_nombres||' '||paciente.per_apellidos as paciente, historia.cosm_motivo 
@@ -316,11 +330,11 @@ class TConsultaMedicaDao(BaseDao):
         respuesta = self.all(sql, tupla_desc)
         if respuesta is not None and len(respuesta) > 0:
             return respuesta[0]['cosm_id']
+            #return respuesta[0]
 
         return None
 
     def get_valores_adc_citamedica(self, catc_id, cosm_id):
-
         sql = u"""
         select cmtval.cmtv_id, cmtval.cmtv_cat, cmtval.cmtv_nombre, cmtval.cmtv_valor, 
                cmtval.cmtv_tinput, coalesce(cval.valcm_valor,'') as valorreg 
@@ -431,6 +445,10 @@ class TConsultaMedicaDao(BaseDao):
                 tconsultamedica.cosm_fechaproxcita = cosm_fechaproxcita_parsed
 
         tconsultamedica.user_crea = usercrea
+
+        if 'cosm_odontograma' in datosconsulta:
+            tconsultamedica.cosm_odontograma = datosconsulta['cosm_odontograma']
+
         self.dbsession.add(tconsultamedica)
         self.dbsession.flush()
         cosm_id = tconsultamedica.cosm_id

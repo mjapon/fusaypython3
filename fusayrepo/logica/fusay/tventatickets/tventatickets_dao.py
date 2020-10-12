@@ -44,7 +44,11 @@ class TVentaTicketsDao(BaseDao):
         },
             {
                 'value': 2, 'label': 'Gasto',
+            },
+            {
+                'value': 3, 'label': 'Patrimonio',
             }
+
         ]
 
     def agregar_todos_inlist(self, thelist):

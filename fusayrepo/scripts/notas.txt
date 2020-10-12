@@ -41,11 +41,9 @@ ESPMO_OPR   Odontología preventiva
 ESPMO_PF    Odontología forense
 ESPMO_CM    Cirugía maxilofacial
 
-
 med_id     serial  not null
 per_id     integer not null,
 med_fecreg timestamp default now()
-
 
 medesp_id     serial            not null
 med_id        integer           not null,
@@ -63,8 +61,164 @@ VENTTK_DIA
     {"label":"Estado", "field":"vt_estado"},
     {"label":"Observación", "field":"vt_obs"}
 ]
-
-
-
 private dateFormatPipe: DateFormatPipe,
 fechaProxCita = this.dateFormatPipe.transform(this.form.datosconsulta.cosm_fechaproxcita);
+
+click-delete
+
+click-blue
+click-red
+
+
+
+
+this.tools {
+1:
+        {
+            codigo: 1,
+            nombre: 'Sellante necesario',
+            classTapa: 'm-aster-rojo',
+            classTapaLeche: 'm-aster-rojo-leche'
+        },2:{
+            codigo: 2,
+            nombre: 'Sellante realizado',
+            classTapa: 'm-aster-azul',
+            classTapaLeche: 'm-aster-azul-leche'
+        },3:{
+            codigo: 3,
+            nombre: 'Extracción Indicada',
+            classTapa: 'm-x-rojo',
+            classTapaLeche: 'm-x-rojo-leche'
+        }4:{
+            codigo: 4,
+            nombre: 'Pérdida por caries',
+            classTapa: 'm-x-azul',
+            classTapaLeche: 'm-x-azul-leche'
+        }5:{
+            codigo: 5,
+            nombre: 'Pérdida (otra causa)',
+            classTapa: 'm-x-rojo',
+            classTapaLeche: 'm-x-rojo-leche'}
+        6:{
+            codigo: 6,
+            nombre: 'Endodoncia Necesaria',
+            classTapa: 'm-endo-rojo',
+            classTapaLeche: 'm-endo-rojoleche'
+        7:{
+            codigo: 7,
+            nombre: 'Endodoncia Realizada',
+            classTapa: 'm-endo-azul',
+            classTapaLeche: 'm-endo-azulleche'
+        }8:{codigo: 8, nombre: 'Prótesis Fija', cssClass: ''},
+        9:{codigo: 9, nombre: 'Prótesis Removible', cssClass: ''},
+        10:{codigo: 10, nombre: 'Prótesis Total', cssClass: ''},
+        11:{
+            codigo: 11,
+            nombre: 'Corona Necesaria',
+            classTapa: 'm-corona-rojo',
+            classTapaLeche: 'm-corona-rojoleche'
+        },12:{
+            codigo: 12,
+            nombre: 'Corona Realizada',
+            classTapa: 'm-corona-azul',
+            classTapaLeche: 'm-corona-azulleche'
+        }13:{codigo: 13, nombre: 'Obturado', cssClass: 'fondoazul'},
+        14:{codigo: 14, nombre: 'Caries', cssClass: 'fondorojo'}}
+
+
+
+ ---------------------Respaldo texto----------------------------
+
+
+
+   /*
+        this.tools = new Array<any>();
+        this.tools.push({
+            codigo: 1,
+            nombre: 'Sellante necesario',
+            classTapa: 'm-aster-rojo',
+            classTapaLeche: 'm-aster-rojo-leche'
+        });
+        this.tools.push({
+            codigo: 2,
+            nombre: 'Sellante realizado',
+            classTapa: 'm-aster-azul',
+            classTapaLeche: 'm-aster-azul-leche'
+        });
+        this.tools.push({
+            codigo: 3,
+            nombre: 'Extracción Indicada',
+            classTapa: 'm-x-rojo',
+            classTapaLeche: 'm-x-rojo-leche'
+        });
+        this.tools.push({
+            codigo: 4,
+            nombre: 'Pérdida por caries',
+            classTapa: 'm-x-azul',
+            classTapaLeche: 'm-x-azul-leche'
+        });
+        this.tools.push({
+            codigo: 5,
+            nombre: 'Pérdida (otra causa)',
+            classTapa: 'm-x-rojo',
+            classTapaLeche: 'm-x-rojo-leche'
+        });
+        this.tools.push({
+            codigo: 6,
+            nombre: 'Endodoncia Necesaria',
+            classTapa: 'm-endo-rojo',
+            classTapaLeche: 'm-endo-rojoleche'
+        });
+        this.tools.push({
+            codigo: 7,
+            nombre: 'Endodoncia Realizada',
+            classTapa: 'm-endo-azul',
+            classTapaLeche: 'm-endo-azulleche'
+        });
+        this.tools.push({codigo: 8, nombre: 'Prótesis Fija', cssClass: ''});
+        this.tools.push({codigo: 9, nombre: 'Prótesis Removible', cssClass: ''});
+        this.tools.push({codigo: 10, nombre: 'Prótesis Total', cssClass: ''});
+        this.tools.push({
+            codigo: 11,
+            nombre: 'Corona Necesaria',
+            classTapa: 'm-corona-rojo',
+            classTapaLeche: 'm-corona-rojoleche'
+        });
+        this.tools.push({
+            codigo: 12,
+            nombre: 'Corona Realizada',
+            classTapa: 'm-corona-azul',
+            classTapaLeche: 'm-corona-azulleche'
+        });
+        this.tools.push({codigo: 13, nombre: 'Obturado', cssClass: 'fondoazul'});
+        this.tools.push({codigo: 14, nombre: 'Caries', cssClass: 'fondorojo'});
+         */
+          if (diente.tools.length > 0) {
+            return true;
+        }
+        return diente.top.tools.length > 0 ||
+            diente.bottom.tools.length > 0 ||
+            diente.left.tools.length > 0 ||
+            diente.right.tools.length > 0 ||
+            diente.center.tools.length > 0;
+
+
+
+
+datosconsulta.cosm_odontograma
+
+form.datosconsulta.
+
+fondoazul
+fondorojo
+borderojo
+
+
+updateTextos
+
+
+
+
+-----------
+
+

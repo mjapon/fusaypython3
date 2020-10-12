@@ -10,6 +10,7 @@ from fusayrepo.utils.jsonutil import JsonAlchemy
 
 log = logging.getLogger(__name__)
 
+
 class TFuser(Declarative, JsonAlchemy):
     __tablename__ = 'tfuser'
 
