@@ -24,25 +24,21 @@ class TVentaTicketsRest(TokenView):
             form = vtdao.get_form()
             tipos = vtdao.get_tipos_cuentas()
             cuentas = vtdao.get_cuentas(tipo=1)
-
             return {'status': 200, 'form': form, 'tipos': tipos, 'cuentas': cuentas}
         elif 'listar' == accion:
             tipo = self.get_request_param('tipo')
             cuenta = self.get_request_param('cuenta')
             res = vtdao.listar(tipo=tipo, cuenta=cuenta)
             data = res['data']
-
             sumamonto = sum(it['vt_monto'] for it in data)
             return {'status': 200, 'res': res, 'suma': redondear(sumamonto, 2)}
         elif 'forml' == accion:
             tipos = vtdao.get_tipos_cuentas()
             cuentas = vtdao.get_cuentas(tipo=1)
-            #cuentares = vtdao.agregar_todos_inlist(cuentas)
             return {'status': 200, 'tipos': tipos, 'cuentas': cuentas}
         elif 'gcuentas' == accion:
             tipo = self.get_request_param('tipo')
             cuentas = vtdao.get_cuentas(tipo=tipo)
-            #cuentares = vtdao.agregar_todos_inlist(cuentas)
             return {'status': 200, 'cuentas': cuentas}
 
     def collection_post(self):
@@ -52,14 +48,12 @@ class TVentaTicketsRest(TokenView):
             vtdao = TVentaTicketsDao(self.dbsession)
             vtdao.crear(form)
             return {'status': 200, 'msg': 'Registro exitoso'}
-
         elif accion == 'anular':
             form = self.get_request_json_body()
             vt_id = form['vt_id']
             vtdao = TVentaTicketsDao(self.dbsession)
             vtdao.anular(vt_id)
             return {'status': 200, 'msg': 'Registro anulado existósamemente'}
-
         elif accion == 'confirmar':
             form = self.get_request_json_body()
             vt_id = form['vt_id']

@@ -1,0 +1,1 @@
+INSERT INTO public.tempresa (emp_id, emp_ruc, emp_razonsocial, emp_nombrecomercial, emp_nroautorizacion, emp_fechaautorizacion, emp_esquema, emp_codigo, emp_menu) VALUES (2, '1104450877001', 'AGENCIA ACHEL', 'Agencia Achel', '12312', '2020-05-01', 'achel', 'achel', null);

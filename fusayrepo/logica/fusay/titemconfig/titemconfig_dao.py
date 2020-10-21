@@ -27,6 +27,11 @@ class TItemConfigDao(BaseDao):
         data = tgrid_dao.run_grid(grid_nombre='productos', where=swhere, order='ic_nombre', sec_id=sec_id)
         return data
 
+    def listarrubros_grid(self):
+        tgrid_dao = TGridDao(self.dbsession)
+        data = tgrid_dao.run_grid(grid_nombre='trubros')
+        return data
+
     def listar_teleservicios(self):
         sql = """
         select ic.ic_id, ic.ic_nombre, sm.med_id, per.per_nombres ||' '|| per.per_apellidos as medico from titemconfig ic 
@@ -88,6 +93,88 @@ class TItemConfigDao(BaseDao):
             cadenas.strip(str(codbar)))
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
+
+    def find_byid(self, ic_id):
+        return self.dbsession.query(TItemConfig).filter(TItemConfig.ic_id == ic_id).first()
+
+    def get_form_rubro(self):
+        form = {
+            'ic_id': 0,
+            'ic_nombre': '',
+            'ic_code': '',
+            'clsic_id': 0
+        }
+        return form
+
+    def get_form_rubro_edit(self, ic_id):
+        itemconfig = self.find_byid(ic_id)
+        if itemconfig is not None:
+            return itemconfig.__json__()
+        return None
+
+    def editar_rubro(self, form, user_edita):
+        ic_id = form['ic_id']
+        itemconfig = self.find_byid(ic_id)
+
+        new_ic_nombre = cadenas.strip_upper(form['ic_nombre'])
+        if not cadenas.es_nonulo_novacio(new_ic_nombre):
+            raise ErrorValidacionExc('Debe ingresar el nombre del rubro')
+
+        new_ic_code = cadenas.strip_upper(form['ic_code'])
+        if not cadenas.es_nonulo_novacio(new_ic_code):
+            raise ErrorValidacionExc('Debe ingresar la abreviacion del rubro')
+
+        if itemconfig is not None:
+            current_ic_nombre = cadenas.strip_upper(itemconfig.ic_nombre)
+            current_ic_code = cadenas.strip_upper(itemconfig.ic_code)
+            setfechas = False
+            if current_ic_nombre != new_ic_nombre:
+                itemconfig.ic_nombre = new_ic_nombre
+                setfechas = True
+
+            if current_ic_code != new_ic_code:
+                if self.existe_codbar(new_ic_code):
+                    raise ErrorValidacionExc('Ya existe un rubro registrado con la abreviación ingresada, ingrese otra')
+                else:
+                    itemconfig.ic_code = new_ic_code
+                    setfechas = True
+
+            if setfechas:
+                itemconfig.ic_fechaactualiza = datetime.now()
+                itemconfig.ic_useractualiza = user_edita
+                self.dbsession.add(itemconfig)
+        else:
+            raise ErrorValidacionExc('No existe un registro con el código indicado')
+
+    def crear_rubro(self, form, user_crea):
+        titemconfig = TItemConfig()
+
+        ic_nombre = cadenas.strip_upper(form['ic_nombre'])
+        ic_code = cadenas.strip_upper(form['ic_code'])
+        tipic_id = 4
+        clsic_id = form['clsic_id']
+
+        if not cadenas.es_nonulo_novacio(ic_nombre):
+            raise ErrorValidacionExc('Debe ingresar el nombre del rubro')
+
+        if not cadenas.es_nonulo_novacio(ic_code):
+            raise ErrorValidacionExc('Debe ingresar la abreviacion del rubro')
+
+        if not cadenas.es_nonulo_novacio(clsic_id):
+            raise ErrorValidacionExc('Debe especificar el tipo del rubro')
+
+        if self.existe_codbar(ic_code):
+            raise ErrorValidacionExc('Ya existe un rubro registrado con la abreviación ingresada, ingrese otra')
+
+        titemconfig.ic_nombre = ic_nombre
+        titemconfig.ic_code = ic_code
+        titemconfig.tipic_id = tipic_id
+        titemconfig.ic_usercrea = user_crea
+        titemconfig.ic_fechacrea = datetime.now()
+        titemconfig.ic_estado = 1
+        titemconfig.catic_id = 1
+        titemconfig.clsic_id = clsic_id
+        self.dbsession.add(titemconfig)
 
     def crear(self, form, user_crea):
         """

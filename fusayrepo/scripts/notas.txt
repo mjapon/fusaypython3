@@ -10,6 +10,15 @@ psql imprentadb postgres
 \i ruta del archivo
 \dt --->LISTA LAS TABLAS
 
+DATOS DE LOS SERVIDORES DE DIGITAL OCEAN:
+157.230.129.131
+usuario: root
+clave: hart471
+---------------------
+Datos servidor Lucho:
+206.189.239.86
+usuario: root
+clave: LuisGuaman92achel
 
 https://www.codingforentrepreneurs.com/blog/hello-linux-setup-gunicorn-and-supervisor
 nueva ruta de la aplicacion:

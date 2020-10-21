@@ -70,6 +70,11 @@ class TFuserTokenRest(TokenView):
             roles = form['roles']
             tfuserroldao.editar(us_id, roles)
             return {'status': 200, 'msg': 'Operación Exitosa'}
+        elif accion == 'creauser':
+            form = self.get_json_body()
+            tfuserdao = TFuserDao(self.dbsession)
+            tfuserdao.crear(form=form['form'], formcli=form['formcli'])
+            return {'status': 200, 'msg': 'Usuario creado existosamente'}
 
     def collection_get(self):
         accion = self.get_request_param('accion')
@@ -77,13 +82,27 @@ class TFuserTokenRest(TokenView):
             tfuserdao = TFuserDao(self.dbsession)
             usuarios = tfuserdao.listargrid()
             return {'status': 200, 'items': usuarios}
+        elif accion == 'chkexiste':
+            per_id = self.get_request_param('per_id')
+            tfuserdao = TFuserDao(self.dbsession)
+            datoscuenta = tfuserdao.find_byperid(per_id=per_id)
+            if datoscuenta is not None:
+                return {'status': 200, 'datoscuenta': datoscuenta}
+            else:
+                return {'status': 404}
+        elif accion == 'formcrea':
+            tfuserdao = TFuserDao(self.dbsession)
+            form = tfuserdao.get_form_crear()
+            form['status'] = 200
+            return form
 
     def get(self):
         us_id = self.get_request_matchdict('us_id')
         accion = self.get_request_param('accion')
+
         if accion == 'formedita':
-            fuserroldao = TFuserRolDao(self.dbsession)
-            form_edita = fuserroldao.get_form_editar(us_id=us_id)
+            fuserdao = TFuserDao(self.dbsession)
+            form_edita = fuserdao.get_form_editar(us_id=us_id)
             return {'status': 200, 'formedita': form_edita}
         elif accion == 'lpermisos':
             fuserroldao = TFuserRolDao(self.dbsession)

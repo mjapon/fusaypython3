@@ -9,6 +9,7 @@ from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
+from fusayrepo.logica.fusay.tventatickets.tventatickets_dao import TVentaTicketsDao
 from fusayrepo.utils.pyramidutil import TokenView, FusayPublicView
 
 log = logging.getLogger(__name__)
@@ -28,6 +29,9 @@ class TItemConfigRest(TokenView):
         elif 'formcrea' == accion:
             form = titemconfig_dao.get_form()
             return {'status': 200, 'form': form}
+        elif 'rubrosgrid' == accion:
+            items = titemconfig_dao.listarrubros_grid()
+            return {'status': 200, 'items': items}
         elif 'seccodbarra' == accion:
             tparamsdao = TParamsDao(self.dbsession)
             nexcodbar = tparamsdao.get_next_sequence_codbar()
@@ -42,6 +46,11 @@ class TItemConfigRest(TokenView):
             sec_id = self.get_sec_id()
             data = titemconfig_dao.listar_teleservicios(sec_id=sec_id)
             return {'status': 200, 'data': data}
+        elif 'formrubros' == accion:
+            form = titemconfig_dao.get_form_rubro()
+            vtdao = TVentaTicketsDao(self.dbsession)
+            tipos = vtdao.get_tipos_cuentas()
+            return {'status': 200, 'form': form, 'tipos': tipos}
         else:
             return {'status': 404, 'msg': 'accion desconocida'}
 
@@ -59,6 +68,14 @@ class TItemConfigRest(TokenView):
             elif accion == 'updatecode':
                 titemconfig_dao.update_barcode(ic_id=ic_id, newbarcode=form['new_ic_code'])
                 return {'status': 200, 'msg': u'Actualizado exitósamente'}
+            elif accion == 'guardarubro':
+                msg = 'Rubro creado exitosamente'
+                if result_ic_id == 0:
+                    titemconfig_dao.crear_rubro(form, self.get_user_id())
+                else:
+                    msg = 'Rubro editado exitosamente'
+                    titemconfig_dao.editar_rubro(form, self.get_user_id())
+                return {'status': 200, 'msg': msg}
         else:
             if ic_id == 0:
                 msg = u'Registrado exitósamente'
@@ -73,6 +90,18 @@ class TItemConfigRest(TokenView):
         ic_id = self.get_request_matchdict('ic_id')
         titemconfig_dao = TItemConfigDao(self.dbsession)
         res = titemconfig_dao.get_detalles_prod(ic_id=ic_id)
+
+        accion = self.get_request_param('accion')
+        if accion is not None:
+            if accion == 'formrubroedit':
+                itemconfig = titemconfig_dao.get_form_rubro_edit(ic_id=ic_id)
+                vtdao = TVentaTicketsDao(self.dbsession)
+                tipos = vtdao.get_tipos_cuentas()
+                if itemconfig is not None:
+                    return {'status': 200, 'item': itemconfig, 'tipos': tipos}
+                else:
+                    return {'status': 404, 'msg': 'No existe el registro'}
+
         if res is not None:
             return {'status': 200, 'datosprod': res}
         else:
@@ -86,7 +115,7 @@ class PublicItemConfigRest(FusayPublicView):
         accion = self.get_request_param('accion')
         titemconfig_dao = TItemConfigDao(self.dbsession)
         if 'teleservicios' == accion:
-            sec_id = 1 
+            sec_id = 1
             data = titemconfig_dao.listar_teleservicios()
             return {'status': 200, 'data': data}
         else:

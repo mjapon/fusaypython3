@@ -7,10 +7,7 @@ import datetime
 import logging
 
 from fusayrepo.logica.dao.base import BaseDao
-from fusayrepo.logica.fusay.tfuser.tfuser_dao import TFuserDao
 from fusayrepo.logica.fusay.tfuserrol.tfuserrol_model import TFuserRol
-from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
-from fusayrepo.logica.fusay.trol.trol_dao import TRolDao
 
 log = logging.getLogger(__name__)
 
@@ -24,37 +21,6 @@ class TFuserRolDao(BaseDao):
             tfuserrol.rl_id = rol['rl_id']
             tfuserrol.usrl_fechacrea = datetime.datetime.now()
             self.dbsession.add(tfuserrol)
-
-    def get_form_editar(self, us_id):
-        tfuserdao = TFuserDao(self.dbsession)
-        tfuser = tfuserdao.find_byid(us_id=us_id)
-        if tfuser is not None:
-            tpersonadao = TPersonaDao(self.dbsession)
-            tpersona = tpersonadao.get_entity_byid(per_id=tfuser.per_id)
-            if tpersona is not None:
-                troldao = TRolDao(self.dbsession)
-                allroles = troldao.listar()
-                rolesuser = self.listar(us_id=us_id)
-                rolesmap = set()
-                for rol in rolesuser:
-                    rolesmap.add(rol['rl_id'])
-
-                for rol in allroles:
-                    rl_id = rol['rl_id']
-                    if rl_id in rolesmap:
-                        rol['rl_marca'] = True
-                    else:
-                        rol['rl_marca'] = False
-
-                form = {
-                    'us_id': us_id,
-                    'us_cuenta': tfuser.us_cuenta,
-                    'persona': tpersona.__json__(),
-                    'roles': allroles
-                }
-                return form
-
-        return None
 
     def editar(self, us_id, listaroles):
         current_roles = self.dbsession.query(TFuserRol).filter(TFuserRol.us_id == us_id).all()
@@ -83,21 +49,47 @@ class TFuserRolDao(BaseDao):
         return self.all(sql, tupla_desc)
 
     def build_menu(self, permisos):
+
+        contabilidad_list = [
+            {'label': 'Ingresos y Gastos', 'icon': 'pi pi-fw pi-sort-alt', 'routerLink': ['/vtickets']},
+            {'label': 'Cuentas', 'icon': 'pi pi-fw pi-cog', 'routerLink': ['/rubros']},
+        ]
+        tickets_list = [
+            {'label': 'Listado', 'icon': 'pi pi-fw pi-ticket', 'routerLink': ['/tickets']},
+            {'label': 'Crear', 'icon': 'pi pi-fw pi-file', 'routerLink': ['/ticket/form']}
+        ]
+
+        prods_list = [
+            {'label': 'Listado', 'icon': 'pi pi-fw pi-th-large', 'routerLink': ['/mercaderia']},
+        ]
+
+        users_list = [
+            {'label': 'Admin Usuarios', 'icon': 'pi pi-fw pi-users', 'routerLink': ['/usuarios']},
+            {'label': 'Admin Roles', 'icon': 'pi pi-fw pi-bookmark', 'routerLink': ['/roles']}
+        ]
+
+        hist_list = [
+            {'label': 'Administrar', 'icon': 'pi pi-fw pi-calendar',
+             'routerLink': ['/historiaclinica/1']}
+        ]
+
+        histo_list = [
+            {'label': 'Administrar', 'icon': 'pi pi-fw pi-bell',
+             'routerLink': ['/historiaclinica/2']}
+        ]
+
         all_menu = {
             '*': {'label': 'Inicio', 'icon': 'pi pi-fw pi-home', 'routerLink': ['/lghome']},
-            'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-ticket', 'routerLink': ['/tickets']},
-            'IG_LISTAR': {'label': 'Ingresos y Gastos', 'icon': 'pi pi-fw pi-sort-alt', 'routerLink': ['/vtickets']},
-            'PRODS_LISTAR': {'label': 'Productos', 'icon': 'pi pi-fw pi-th-large', 'routerLink': ['/mercaderia']},
-            'HIST_LISTAR': {'label': 'Historias Clínicas', 'icon': 'pi pi-fw pi-calendar',
-                            'routerLink': ['/historiaclinica/1']},
-            'HISTO_LISTAR': {'label': 'Historias Clínicas', 'icon': 'pi pi-fw pi-bell',
-                             'routerLink': ['/historiaclinica/2']},
-            'RL_LISTAR': {'label': 'Roles', 'icon': 'pi pi-fw pi-bookmark', 'routerLink': ['/roles']},
-            'US_LISTAR': {'label': 'Usuarios', 'icon': 'pi pi-fw pi-users', 'routerLink': ['/usuarios']}
+            'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-sort-alt', 'items': tickets_list},
+            'IG_LISTAR': {'label': 'Contabilidad', 'icon': 'pi pi-fw pi-sort-alt', 'items': contabilidad_list},
+            'PRODS_LISTAR': {'label': 'Productos y Servicios', 'icon': 'pi pi-fw pi-microsoft', 'items': prods_list},
+            'HIST_LISTAR': {'label': 'Historias Clínicas', 'icon': 'pi pi-fw pi-calendar', 'items': hist_list},
+            'HISTO_LISTAR': {'label': 'Historias Clínicas', 'icon': 'pi pi-fw pi-bell', 'items': histo_list},
+            'US_LISTAR': {'label': 'Usuarios', 'icon': 'pi pi-fw pi-users', 'items': users_list},
         }
 
         menu = []
-        #menu.append(all_menu['*'])
+        # menu.append(all_menu['*'])
         permisosSet = set()
         for perm in permisos:
             abrperm = perm['prm_abreviacion']

@@ -8,13 +8,13 @@ import logging
 from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
-from fusayrepo.utils.pyramidutil import FusayPublicView
+from fusayrepo.utils.pyramidutil import FusayPublicView, TokenView
 
 log = logging.getLogger(__name__)
 
 
 @resource(collection_path='/api/tpersona', path='/api/tpersona/{per_id}', cors_origins=('*',))
-class TPersonaRest(FusayPublicView):
+class TPersonaRest(TokenView):
 
     def collection_get(self):
         accion = self.get_request_param('accion')
@@ -36,7 +36,6 @@ class TPersonaRest(FusayPublicView):
                 return {'status': 200, 'persona': res}
             else:
                 return {'status': 404}
-
         elif 'buscaemail' == accion:
             tpersonadao = TPersonaDao(self.dbsession)
             res = tpersonadao.buscar_poremail(per_ciruc=self.get_request_param('email'))
@@ -68,10 +67,9 @@ class TPersonaRest(FusayPublicView):
             offset = intlastpage * limit
             items = tpersonadao.buscar_pornomapelci(filtro, solo_cedulas=True, limit=limit, offsset=offset)
             hasMore = items is not None and len(items) == limit
-            return {'status': 200, 'items': items, 'hasMore': hasMore, 'nextp': intlastpage+1}
+            return {'status': 200, 'items': items, 'hasMore': hasMore, 'nextp': intlastpage + 1}
 
     def post(self):
-        # per_id = self.get_request_matchdict('per_id')
         tpersonadao = TPersonaDao(self.dbsession)
         form = self.get_json_body()
         per_id_gen = tpersonadao.crear(form=form)
