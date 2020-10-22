@@ -176,7 +176,7 @@ class TConsultaMedicaDao(BaseDao):
         else:
             raise ErrorValidacionExc('No existe ningún registro de historia clínica con el código:{0}'.format(cosm_id))
 
-    def listarproxcita_grid(self, tipofecha):
+    def listarproxcita_grid(self, tipofecha, tipocita):
         tgrid_dao = TGridDao(self.dbsession)
 
         desde = ''
@@ -203,14 +203,18 @@ class TConsultaMedicaDao(BaseDao):
             fechasstr = '{0}  -  {1}'.format(fechas.format_cadena(desde, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA),
                                              fechas.format_cadena(hasta, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA))
 
-        swhere = ""
+        tipocitawhere = " and historia.cosm_tipo = {tipo}".format(tipo=tipocita)
+        swhere = "{0}".format(tipocitawhere)
         if len(desde) > 0:
-            swhere = " and date(historia.cosm_fechaproxcita) between '{desde}' and '{hasta}' ".format(desde=desde, hasta=hasta)
+            swhere = " {tipo} and date(historia.cosm_fechaproxcita) between '{desde}' and '{hasta}' ".format(
+                tipo=tipocitawhere,
+                desde=desde,
+                hasta=hasta)
 
         data = tgrid_dao.run_grid(grid_nombre='proxcitas', swhere=swhere)
         return data, fechasstr
 
-    def listar(self, filtro, desde, hasta, limit=30, offset=0):
+    def listar(self, filtro, desde, hasta, tipo, limit=30, offset=0):
         tupla_desc = ('cosm_id',
                       'cosm_fechacrea',
                       'mescrea',
@@ -246,6 +250,7 @@ class TConsultaMedicaDao(BaseDao):
 
         solo_cedulas = True
         concedula = u" historia.cosm_estado = 1 and coalesce(per_ciruc,'')!='' and per_id>0 " if solo_cedulas else ''
+        tipocita = "  historia.cosm_tipo = {0}".format(tipo)
 
         filtrofechas = ""
         if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
@@ -269,18 +274,19 @@ class TConsultaMedicaDao(BaseDao):
             filtrocedulas = u" per_ciruc like '{0}%'".format(cadenas.strip(filtro))
 
             sql = u"""{basesql}
-                                where ((per_nombres||' '||per_apellidos like '{nombreslike}') or ({filtrocedulas})) and {concedula} {filtrofechas} order by historia.cosm_fechacrea desc limit {limit} offset {offset}
+                                where ((per_nombres||' '||per_apellidos like '{nombreslike}') or ({filtrocedulas})) and {concedula} and {tipo} {filtrofechas} order by historia.cosm_fechacrea desc limit {limit} offset {offset}
                             """.format(nombreslike=nombreslike,
                                        concedula=concedula,
+                                       tipo=tipocita,
                                        limit=limit,
                                        offset=offset,
                                        filtrocedulas=filtrocedulas,
                                        filtrofechas=filtrofechas,
                                        basesql=basesql)
         else:
-            sql = u"""{basesql} where {concedula} {filtrofechas}
+            sql = u"""{basesql} where {concedula} and {tipo} {filtrofechas}
                      order by historia.cosm_fechacrea desc limit {limit} offset {offset}
-                    """.format(basesql=basesql, limit=limit, offset=offset, concedula=concedula,
+                    """.format(basesql=basesql, limit=limit, offset=offset, concedula=concedula, tipo=tipocita,
                                filtrofechas=filtrofechas)
 
         items = self.all(sql, tupla_desc)

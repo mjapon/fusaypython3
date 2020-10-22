@@ -57,6 +57,7 @@ class TConsultaMedicaRest(TokenView):
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
             lastpage = self.get_request_param('pag')
+            tipo = self.get_request_param('tipo')
             intlastpage = 0
             try:
                 intlastpage = int(lastpage)
@@ -65,12 +66,13 @@ class TConsultaMedicaRest(TokenView):
 
             limit = 50
             offset = intlastpage * limit
-            items, lenitems = tconsultam_dao.listar(filtro=filtro, desde=desde, hasta=hasta, limit=limit, offset=offset)
+            items, lenitems = tconsultam_dao.listar(filtro=filtro, desde=desde, hasta=hasta, tipo=tipo, limit=limit, offset=offset)
             hasMore = items is not None and lenitems == limit
             return {'status': 200, 'items': items, 'hasMore': hasMore, 'nextp': intlastpage + 1}
         elif accion == 'proxcitas':
             tipofecha = self.get_request_param('tipofecha')
-            res, fechastr = tconsultam_dao.listarproxcita_grid(int(tipofecha))
+            tipo = self.get_request_param('tipocita')
+            res, fechastr = tconsultam_dao.listarproxcita_grid(int(tipofecha), tipocita=tipo)
             return {'status': 200, 'grid': res, 'fechas': fechastr}
 
     def collection_post(self):
