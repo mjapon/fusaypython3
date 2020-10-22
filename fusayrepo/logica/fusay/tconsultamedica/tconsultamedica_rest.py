@@ -52,6 +52,26 @@ class TConsultaMedicaRest(TokenView):
             # 3-indice de masa corporal
             result, color = tconsultam_dao.buscar_categoria_valor(valor, int(categ))
             return {'status': 200, 'result': result, 'color': color}
+        elif accion == 'cpreviasfiltropag':  # Esta opcion lista las atenciones previas realizadas
+            filtro = self.get_request_param('filtro')
+            desde = self.get_request_param('desde')
+            hasta = self.get_request_param('hasta')
+            lastpage = self.get_request_param('pag')
+            intlastpage = 0
+            try:
+                intlastpage = int(lastpage)
+            except Exception as ex:
+                log.error('Error al parsear a int la pagina', ex)
+
+            limit = 50
+            offset = intlastpage * limit
+            items, lenitems = tconsultam_dao.listar(filtro=filtro, desde=desde, hasta=hasta, limit=limit, offset=offset)
+            hasMore = items is not None and lenitems == limit
+            return {'status': 200, 'items': items, 'hasMore': hasMore, 'nextp': intlastpage + 1}
+        elif accion == 'proxcitas':
+            tipofecha = self.get_request_param('tipofecha')
+            res, fechastr = tconsultam_dao.listarproxcita_grid(int(tipofecha))
+            return {'status': 200, 'grid': res, 'fechas': fechastr}
 
     def collection_post(self):
         accion = self.get_request_param('accion')
