@@ -22,7 +22,6 @@ class TConsultaMedicaDao(BaseDao):
         form_antecedentes = self.get_form_valores(1)
         form_revxsistemas = self.get_form_valores(2)
         form_examsfisicos = self.get_form_valores(3)
-        # form_examdiagnostico = self.get_form_valores(4)
         form_paciente = {
             'per_id': 0,
             'per_ciruc': '',
@@ -149,7 +148,8 @@ class TConsultaMedicaDao(BaseDao):
                 historia.cosm_fechaproxcita 
                 from tconsultamedica historia
                 join tpersona paciente on historia.pac_id = paciente.per_id and 
-                paciente.per_ciruc = '{0}' order by historia.cosm_fechacrea desc """.format(per_ciruc)
+                paciente.per_ciruc = '{0}' where historia.cosm_estado = 1 order by historia.cosm_fechacrea desc """.format(
+            per_ciruc)
         tupla_desc = ('cosm_id', 'cosm_fechacrea', 'per_ciruc', 'paciente', 'cosm_motivo', 'cosm_fechaproxcita')
 
         historias = self.all(sql, tupla_desc)
@@ -166,11 +166,14 @@ class TConsultaMedicaDao(BaseDao):
     def get_entity_byid(self, cosm_id):
         return self.dbsession.query(TConsultaMedica).filter(TConsultaMedica.cosm_id == cosm_id).first()
 
-    def anular(self, cosm_id):
+    def anular(self, cosm_id, form, useranula):
         tconsultamedica = self.get_entity_byid(cosm_id)
         if tconsultamedica is not None:
             if tconsultamedica.cosm_estado == 1:
                 tconsultamedica.cosm_estado = 2
+                tconsultamedica.cosm_obsanula = form['cosm_obsanula']
+                tconsultamedica.cosm_useranula = useranula
+                tconsultamedica.cosm_fechaanula = datetime.now()
             else:
                 raise ErrorValidacionExc('Esta historia ya ha sido anulada')
         else:
@@ -358,7 +361,10 @@ class TConsultaMedicaDao(BaseDao):
                     cie.cie_valor ciediagnostico, 
                     get_diagnosticos(historia.cosm_diagnosticos) as diagnosticos,
                     cie.cie_key ciekey,
-                    historia.cosm_odontograma  from tconsultamedica historia
+                    historia.cosm_odontograma,
+                    historia.cosm_fechaedita,
+                    historia.cosm_useredita
+                      from tconsultamedica historia
         join tpersona paciente on historia.pac_id = paciente.per_id
         left join tcie10 cie on  historia.cosm_diagnostico = cie.cie_id
         left join tlistavalores lv on paciente.per_ocupacion = lv.lval_id
@@ -403,7 +409,7 @@ class TConsultaMedicaDao(BaseDao):
                       'ciediagnostico',
                       'diagnosticos',
                       'ciekey',
-                      'cosm_odontograma')
+                      'cosm_odontograma', 'cosm_fechaedita', 'cosm_useredita')
 
         datos_cita_medica = self.first(sql, tupla_desc)
 
@@ -418,15 +424,13 @@ class TConsultaMedicaDao(BaseDao):
         form_antecedentes = self.get_valores_adc_citamedica(1, cosm_id)
         form_examsfisicos = self.get_valores_adc_citamedica(3, cosm_id)
         form_revxsistemas = self.get_valores_adc_citamedica(2, cosm_id)
-        form_examdiagnostico = self.get_valores_adc_citamedica(4, cosm_id)
 
         return {
             'paciente': form_paciente,
             'datosconsulta': form_datosconsulta,
             'antecedentes': form_antecedentes,
             'examsfisicos': form_examsfisicos,
-            'revxsistemas': form_revxsistemas,
-            'diagnostico': form_examdiagnostico
+            'revxsistemas': form_revxsistemas
         }
 
     def get_form_valores(self, catc_id):
@@ -523,6 +527,91 @@ class TConsultaMedicaDao(BaseDao):
 
         return diag_code
 
+    def clone_model(self, model):
+        """Clone an arbitrary sqlalchemy model object without its primary key values."""
+        # Ensure the model's data is loaded before copying.
+        table = model.__table__
+        non_pk_columns = [k for k in table.columns.keys() if k not in table.primary_key]
+        data = {c: getattr(model, c) for c in non_pk_columns}
+        # data.update(kwargs)
+        clone = model.__class__(**data)
+
+        return clone
+
+    def actualizar(self, form, useredita):
+        datosconsulta = form['datosconsulta']
+        tconsultamedica = self.dbsession.query(TConsultaMedica).filter(
+            TConsultaMedica.cosm_id == datosconsulta['cosm_id']).first()
+        if tconsultamedica is not None:
+
+            new_consultamedica = self.clone_model(tconsultamedica)
+
+            tconsultamedica.cosm_estado = 2
+            tconsultamedica.cosm_fechaanula = datetime.now()
+            tconsultamedica.cosm_obsanula = 'anulado por edición'
+            tconsultamedica.cosm_useranula = useredita
+
+            if not cadenas.es_nonulo_novacio(datosconsulta['cosm_motivo']):
+                raise ErrorValidacionExc('Debe especificar el motivo de la consulta')
+
+            new_consultamedica.cosm_id = None
+            new_consultamedica.cosm_motivo = datosconsulta['cosm_motivo']
+            new_consultamedica.cosm_enfermactual = datosconsulta['cosm_enfermactual']
+            new_consultamedica.cosm_hallazgoexamfis = datosconsulta['cosm_hallazgoexamfis']
+            new_consultamedica.cosm_exmscompl = datosconsulta['cosm_exmscompl']
+            new_consultamedica.cosm_tratamiento = datosconsulta['cosm_tratamiento']
+            new_consultamedica.cosm_receta = datosconsulta['cosm_receta']
+            new_consultamedica.cosm_indicsreceta = datosconsulta['cosm_indicsreceta']
+            new_consultamedica.cosm_recomendaciones = datosconsulta['cosm_recomendaciones']
+            new_consultamedica.cosm_fechaedita = datetime.now()
+            new_consultamedica.cosm_useredita = useredita
+            new_consultamedica.cosm_estado = 1
+            new_consultamedica.cosm_fechaanula = None
+            new_consultamedica.cosm_obsanula = None
+
+            diagnosticos_array_aux = datosconsulta['diagnosticos']
+            # filtrar diagnosticos null
+            diagnosticos_array = []
+            for item in diagnosticos_array_aux:
+                if item is not None:
+                    diagnosticos_array.append(item)
+
+            diagnosticos = self.procesar_array_diags(diagnosticos_array)
+            first_diagnostico = None
+            if diagnosticos_array is not None and len(diagnosticos_array) > 0:
+                first_diagnostico = self.get_cod_diagnostico(diagnosticos_array[0])
+
+            if not cadenas.es_nonulo_novacio(diagnosticos):
+                raise ErrorValidacionExc("Debe especificar el diagnóstico")
+
+            new_consultamedica.cosm_diagnosticos = diagnosticos
+            new_consultamedica.cosm_diagnostico = first_diagnostico
+            new_consultamedica.cosm_diagnosticoal = datosconsulta['cosm_diagnosticoal']
+            new_consultamedica.cosm_odontograma = datosconsulta['cosm_odontograma']
+
+            cosm_fechaproxcita = datosconsulta['cosm_fechaproxcita']
+            if cadenas.es_nonulo_novacio(cosm_fechaproxcita):
+                cosm_fechaproxcita_parsed = fechas.parse_cadena(cosm_fechaproxcita)
+                new_consultamedica.cosm_fechaproxcita = cosm_fechaproxcita_parsed
+
+            self.dbsession.add(new_consultamedica)
+            self.dbsession.flush()
+            cosm_id = new_consultamedica.cosm_id
+            print('Valor del nuevo id generado es:')
+            print(cosm_id)
+
+            # 3 Registro de antecendentes:
+            # Esto se registra como lista de valores
+            antecedentes = form['antecedentes']
+            examsfisicos = form['examsfisicos']
+            revxsistemas = form['revxsistemas']
+
+            self.registra_datosadc_consmedica(cosm_id, antecedentes)
+            self.registra_datosadc_consmedica(cosm_id, examsfisicos)
+            self.registra_datosadc_consmedica(cosm_id, revxsistemas)
+
+            return u"Actualizado exitósamente", cosm_id
+
     def registrar(self, form, usercrea):
         # 1 regstro de datos del paciente
         form_paciente = form['paciente']
@@ -544,7 +633,7 @@ class TConsultaMedicaDao(BaseDao):
 
         tconsultamedica = TConsultaMedica()
         tconsultamedica.pac_id = per_id
-        tconsultamedica.med_id = 0  # TODO: Se debe registrar tambien el codigo del medico al que se le va asignar la cita medica
+        tconsultamedica.med_id = usercrea
         tconsultamedica.cosm_fechacita = datetime.now()
         tconsultamedica.cosm_fechacrea = datetime.now()
         tconsultamedica.cosm_motivo = datosconsulta['cosm_motivo']

@@ -66,7 +66,8 @@ class TConsultaMedicaRest(TokenView):
 
             limit = 50
             offset = intlastpage * limit
-            items, lenitems = tconsultam_dao.listar(filtro=filtro, desde=desde, hasta=hasta, tipo=tipo, limit=limit, offset=offset)
+            items, lenitems = tconsultam_dao.listar(filtro=filtro, desde=desde, hasta=hasta, tipo=tipo, limit=limit,
+                                                    offset=offset)
             hasMore = items is not None and lenitems == limit
             return {'status': 200, 'items': items, 'hasMore': hasMore, 'nextp': intlastpage + 1}
         elif accion == 'proxcitas':
@@ -85,7 +86,12 @@ class TConsultaMedicaRest(TokenView):
         elif 'anular' == accion:
             tconsultam_dao = TConsultaMedicaDao(self.dbsession)
             formdata = self.get_request_json_body()
-            tconsultam_dao.anular(cosm_id=formdata['cosm_id'])
+            tconsultam_dao.anular(cosm_id=formdata['cosm_id'], form=formdata, useranula=self.get_user_id())
             return {'status': 200, 'msg': 'Registro anulado exitosamente'}
+        elif 'editar' == accion:
+            tconsultam_dao = TConsultaMedicaDao(self.dbsession)
+            formdata = self.get_request_json_body()
+            msg, cosm_id = tconsultam_dao.actualizar(form=formdata, useredita=self.get_user_id())
+            return {'status': 200, 'msg': msg, 'ccm': cosm_id}
         else:
             raise ErrorValidacionExc(u'Ninguna acción especificada')
