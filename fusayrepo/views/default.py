@@ -1,18 +1,19 @@
 from random import random
 
 from pyramid.view import view_config
-from pyramid.response import Response
+from pyramid.response import Response, FileResponse
 
 from sqlalchemy.exc import DBAPIError
 
+from fusayrepo.logica.mipixel.pixel_dao import MiPixelDao
+from fusayrepo.utils.archivos import CargaArchivosUtil
 from .. import models
 
 
 @view_config(route_name='home', renderer='../templates/indexf.jinja2')
 def my_view(request):
     aleatorio = str(random())
-    return {'version':1.0, 'vscss':aleatorio}
-
+    return {'version': 1.0, 'vscss': aleatorio}
 
     """
     try:
@@ -22,6 +23,31 @@ def my_view(request):
         return Response(db_err_msg, content_type='text/plain', status=500)
     return {'one': one, 'project': 'fusay'}
     """
+
+
+@view_config(route_name='postfile', renderer='json', request_method='POST')
+def post_file(request):
+    print('Inicia procesamiento de la peticion:')
+
+    return {'estado': 200, 'msg': 'procesado'}
+
+
+@view_config(route_name='getlogopixel', request_method='GET')
+def get_logo(request):
+    esquema = 'fusay'
+    request.dbsession.execute("SET search_path TO {0}".format(esquema))
+    pixeldao = MiPixelDao(request.dbsession)
+    pxid = request.params['pxid']
+    pixel = pixeldao.buscar(px_id=pxid)
+    if pixel is not None:
+        pixel['px_id']
+        px_pathlogo = pixel['px_pathlogo']
+        px_tipo = pixel['px_tipo']
+
+        fileutil = CargaArchivosUtil()
+        base64 = fileutil.get_base64_from_file(px_pathlogo, px_tipo)
+        response = FileResponse(px_pathlogo, content_type=px_tipo)
+        return response
 
 
 db_err_msg = """\

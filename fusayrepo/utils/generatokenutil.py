@@ -20,6 +20,13 @@ class GeneraTokenUtil(object):
         encoded_jwt = jwt.encode(data, clave, algorithm='HS256')
         return encoded_jwt
 
+    def gen_token_pixel(self, us_id, clave="fusay4793"):
+        data = {'us_id': us_id, 'emp_codigo': 1, 'emp_esquema': 'fusay', 'sec_id': 1}
+        encoded_jwt = jwt.encode(data, clave, algorithm='HS256')
+        return encoded_jwt
+        encoded_jwt = jwt.encode(data, clave, algorithm='HS256')
+        return encoded_jwt
+
     def update_secid_token(self, token, sec_id):
         datos_token = self.get_datos_fromtoken(token)
         return self.gen_token(datos_token['us_id'], datos_token['emp_codigo'],
