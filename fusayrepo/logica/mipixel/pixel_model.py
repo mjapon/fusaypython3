@@ -4,7 +4,7 @@ Fecha de creacion 10/27/20
 @autor: mjapon
 """
 import logging
-from sqlalchemy import Column, Integer, String, DateTime, Numeric, Text
+from sqlalchemy import Column, Integer, String, DateTime, Numeric, Text, Date
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
 
@@ -32,4 +32,5 @@ class MiPixelModel(Declarative, JsonAlchemy):
     px_obsconfirma = Column(Text)
     px_numpx = Column(Integer)
     px_texto = Column(String(50))
+    px_fechacadu = Column(Date)
 

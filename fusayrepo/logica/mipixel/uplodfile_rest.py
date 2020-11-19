@@ -5,11 +5,12 @@ Fecha de creacion 10/28/20
 """
 import logging
 
+from cornice.resource import resource
+
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.mipixel.pixel_dao import MiPixelDao
 from fusayrepo.utils.archivos import CargaArchivosUtil
 from fusayrepo.utils.pyramidutil import FusayPublicView
-from cornice.resource import resource
 
 log = logging.getLogger(__name__)
 
@@ -65,6 +66,10 @@ class UploadView(FusayPublicView):
         elif accion == 'listarall':
             pixeldao = MiPixelDao(self.dbsession)
             items = pixeldao.listar_all()
+            return {'status': 200, 'items': items}
+        elif accion == 'listarnoanull':
+            pixeldao = MiPixelDao(self.dbsession)
+            items = pixeldao.listar_no_anulados()
             return {'status': 200, 'items': items}
         elif accion == 'getpixel':
             pxid = self.get_request_param('pxid')

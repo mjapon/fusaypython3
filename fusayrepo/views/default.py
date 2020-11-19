@@ -1,13 +1,9 @@
 from random import random
 
+from pyramid.response import FileResponse
 from pyramid.view import view_config
-from pyramid.response import Response, FileResponse
-
-from sqlalchemy.exc import DBAPIError
 
 from fusayrepo.logica.mipixel.pixel_dao import MiPixelDao
-from fusayrepo.utils.archivos import CargaArchivosUtil
-from .. import models
 
 
 @view_config(route_name='home', renderer='../templates/indexf.jinja2')
@@ -44,8 +40,8 @@ def get_logo(request):
         px_pathlogo = pixel['px_pathlogo']
         px_tipo = pixel['px_tipo']
 
-        fileutil = CargaArchivosUtil()
-        base64 = fileutil.get_base64_from_file(px_pathlogo, px_tipo)
+        # fileutil = CargaArchivosUtil()
+        # base64 = fileutil.get_base64_from_file(px_pathlogo, px_tipo)
         response = FileResponse(px_pathlogo, content_type=px_tipo)
         return response
 

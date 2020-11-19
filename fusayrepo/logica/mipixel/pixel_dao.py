@@ -9,7 +9,7 @@ from datetime import datetime
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.mipixel.pixel_model import MiPixelModel
-from fusayrepo.utils import cadenas
+from fusayrepo.utils import cadenas, fechas
 
 log = logging.getLogger(__name__)
 
@@ -46,6 +46,7 @@ class MiPixelDao(BaseDao):
         if not cadenas.es_nonulo_novacio(pxurl):
             raise ErrorValidacionExc('Por favor ingrese la url del pixel')
 
+        hoy = datetime.now()
         mipixel.px_email = email
         mipixel.px_row = row
         mipixel.px_row_end = row_end
@@ -54,11 +55,12 @@ class MiPixelDao(BaseDao):
         mipixel.px_costo = costo
         mipixel.px_pathlogo = pathlogo
         mipixel.px_estado = estado
-        mipixel.px_fecharegistro = datetime.now()
+        mipixel.px_fecharegistro = hoy
         mipixel.px_tipo = tipo
         mipixel.px_url = pxurl
         mipixel.px_numpx = pxnumpx
         mipixel.px_texto = cadenas.strip(detalle)
+        mipixel.px_fechacadu = fechas.sumar_meses(hoy, 12)
 
         self.dbsession.add(mipixel)
         self.dbsession.flush()
@@ -70,11 +72,25 @@ class MiPixelDao(BaseDao):
         px_tipo, px_url, px_estado, case px_estado  when 0 then 'PENDIENTE'
                                                     when 1 then 'ANULADO'
                                                     when 2 then 'CONFIRMADO'
-                                                    else 'DESCONOCIDO' end as estado, px_texto 
+                                                    else 'DESCONOCIDO' end as estado, px_texto, px_fechacadu 
                  from tpixel where px_estado ={estado} order by px_id desc""".format(estado=estado)
         tupla_desc = (
             'px_id', 'px_email', 'px_row', 'px_col', 'px_row_end', 'px_col_end', 'px_costo', 'px_pathlogo', 'px_url',
-            'px_estado', 'estado', 'px_texto')
+            'px_estado', 'estado', 'px_texto', 'px_fechacadu')
+
+        return self.all(sql, tupla_desc)
+
+    def listar_no_anulados(self):
+        status_anulado = 1
+        sql = """select px_id, px_email, px_row, px_col, px_row_end, px_col_end, px_costo, px_pathlogo, 
+                px_tipo, px_url, px_estado, case px_estado  when 0 then 'PENDIENTE'
+                                                            when 1 then 'ANULADO'
+                                                            when 2 then 'CONFIRMADO'
+                                                            else 'DESCONOCIDO' end as estado, px_texto, px_fechacadu 
+                         from tpixel where px_estado !={estado} order by px_id desc""".format(estado=status_anulado)
+        tupla_desc = (
+            'px_id', 'px_email', 'px_row', 'px_col', 'px_row_end', 'px_col_end', 'px_costo', 'px_pathlogo', 'px_url',
+            'px_estado', 'estado', 'px_texto', 'px_fechacadu')
 
         return self.all(sql, tupla_desc)
 
@@ -88,22 +104,28 @@ class MiPixelDao(BaseDao):
                                                             px_fechanula,
                                                             px_fechaconfirma,
                                                             px_numpx,
-                                                            px_texto
+                                                            px_texto, px_fechacadu
                          from tpixel order by px_id desc"""
         tupla_desc = (
             'px_id', 'px_email', 'px_row', 'px_col', 'px_row_end', 'px_col_end', 'px_costo', 'px_pathlogo', 'px_url',
-            'px_estado', 'estado', 'px_fecharegistro', 'px_fechanula', 'px_fechaconfirma', 'px_numpx', 'px_texto')
+            'px_estado', 'estado', 'px_fecharegistro', 'px_fechanula', 'px_fechaconfirma', 'px_numpx', 'px_texto',
+            'px_fechacadu')
 
         return self.all(sql, tupla_desc)
 
     def buscar(self, px_id):
-        sql = """select px_id, px_numpx, px_email, px_row, px_col, px_row_end, px_col_end, px_costo, px_pathlogo, px_tipo, px_url, px_estado 
+        sql = """select px_id, px_numpx, px_email, px_row, px_col, px_row_end, px_col_end, px_costo, px_pathlogo, px_tipo, 
+        px_url, px_estado, px_fechacadu, px_fechanula, px_obsanula, px_fechaconfirma, px_obsconfirma, px_fecharegistro,
+        case px_estado  when 0 then 'PENDIENTE'
+                                                            when 1 then 'ANULADO'
+                                                            when 2 then 'CONFIRMADO'
+                                                            else 'DESCONOCIDO' end as estado  
         from tpixel where px_id = {0}""".format(px_id)
 
         tupla_desc = (
             'px_id', 'px_numpx', 'px_email', 'px_row', 'px_col', 'px_row_end', 'px_col_end', 'px_costo', 'px_pathlogo',
-            'px_tipo',
-            'px_url', 'px_estado')
+            'px_tipo', 'px_url', 'px_estado', 'px_fechacadu', 'px_fechanula', 'px_obsanula', 'px_fechaconfirma',
+            'px_obsconfirma', 'px_fecharegistro', 'estado')
 
         return self.first(sql, tupla_desc)
 
@@ -120,3 +142,4 @@ class MiPixelDao(BaseDao):
             pixelmodel.px_estado = 2
             pixelmodel.px_fechaconfirma = datetime.now()
             pixelmodel.px_obsconfirma = obs_confirma
+            pixelmodel.px_fechacadu = fechas.sumar_meses(datetime.now(), 12)
