@@ -7,6 +7,7 @@ import logging
 
 from cornice.resource import resource
 
+from fusayrepo.logica.excepciones.validacion import PixelUsadoExc
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.mipixel.pixel_dao import MiPixelDao
 from fusayrepo.utils.archivos import CargaArchivosUtil
@@ -43,18 +44,23 @@ class UploadView(FusayPublicView):
             form = jsonbody['form']
             try:
                 pixeldao = MiPixelDao(self.dbsession)
+                px_id = pixeldao.crear(form=form, pathlogo=ruta, tipo=jsonbody['tipo'])
                 uploadFileUtil = CargaArchivosUtil()
                 res = uploadFileUtil.get_decoded_file_data_type(jsonbody['archivo'])
                 uploadFileUtil.save_bytarray(ruta, res['decoded'])
-                px_id = pixeldao.crear(form=form, pathlogo=ruta, tipo=jsonbody['tipo'])
                 estado = 200
                 msg = 'Registro satisfactorio'
                 return {'status': estado, 'msg': msg, 'px_id': px_id}
+            except PixelUsadoExc as ex:
+                estado = -2
+                msg = '{0}'.format(ex)
+                return {'status': estado, 'msg': msg}
+                log.error(u'Error Pixel Usado Excepcion al tratar de guardar la compra de un pixel: {0}'.format(ex))
             except Exception as ex:
                 estado = -1
                 msg = '{0}'.format(ex)
                 return {'status': estado, 'msg': msg}
-                log.error(u'Error al tratar de guardar el trabajo de impresión: {0}'.format(ex))
+                log.error(u'Error al tratar de guardar la compra de un pixel: {0}'.format(ex))
 
     def collection_get(self):
         accion = self.get_request_param('accion')
@@ -66,7 +72,8 @@ class UploadView(FusayPublicView):
         elif accion == 'listarall':
             pixeldao = MiPixelDao(self.dbsession)
             items = pixeldao.listar_all()
-            return {'status': 200, 'items': items}
+            totalconfirm = pixeldao.sumar_confirmados(items)
+            return {'status': 200, 'items': items, 'totalconf': totalconfirm}
         elif accion == 'listarnoanull':
             pixeldao = MiPixelDao(self.dbsession)
             items = pixeldao.listar_no_anulados()
