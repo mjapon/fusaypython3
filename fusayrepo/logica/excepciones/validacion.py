@@ -14,6 +14,12 @@ class ErrorValidacionExc(Exception):
         Exception.__init__(self, message)
         self.inputid=inputid
 
+class PixelUsadoExc(Exception):
+    """Excepcion generadad cuando se desea comprar un pixel y este ya fue comprado"""
+    def __init__(self, message, inputid=""):
+        Exception.__init__(self, message)
+        self.inputid = inputid
+
 
 class SinDetallesExc(Exception):
     def __init__(self, message, inputid=""):

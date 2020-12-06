@@ -8,7 +8,7 @@ import logging
 from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
-from fusayrepo.utils.pyramidutil import FusayPublicView, TokenView
+from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
 
@@ -79,5 +79,12 @@ class TPersonaRest(TokenView):
         per_id = self.get_request_matchdict('per_id')
         tpersonadao = TPersonaDao(self.dbsession)
         form = self.get_json_body()
-        res = tpersonadao.actualizar(per_id=per_id, form=form)
-        return {'status': 200, 'msg': u'Actualizado exitosamente'}
+        if int(per_id) == 0:
+            return self.post()
+        else:
+            upd = tpersonadao.actualizar(per_id=per_id, form=form)
+            msg = u'Actualizado exitosamente'
+            if not upd:
+                msg = 'No se pudo actualizar, no existe un registro con el codigo:{0}'.format(per_id)
+
+            return {'status': 200, 'msg': msg}

@@ -145,25 +145,25 @@ class TPersonaDao(BaseDao):
 
     def buscar_porciruc_full(self, per_ciruc):
         tupla_desc = ('per_id',
-        'per_ciruc',
-        'per_nombres',
-        'per_apellidos',
-        'per_direccion',
-        'per_telf',
-        'per_movil',
-        'per_email',
-        'per_tipo',
-        'per_lugnac',
-        'per_nota',
-        'per_fechanac',
-        'per_genero',
-        'per_estadocivil',
-        'per_lugresidencia',
-        'per_ocupacion',
-        'genero',
-        'estadocivil',
-        'profesion',
-        'residencia')
+                      'per_ciruc',
+                      'per_nombres',
+                      'per_apellidos',
+                      'per_direccion',
+                      'per_telf',
+                      'per_movil',
+                      'per_email',
+                      'per_tipo',
+                      'per_lugnac',
+                      'per_nota',
+                      'per_fechanac',
+                      'per_genero',
+                      'per_estadocivil',
+                      'per_lugresidencia',
+                      'per_ocupacion',
+                      'genero',
+                      'estadocivil',
+                      'profesion',
+                      'residencia')
         sql = """   
             select per_id,
                per_ciruc,
@@ -295,7 +295,6 @@ class TPersonaDao(BaseDao):
         return self.all(sql, tupla_desc)
 
     def actualizar(self, per_id, form):
-
         tpersona = self.get_entity_byid(per_id)
         if tpersona is not None:
             if not cadenas.es_nonulo_novacio(form['per_ciruc']):
@@ -378,6 +377,8 @@ class TPersonaDao(BaseDao):
 
             self.dbsession.add(tpersona)
             self.dbsession.flush()
+            return True
+        return False
 
     def crear(self, form, permit_ciruc_null=False):
         if not permit_ciruc_null:
@@ -423,7 +424,13 @@ class TPersonaDao(BaseDao):
         tpersona.per_nota = ''
 
         # Columnas agregadas:
-        if 'per_fechanac' in form:
+        if 'per_fechanacp' in form:
+            per_fechanac_txt = form['per_fechanacp']
+            if cadenas.es_nonulo_novacio(per_fechanac_txt):
+                per_fechanac = fechas.parse_cadena(per_fechanac_txt)
+                tpersona.per_fechanac = per_fechanac
+
+        elif 'per_fechanac' in form:
             per_fechanac_txt = form['per_fechanac']
             if cadenas.es_nonulo_novacio(per_fechanac_txt):
                 per_fechanac = fechas.parse_cadena(per_fechanac_txt)
