@@ -212,6 +212,15 @@ class TCitaDao(BaseDao):
                       'ct_color', 'ct_fechacrea', 'user_crea')
         return self.all(sql, tupla_desc)
 
+    def contar_validos(self, desde, hasta):
+        sql = """        
+        select count(*) as cuenta, date(a.ct_fecha) as ct_fecha  from tcita a where a.ct_estado in (0,1) and  date(a.ct_fecha) between '{0}' and '{1}'
+            group by 2 order by 2
+                """.format(fechas.format_cadena_db(desde), fechas.format_cadena_db(hasta))
+        tupla_desc = ('cuenta',
+                      'ct_fecha')
+        return self.all(sql, tupla_desc)
+
     def listar_citas(self, med_id, fecha_desde):
         sql_fecha = ''
         if fecha_desde is not None and len(fecha_desde) > 0:

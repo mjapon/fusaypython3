@@ -25,10 +25,15 @@ class TCitaRest(TokenView):
             horas = tcitadao.get_horas_for_form()
             colores = tcitadao.get_lista_colores()
             return {'status': 200, 'form': form, 'horas': horas, 'colores': colores}
-        if accion == 'lstw':
+        elif accion == 'lstw':
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
             citas = tcitadao.listar_validos(desde, hasta)
+            return {'status': 200, 'citas': citas}
+        elif accion == 'countm':
+            desde = self.get_request_param('desde')
+            hasta = self.get_request_param('hasta')
+            citas = tcitadao.contar_validos(desde, hasta)
             return {'status': 200, 'citas': citas}
         elif accion == 'gdet':
             cod = self.get_request_param('cod')
