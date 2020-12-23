@@ -61,3 +61,13 @@ class TOdontogramaDao(BaseDao):
         tupla_desc = ('od_id', 'od_fechacrea', 'od_fechaupd', 'user_crea', 'od_odontograma',
                       'od_obsodonto', 'od_tipo', 'od_protesis', 'pac_id')
         return self.first(sql, tupla_desc)
+
+    def get_last_odontograma(self, pac_id):
+        sql = "select od_odontograma, od_tipo from todontograma where pac_id={0} and od_tipo in (1,2) order by od_id desc limit 2".format(
+            pac_id)
+        res = self.all(sql, ('od_odontograma', 'od_tipo'))
+        resdict = {}
+        for item in res:
+            resdict[item['od_tipo']] = item['od_odontograma']
+
+        return resdict

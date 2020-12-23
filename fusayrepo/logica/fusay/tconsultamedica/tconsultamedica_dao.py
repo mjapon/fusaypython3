@@ -179,6 +179,41 @@ class TConsultaMedicaDao(BaseDao):
         else:
             raise ErrorValidacionExc('No existe ningún registro de historia clínica con el código:{0}'.format(cosm_id))
 
+    def listarproxcitasod_grid(self, tipofecha):
+        tgrid_dao = TGridDao(self.dbsession)
+
+        desde = ''
+        hasta = ''
+        hoy = datetime.now()
+        fechasstr = ''
+        if tipofecha == 1:  # hoy
+            desde = fechas.get_str_fecha_actual(ctes.APP_FMT_FECHA_DB)
+            hasta = fechas.get_str_fecha_actual(ctes.APP_FMT_FECHA_DB)
+            fechasstr = fechas.format_cadena(desde, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA)
+        elif tipofecha == 2:  # mañana
+            maniana = fechas.sumar_dias(hoy, 1)
+            desde = fechas.get_str_fecha(maniana, ctes.APP_FMT_FECHA_DB)
+            hasta = fechas.get_str_fecha(maniana, ctes.APP_FMT_FECHA_DB)
+            fechasstr = fechas.format_cadena(desde, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA)
+        elif tipofecha == 3:  # Esta semana
+            desde = fechas.get_str_fecha(hoy, ctes.APP_FMT_FECHA_DB)
+            hasta = fechas.get_str_fecha(fechas.get_lastday_of_week(), ctes.APP_FMT_FECHA_DB)
+            fechasstr = '{0}  -  {1}'.format(fechas.format_cadena(desde, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA),
+                                             fechas.format_cadena(hasta, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA))
+        elif tipofecha == 4:  # Este mesa
+            desde = fechas.get_str_fecha(hoy, ctes.APP_FMT_FECHA_DB)
+            hasta = fechas.get_str_fecha(fechas.get_lastday_of_month(), ctes.APP_FMT_FECHA_DB)
+            fechasstr = '{0}  -  {1}'.format(fechas.format_cadena(desde, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA),
+                                             fechas.format_cadena(hasta, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA))
+        swhere = " "
+        if len(desde) > 0:
+            swhere = " and date(cita.ct_fecha) between '{desde}' and '{hasta}' ".format(
+                desde=desde,
+                hasta=hasta)
+
+        data = tgrid_dao.run_grid(grid_nombre='proxcitasod', swhere=swhere)
+        return data, fechasstr
+
     def listarproxcita_grid(self, tipofecha, tipocita):
         tgrid_dao = TGridDao(self.dbsession)
 
@@ -216,6 +251,107 @@ class TConsultaMedicaDao(BaseDao):
 
         data = tgrid_dao.run_grid(grid_nombre='proxcitas', swhere=swhere)
         return data, fechasstr
+
+    def listar_odonto(self, filtro, desde, hasta, limit=30, offset=0):
+        tupla_desc = ('ate_id',
+                      'ate_fechacrea',
+                      'mescrea',
+                      'mescreastr',
+                      'horacreastr',
+                      'diacrea',
+                      'genero',
+                      'per_ciruc',
+                      'paciente',
+                      'cosm_motivo',
+                      'ate_estado',
+                      'ate_odontograma',
+                      'ate_odontograma_sm',
+                      'per_lugresidencia',
+                      'lugresidencia')
+
+        basesql = """
+                    select  aten.ate_id,
+                            aten.ate_fechacrea,
+                            extract(month from aten.ate_fechacrea)  as mescrea,
+                            to_char(aten.ate_fechacrea, 'TMMonth') as mescreastr,
+                            to_char(aten.ate_fechacrea, 'HH24:MI') as horacreastr,
+                            extract(day from aten.ate_fechacrea)   as diacrea,
+                            coalesce(paciente.per_genero, 1)        as genero,
+                            paciente.per_ciruc,
+                            paciente.per_nombres || ' ' || paciente.per_apellidos as paciente,
+                            aten.ate_diagnostico as cosm_motivo,
+                            aten.ate_estado,
+                            aten.ate_odontograma,
+                            aten.ate_odontograma_sm,
+                            paciente.per_lugresidencia,
+                            coalesce(tlugar.lug_nombre,'') as lugresidencia
+                    from todatenciones aten
+                            join tpersona paciente on aten.pac_id = paciente.per_id
+                            left join tlugar on paciente.per_lugresidencia = tlugar.lug_id"""
+
+        solo_cedulas = True
+        concedula = u" aten.ate_estado = 1 and coalesce(per_ciruc,'')!='' and per_id>0 " if solo_cedulas else ''
+        tipocita = " 1=1 "
+
+        filtrofechas = ""
+        if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
+            filtrofechas = " and date(ate_fechacrea) between '{desde}' and '{hasta}' ".format(
+                desde=fechas.format_cadena_db(desde),
+                hasta=fechas.format_cadena_db(hasta))
+        elif cadenas.es_nonulo_novacio(desde) and not cadenas.es_nonulo_novacio(hasta):
+            filtrofechas = " and date(ate_fechacrea) >= '{desde}' ".format(
+                desde=fechas.format_cadena_db(desde))
+        elif not cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
+            filtrofechas = " and date(ate_fechacrea) <= '{hasta}' ".format(
+                hasta=fechas.format_cadena_db(hasta))
+
+        if cadenas.es_nonulo_novacio(filtro):
+            palabras = cadenas.strip_upper(filtro).split()
+            filtromod = []
+            for cad in palabras:
+                filtromod.append(u"%{0}%".format(cad))
+
+            nombreslike = u' '.join(filtromod)
+            filtrocedulas = u" per_ciruc like '{0}%'".format(cadenas.strip(filtro))
+
+            sql = u"""{basesql}
+                        where ((per_nombres||' '||per_apellidos like '{nombreslike}') or ({filtrocedulas})) and {concedula} and {tipo} {filtrofechas} order by aten.ate_fechacrea desc limit {limit} offset {offset}
+                    """.format(nombreslike=nombreslike,
+                               concedula=concedula,
+                               tipo=tipocita,
+                               limit=limit,
+                               offset=offset,
+                               filtrocedulas=filtrocedulas,
+                               filtrofechas=filtrofechas,
+                               basesql=basesql)
+        else:
+            sql = u"""{basesql} where {concedula} and {tipo} {filtrofechas}
+                             order by aten.ate_fechacrea desc limit {limit} offset {offset}
+                            """.format(basesql=basesql, limit=limit, offset=offset, concedula=concedula, tipo=tipocita,
+                                       filtrofechas=filtrofechas)
+
+        items = self.all(sql, tupla_desc)
+        lenitems = len(items)
+        itemsres = []
+        items_dict = {}
+
+        for item in items:
+            mescrea = item['mescrea']
+            diacrea = item['diacrea']
+            clave = "{0}_{1}".format(mescrea, diacrea)
+            if clave not in items_dict:
+                items_dict[clave] = []
+
+            items_dict[clave].append(item)
+
+        for key in items_dict:
+            first = items_dict[key][0]
+            month_item = {'tipo': 'd', 'mes': '{0} {1}'.format(first['mescreastr'], int(first['diacrea']))}
+            itemsres.append(month_item)
+            for item in items_dict[key]:
+                itemsres.append(item)
+
+        return itemsres, lenitems
 
     def listar(self, filtro, desde, hasta, tipo, limit=30, offset=0):
         tupla_desc = ('cosm_id',
@@ -483,6 +619,18 @@ class TConsultaMedicaDao(BaseDao):
             left join tconsultam_valores cval on cmtval.cmtv_id = cval.valcm_tipo
                         where cmtv_cat = {0} and cval.cosm_id = {1} order by cmtval.cmtv_orden;
         """.format(catc_id, cosm_id)
+
+        tupla_desc = ('cmtv_id', 'cmtv_cat', 'cmtv_nombre', 'cmtv_valor', 'cmtv_tinput', 'valorreg')
+        return self.all(sql, tupla_desc)
+
+    def get_valores_adc_odonto(self, catc_id, od_antid):
+        sql = u"""
+        select cmtval.cmtv_id, cmtval.cmtv_cat, cmtval.cmtv_nombre, cmtval.cmtv_valor, 
+               cmtval.cmtv_tinput, coalesce(cval.valcm_valor,'') as valorreg 
+            from tconsultam_tiposval cmtval
+            left join tconsultam_valores cval on cmtval.cmtv_id = cval.valcm_tipo
+                        where cmtv_cat = {0} and cval.od_antid = {1} order by cmtval.cmtv_orden;
+        """.format(catc_id, od_antid)
 
         tupla_desc = ('cmtv_id', 'cmtv_cat', 'cmtv_nombre', 'cmtv_valor', 'cmtv_tinput', 'valorreg')
         return self.all(sql, tupla_desc)

@@ -60,10 +60,32 @@ class TPersonaDao(BaseDao):
             'per_telf': '',
             'per_movil': '',
             'per_email': '',
+            'per_fecreg': '',
+            'per_tipo': 1,
+            'per_lugnac': None,
+            'per_nota': '',
+            'per_fechanac': '',
+            'per_genero': None,
+            'per_estadocivil': 1,
+            'per_lugresidencia': None,
+            'per_ocupacion': None,
+            'per_edad': 0
+        }
+        """
+        return {
+            'per_id': 0,
+            'per_ciruc': '',
+            'per_nombres': '',
+            'per_apellidos': '',
+            'per_direccion': '',
+            'per_telf': '',
+            'per_movil': '',
+            'per_email': '',
             'per_tipo': 1,
             'per_lugnac': 0,
             'per_nota': ''
         }
+        """
 
     def get_tipos(self):
         tipos = [{
@@ -143,7 +165,7 @@ class TPersonaDao(BaseDao):
 
         return result
 
-    def buscar_porciruc_full(self, per_ciruc):
+    def aux_busca_por_prop_full(self, propname, propvalue):
         tupla_desc = ('per_id',
                       'per_ciruc',
                       'per_nombres',
@@ -165,32 +187,32 @@ class TPersonaDao(BaseDao):
                       'profesion',
                       'residencia')
         sql = """   
-            select per_id,
-               per_ciruc,
-               per_nombres,
-               per_apellidos,
-               per_direccion,
-               per_telf,
-               per_movil,
-               per_email,
-               per_tipo,
-               per_lugnac,
-               per_nota,
-               per_fechanac,
-               per_genero,
-               per_estadocivil,
-               per_lugresidencia,
-               per_ocupacion,
-                coalesce(genlval.lval_nombre,'') as genero,
-                coalesce(estclval.lval_nombre,'') as estadocivil,
-                coalesce(profval.lval_nombre,'') as profesion,
-                coalesce(lugar.lug_nombre,'') as residencia
-                from fusay.tpersona paciente
-                    left join fusay.tlistavalores genlval on paciente.per_genero = genlval.lval_id and genlval.lval_cat=1
-                    left join fusay.tlistavalores estclval on paciente.per_estadocivil = estclval.lval_id and estclval.lval_cat=2
-                    left join fusay.tlistavalores profval on paciente.per_ocupacion = profval.lval_id and profval.lval_cat=3
-                    left join fusay.tlugar lugar on paciente.per_lugresidencia = lugar.lug_id
-                where per_ciruc = '{0}'""".format(cadenas.strip(per_ciruc))
+                    select per_id,
+                       per_ciruc,
+                       per_nombres,
+                       per_apellidos,
+                       per_direccion,
+                       per_telf,
+                       per_movil,
+                       per_email,
+                       per_tipo,
+                       per_lugnac,
+                       per_nota,
+                       per_fechanac,
+                       per_genero,
+                       per_estadocivil,
+                       per_lugresidencia,
+                       per_ocupacion,
+                        coalesce(genlval.lval_nombre,'') as genero,
+                        coalesce(estclval.lval_nombre,'') as estadocivil,
+                        coalesce(profval.lval_nombre,'') as profesion,
+                        coalesce(lugar.lug_nombre,'') as residencia
+                        from fusay.tpersona paciente
+                            left join fusay.tlistavalores genlval on paciente.per_genero = genlval.lval_id and genlval.lval_cat=1
+                            left join fusay.tlistavalores estclval on paciente.per_estadocivil = estclval.lval_id and estclval.lval_cat=2
+                            left join fusay.tlistavalores profval on paciente.per_ocupacion = profval.lval_id and profval.lval_cat=3
+                            left join fusay.tlugar lugar on paciente.per_lugresidencia = lugar.lug_id
+                        where {0} = {1}""".format(cadenas.strip(propname), cadenas.strip(propvalue))
         result = self.first(sql, tupla_desc)
         try:
             if result is not None and cadenas.es_nonulo_novacio(result['per_fechanac']):
@@ -200,6 +222,12 @@ class TPersonaDao(BaseDao):
             pass
 
         return result
+
+    def buscar_porciruc_full(self, per_ciruc):
+        return self.aux_busca_por_prop_full('per_ciruc', "'{0}'".format(per_ciruc))
+
+    def buscar_porperid_full(self, per_id):
+        return self.aux_busca_por_prop_full('per_id', per_id)
 
     def get_entity_byid(self, per_id):
         return self.dbsession.query(TPersona).filter(TPersona.per_id == per_id).first()
@@ -263,12 +291,27 @@ class TPersonaDao(BaseDao):
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
 
+    def listar_medicos(self, med_tipo, med_estado=1):
+        sql = u"""
+                select per.per_id,
+                    med.med_id,
+                    per.per_ciruc,
+                    per.per_genero,
+                    per.per_nombres||' '||coalesce(per.per_apellidos,'') as nomapel
+                from tpersona per
+                join tmedico med on med.per_id = per.per_id 
+                where med.med_tipo = {tipo} and med.med_estado = {estado} order by nomapel
+                """.format(tipo=med_tipo,
+                           estado=med_estado)
+        tupla_desc = ('per_id', 'med_id', 'per_ciruc', 'per_genero', 'nomapel')
+        return self.all(sql, tupla_desc)
+
     def listar_por_tipo(self, per_tipo):
         sql = """
-        select  per_id,        
-                per_ciruc,     
-                per_nombres,   
-                per_apellidos, 
+        select  per_id,
+                per_ciruc,
+                per_nombres,
+                per_apellidos,
                 per_direccion,
                 per_telf,      
                 per_movil,     

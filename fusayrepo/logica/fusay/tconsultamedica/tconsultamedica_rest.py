@@ -4,6 +4,7 @@ Fecha de creacion 5/24/20
 @autor: mjapon
 """
 import logging
+
 from cornice.resource import resource
 
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
@@ -66,14 +67,24 @@ class TConsultaMedicaRest(TokenView):
 
             limit = 50
             offset = intlastpage * limit
-            items, lenitems = tconsultam_dao.listar(filtro=filtro, desde=desde, hasta=hasta, tipo=tipo, limit=limit,
-                                                    offset=offset)
+
+            if int(tipo) == 2:
+                items, lenitems = tconsultam_dao.listar_odonto(filtro=filtro, desde=desde, hasta=hasta, limit=limit,
+                                                               offset=offset)
+            else:
+                items, lenitems = tconsultam_dao.listar(filtro=filtro, desde=desde, hasta=hasta, tipo=tipo, limit=limit,
+                                                        offset=offset)
+
             hasMore = items is not None and lenitems == limit
             return {'status': 200, 'items': items, 'hasMore': hasMore, 'nextp': intlastpage + 1}
         elif accion == 'proxcitas':
             tipofecha = self.get_request_param('tipofecha')
             tipo = self.get_request_param('tipocita')
-            res, fechastr = tconsultam_dao.listarproxcita_grid(int(tipofecha), tipocita=tipo)
+            if int(tipo) == 2:
+                res, fechastr = tconsultam_dao.listarproxcitasod_grid(int(tipofecha))
+            else:
+                res, fechastr = tconsultam_dao.listarproxcita_grid(int(tipofecha), tipocita=tipo)
+
             return {'status': 200, 'grid': res, 'fechas': fechastr}
 
     def collection_post(self):

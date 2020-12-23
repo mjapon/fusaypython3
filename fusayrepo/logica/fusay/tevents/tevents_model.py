@@ -16,21 +16,6 @@ from sqlalchemy import Column, Integer, String, Text, Numeric, Date, DATETIME
 class TFusayEvent(Declarative, JsonAlchemy):
     __tablename__ = 'tevents'
 
-    """
-    ev_id INTEGER NOT NULL,
-	ev_fecha TEXT NOT NULL,
-	ev_fechacrea TEXT NOT NULL,
-	ev_creadopor INTEGER,
-	ev_lugar INTEGER,
-	ev_horainicio TEXT,
-	ev_horafin TEXT,
-	ev_nota TEXT,
-	ev_publicidad TEXT,
-	ev_tipo INTEGER NOT NULL,
-	ev_precionormal REAL DEFAULT 0.0 NOT NULL,
-	ev_precioespecial REAL DEFAULT 0.0,
-	ev_img TEXT
-    """
     ev_id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
     ev_fecha = Column(Date, nullable=False)
     ev_fechacrea = Column(DATETIME, nullable=False)

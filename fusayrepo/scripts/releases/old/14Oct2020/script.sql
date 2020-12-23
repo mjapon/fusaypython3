@@ -12,3 +12,4 @@ tipic_id = 4 order by clsic_id, ic_nombre asc', '[
     {"label":"Tipo", "field":"tipo"}
 ]', '2020-10-13 17:26:43.000000', '["ic_id", "ic_code", "ic_nombre", "clsic_id", "tipo"]');
 
+

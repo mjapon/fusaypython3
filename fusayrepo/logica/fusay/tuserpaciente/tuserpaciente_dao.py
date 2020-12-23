@@ -9,7 +9,7 @@ from datetime import datetime
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
-from fusayrepo.logica.fusay.tuserpaciente.tcita import TCita
+from fusayrepo.logica.fusay.tcita.tcita_model import TCita
 from fusayrepo.logica.fusay.tuserpaciente.tuserpaciente_model import TUserPaciente
 from fusayrepo.utils import cadenas, fechas
 

@@ -75,7 +75,7 @@ class TFuserRolDao(BaseDao):
 
         histo_list = [
             {'label': 'Administrar', 'icon': 'pi pi-fw pi-bell',
-             'routerLink': ['/historiaclinica/2']}
+             'routerLink': ['/odonto']}
         ]
 
         all_menu = {

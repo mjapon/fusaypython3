@@ -36,6 +36,14 @@ class TPersonaRest(TokenView):
                 return {'status': 200, 'persona': res}
             else:
                 return {'status': 404}
+        elif 'buscaporidfull' == accion:
+            tpersonadao = TPersonaDao(self.dbsession)
+            res = tpersonadao.buscar_porperid_full(per_id=self.get_request_param('perid'))
+            if res is not None:
+                return {'status': 200, 'persona': res}
+            else:
+                return {'status': 404}
+
         elif 'buscaemail' == accion:
             tpersonadao = TPersonaDao(self.dbsession)
             res = tpersonadao.buscar_poremail(per_ciruc=self.get_request_param('email'))
@@ -63,11 +71,16 @@ class TPersonaRest(TokenView):
                 log.error('Error al parsear a int la pagina', ex)
 
             tpersonadao = TPersonaDao(self.dbsession)
-            limit = 10
+            limit = 40
             offset = intlastpage * limit
             items = tpersonadao.buscar_pornomapelci(filtro, solo_cedulas=True, limit=limit, offsset=offset)
             hasMore = items is not None and len(items) == limit
             return {'status': 200, 'items': items, 'hasMore': hasMore, 'nextp': intlastpage + 1}
+        elif 'lmedicos' == accion:
+            tipo = self.get_request_param('tipo')
+            tpersonadao = TPersonaDao(self.dbsession)
+            medicos = tpersonadao.listar_medicos(med_tipo=tipo)
+            return {'status': 200, 'medicos': medicos}
 
     def post(self):
         tpersonadao = TPersonaDao(self.dbsession)

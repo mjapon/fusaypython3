@@ -1,0 +1,4 @@
+SELECT setval(pg_get_serial_sequence('fusay.tconsultam_tiposval', 'cmtv_id'), coalesce(max(cmtv_id),0) + 1, false) FROM fusay.tconsultam_tiposval;
+INSERT INTO fusay.tconsultam_tiposval (cmtv_cat, cmtv_nombre, cmtv_valor, cmtv_tinput, cmtv_orden, cmtv_unidad) VALUES (5, 'ANTO_PERSONALES', 'PERSONALES', 2, 1, null);
+INSERT INTO fusay.tconsultam_tiposval (cmtv_cat, cmtv_nombre, cmtv_valor, cmtv_tinput, cmtv_orden, cmtv_unidad) VALUES (5, 'ANTO_FAMILIAREAS', 'FAMILIARES', 2, 2, null);
+INSERT INTO fusay.tconsultam_tiposval (cmtv_cat, cmtv_nombre, cmtv_valor, cmtv_tinput, cmtv_orden, cmtv_unidad) VALUES (5, 'ANTO_ALERGICOS', 'ALÉRGICOS', 2, 3, null);
