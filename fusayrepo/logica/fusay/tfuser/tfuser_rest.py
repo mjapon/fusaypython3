@@ -7,11 +7,10 @@ import logging
 
 from cornice.resource import resource
 
-from fusayrepo.logica.fusay.tfuser.tfuser_model import TFuser
-from fusayrepo.logica.fusay.tfuserrol.tfuserrol_dao import TFuserRolDao
-from fusayrepo.logica.tempresa.empresa_dao import TEmpresaDao
 from fusayrepo.logica.fusay.tfuser.tfuser_dao import TFuserDao
+from fusayrepo.logica.fusay.tfuserrol.tfuserrol_dao import TFuserRolDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
+from fusayrepo.logica.tempresa.empresa_dao import TEmpresaDao
 from fusayrepo.utils import cadenas
 from fusayrepo.utils.generatokenutil import GeneraTokenUtil
 from fusayrepo.utils.pyramidutil import DbComunView, TokenView
@@ -53,6 +52,7 @@ class TFuserRest(DbComunView):
                         'seccion': secciones[0],
                         'token': token,
                         'menu': empresa['emp_menu'],
+                        'sqm': empresa['emp_esquema'],
                         'empNombreComercial': empresa['emp_nombrecomercial']}
             else:
                 return {'autenticado': autenticado}

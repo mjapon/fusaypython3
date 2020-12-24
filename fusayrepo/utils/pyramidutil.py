@@ -6,6 +6,7 @@ Created on '02/12/2014'
 import logging
 
 from pyramid.httpexceptions import HTTPFound
+
 from fusayrepo.logica.excepciones.validacion import UnauthorizedExc
 from fusayrepo.utils.generatokenutil import GeneraTokenUtil
 from fusayrepo.utils.jsonutil import SimpleJsonUtil
@@ -24,7 +25,7 @@ class PyramidView(SimpleJsonUtil):
         self.dbsession = None
         if 'dbsession' in dir(self.request):
             self.dbsession = self.request.dbsession
-        #self.conf_dbsession()
+        # self.conf_dbsession()
         self.init()
 
     def verif_dbsession(self):
@@ -70,7 +71,7 @@ class PyramidView(SimpleJsonUtil):
 
     def reload_page(self, **kwargs):
         """Metodo de ayuda que hace un redireccion a la misma pagina"""
-        return HTTPFound(self.ruta,**kwargs)
+        return HTTPFound(self.ruta, **kwargs)
 
     def route_url(self, ruta, **kwargs):
         """Metodo de ayuda para rutear entre paginas"""
@@ -96,7 +97,7 @@ class PyramidView(SimpleJsonUtil):
     def rsession(self, key):
         """Borra un valor de session"""
         if key in self.request.session:
-            del(self.request.session[key])
+            del (self.request.session[key])
 
     def get_request_param(self, param):
         """
@@ -127,9 +128,10 @@ class DbComunView(PyramidView):
     def conf_dbsession(self):
         self.dbsession = get_dbsession_comun(self.request.registry.settings)
     """
+
     def init(self):
         if 'emp_esquema' in self.request.session:
-            esquema_emp =self.request.session['emp_esquema']
+            esquema_emp = self.request.session['emp_esquema']
             self.request.dbsession.execute("SET search_path TO {0}".format(esquema_emp))
 
     def change_dbschema(self, emp_esquema):
@@ -146,6 +148,7 @@ class TokenView(PyramidView):
     Clase para implementar autenticacion basada en token, en la cabecera de la peticion debe venir
     el codigo de la tempresa, el esquema de la tempresa y el token de autenticacion
     """
+
     def init(self):
         """
         if 'token' not in self.request.headers \
@@ -169,7 +172,7 @@ class TokenView(PyramidView):
         auth_token = self.request.headers['x-authtoken']
         # TODO: Codigo para verificar si token ya ha expirado
         genera_token_util = GeneraTokenUtil()
-        datostoken =  genera_token_util.get_datos_fromtoken(auth_token)
+        datostoken = genera_token_util.get_datos_fromtoken(auth_token)
 
         self.emp_codigo = datostoken['emp_codigo']
         self.emp_esquema = datostoken['emp_esquema']
@@ -207,6 +210,12 @@ class TokenView(PyramidView):
 
     def get_sec_id(self):
         return self.sec_id
+
+    def res200(self, res):
+        return {'status': 200, **res}
+
+    def grqpa(self):
+        return self.get_request_param('accion')
 
 
 class FusayPublicView(PyramidView):
