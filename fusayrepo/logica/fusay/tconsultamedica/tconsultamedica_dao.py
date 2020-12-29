@@ -10,7 +10,6 @@ from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tconsultamedica.tconsultamedica_model import TConsultaMedicaValores, TConsultaMedica
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
-from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.utils import fechas, cadenas, ctes
 
 log = logging.getLogger(__name__)
@@ -40,7 +39,7 @@ class TConsultaMedicaDao(BaseDao):
             'per_estadocivil': 1,
             'per_lugresidencia': None,
             'per_ocupacion': None,
-            'per_edad': 0
+            'per_edad': {'years': 0, 'months': 0, 'days': 0}
         }
 
         form_datosconsulta = {
@@ -95,7 +94,7 @@ class TConsultaMedicaDao(BaseDao):
             'per_estadocivil': 1,
             'per_lugresidencia': None,
             'per_ocupacion': None,
-            'per_edad': 0
+            'per_edad': {'years': 0, 'months': 0, 'days': 0}
         }
 
         form_datosconsulta = {
@@ -763,14 +762,11 @@ class TConsultaMedicaDao(BaseDao):
     def registrar(self, form, usercrea):
         # 1 regstro de datos del paciente
         form_paciente = form['paciente']
-        tpersonadao = TPersonaDao(self.dbsession)
 
         # Verificar si el paciente ya esta registrado:
-        if tpersonadao.existe_ciruc(per_ciruc=form_paciente['per_ciruc']):
-            per_id = form_paciente['per_id']
-            tpersonadao.actualizar(per_id=per_id, form=form_paciente)
-        else:
-            per_id = tpersonadao.crear(form=form_paciente)
+        per_id = form_paciente['per_id']
+        if per_id == 0 or per_id is None:
+            raise ErrorValidacionExc('Debe registrar primero los datos del paciente')
 
         # 2 registro de la cita medica
         datosconsulta = form['datosconsulta']

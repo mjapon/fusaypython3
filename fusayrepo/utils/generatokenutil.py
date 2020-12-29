@@ -38,27 +38,12 @@ class GeneraTokenUtil(object):
 
 
 if __name__ == '__main__':
+    print("Se ejecuta main--->")
 
-    """
-    clave = "MANUELJAPON123"
-    encoded_jwt = jwt.encode({'some': 'payload'}, clave, algorithm='HS256')
+    from dateutil.relativedelta import *
+    from datetime import date
 
-    print('Encoded jwt')
-    print(encoded_jwt)
-
-    decoded_value = jwt.decode(encoded_jwt, clave, algorithms=['HS256'])
-
-    print('decoded jwt')
-    print(decoded_value)
-    print(type(decoded_value))
-    """
-
-    permisorolmap = set()
-
-    permisorolmap.add(1)
-    permisorolmap.add(2)
-    permisorolmap.add(3)
-
-    print (permisorolmap)
-
-    print (5 in permisorolmap)
+    today = date.today()
+    dob = date(1985, 1, 25)
+    age = relativedelta(today, dob)
+    print (age)

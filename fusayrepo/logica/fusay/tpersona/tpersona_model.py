@@ -25,7 +25,7 @@ class TPersona(Declarative, JsonAlchemy):
     per_movil = Column(String(20))
     per_email = Column(String(40), unique=True)
     per_fecreg = Column(DateTime)
-    per_tipo = Column(Integer, nullable=False, default=1) #1:cliente, 2:personal, 3:proveedor
+    per_tipo = Column(Integer, nullable=False, default=1)  # 1:cliente, 2:personal, 3:proveedor
     per_lugnac = Column(Integer)
     per_nota = Column(Text)
     per_fechanac = Column(Date)
@@ -33,3 +33,4 @@ class TPersona(Declarative, JsonAlchemy):
     per_estadocivil = Column(Integer)
     per_lugresidencia = Column(Integer)
     per_ocupacion = Column(Integer)
+    per_tiposangre = Column(Integer)

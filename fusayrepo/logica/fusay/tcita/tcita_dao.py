@@ -86,7 +86,7 @@ class TCitaDao(BaseDao):
                med.per_nombres||' '||med.per_apellidos as medico, med.per_ciruc as ciruc_med, 
         a.ct_color, a.ct_fechacrea, a.user_crea, a.ct_estado 
         from tcita a 
-        join tpersona per on a.pac_id = per.per_id
+        left join tpersona per on a.pac_id = per.per_id
         left join tpersona med on a.med_id = med.per_id
         where a.ct_id = {0}
         """.format(ct_id)
@@ -195,7 +195,7 @@ class TCitaDao(BaseDao):
         sql = """
         select a.ct_id, date(a.ct_fecha) as ct_fecha, a.ct_hora, a.ct_hora_fin, a.pac_id, a.ct_obs, a.med_id, a.ct_titulo,
                per.per_nombres, per.per_apellidos, per.per_ciruc,
-        a.ct_color, a.ct_fechacrea, a.user_crea from tcita a join tpersona per on
+        a.ct_color, a.ct_fechacrea, a.user_crea from tcita a left join  tpersona per on
         a.pac_id = per.per_id where a.ct_estado in (0,1) and  date(a.ct_fecha) between '{0}' and '{1}' order by a.ct_fecha
         """.format(fechas.format_cadena_db(desde), fechas.format_cadena_db(hasta))
         tupla_desc = ('ct_id',

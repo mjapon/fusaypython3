@@ -4,12 +4,14 @@ Created on '01/12/2014'
 @author: 'Manuel'
 """
 import calendar
-import logging
 import datetime
+import logging
 from calendar import monthrange
 from datetime import date, timedelta
-
 from math import fabs
+
+from dateutil import relativedelta
+from dateutil.relativedelta import *
 
 from fusayrepo.utils import ctes
 
@@ -331,3 +333,9 @@ def get_edad_anios(fecha_nacimiento):
         edad = hoy.year - fecha_nacimiento.year - (
                 (hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
     return edad
+
+
+def get_edad(fecha_nacimiento):
+    today = date.today()
+    age = relativedelta(today, fecha_nacimiento)
+    return {'years': age.years, 'months': age.months, 'days': age.days}

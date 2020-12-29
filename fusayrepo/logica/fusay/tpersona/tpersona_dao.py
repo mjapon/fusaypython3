@@ -69,7 +69,7 @@ class TPersonaDao(BaseDao):
             'per_estadocivil': 1,
             'per_lugresidencia': None,
             'per_ocupacion': None,
-            'per_edad': 0
+            'per_edad': {'years': 0, 'months': 0, 'days': 0}
         }
         """
         return {
@@ -158,7 +158,8 @@ class TPersonaDao(BaseDao):
         result = self.first(sql, tupla_desc=self.BASE_TUPLA_DESC)
         try:
             if result is not None and cadenas.es_nonulo_novacio(result['per_fechanac']):
-                edad = fechas.get_edad_anios(fechas.parse_cadena(result['per_fechanac']))
+                # edad = fechas.get_edad_anios(fechas.parse_cadena(result['per_fechanac']))
+                edad = fechas.get_edad(fechas.parse_cadena(result['per_fechanac']))
                 result['per_edad'] = edad
         except:
             pass
@@ -182,9 +183,11 @@ class TPersonaDao(BaseDao):
                       'per_estadocivil',
                       'per_lugresidencia',
                       'per_ocupacion',
+                      'per_tiposangre',
                       'genero',
                       'estadocivil',
                       'profesion',
+                      'tiposangre',
                       'residencia')
         sql = """   
                     select per_id,
@@ -203,20 +206,23 @@ class TPersonaDao(BaseDao):
                        per_estadocivil,
                        per_lugresidencia,
                        per_ocupacion,
+                       per_tiposangre,
                         coalesce(genlval.lval_nombre,'') as genero,
                         coalesce(estclval.lval_nombre,'') as estadocivil,
                         coalesce(profval.lval_nombre,'') as profesion,
+                        coalesce(tipsanval.lval_nombre, '') as tiposangre,
                         coalesce(lugar.lug_nombre,'') as residencia
                         from fusay.tpersona paciente
                             left join fusay.tlistavalores genlval on paciente.per_genero = genlval.lval_id and genlval.lval_cat=1
                             left join fusay.tlistavalores estclval on paciente.per_estadocivil = estclval.lval_id and estclval.lval_cat=2
                             left join fusay.tlistavalores profval on paciente.per_ocupacion = profval.lval_id and profval.lval_cat=3
+                            left join fusay.tlistavalores tipsanval on paciente.per_tiposangre = tipsanval.lval_id and tipsanval.lval_cat=4
                             left join fusay.tlugar lugar on paciente.per_lugresidencia = lugar.lug_id
                         where {0} = {1}""".format(cadenas.strip(propname), cadenas.strip(propvalue))
         result = self.first(sql, tupla_desc)
         try:
             if result is not None and cadenas.es_nonulo_novacio(result['per_fechanac']):
-                edad = fechas.get_edad_anios(fechas.parse_cadena(result['per_fechanac']))
+                edad = fechas.get_edad(fechas.parse_cadena(result['per_fechanac']))
                 result['per_edad'] = edad
         except:
             pass
@@ -418,6 +424,13 @@ class TPersonaDao(BaseDao):
                     per_ocupacion = form['per_ocupacion']
                 tpersona.per_ocupacion = per_ocupacion
 
+            if 'per_tiposangre' in form:
+                if type(form['per_tiposangre']) is dict:
+                    per_tiposangre = form['per_tiposangre']['lval_id']
+                else:
+                    per_tiposangre = form['per_tiposangre']
+                tpersona.per_tiposangre = per_tiposangre
+
             self.dbsession.add(tpersona)
             self.dbsession.flush()
             return True
@@ -509,6 +522,13 @@ class TPersonaDao(BaseDao):
             else:
                 per_ocupacion = form['per_ocupacion']
             tpersona.per_ocupacion = per_ocupacion
+
+        if 'per_tiposangre' in form:
+            if type(form['per_tiposangre']) is dict:
+                per_tiposangre = form['per_tiposangre']['lval_id']
+            else:
+                per_tiposangre = form['per_tiposangre']
+            tpersona.per_tiposangre = per_tiposangre
 
         self.dbsession.add(tpersona)
         self.dbsession.flush()

@@ -3,6 +3,7 @@ from random import random
 from pyramid.response import FileResponse
 from pyramid.view import view_config
 
+from fusayrepo.logica.fusay.dental.todrxdocs.todrxdocs_dao import TOdRxDocsDao
 from fusayrepo.logica.mipixel.pixel_dao import MiPixelDao
 
 
@@ -10,22 +11,6 @@ from fusayrepo.logica.mipixel.pixel_dao import MiPixelDao
 def my_view(request):
     aleatorio = str(random())
     return {'version': 1.0, 'vscss': aleatorio}
-
-    """
-    try:
-        query = request.dbsession.query(models.MyModel)
-        one = query.filter(models.MyModel.name == 'one').first()
-    except DBAPIError:
-        return Response(db_err_msg, content_type='text/plain', status=500)
-    return {'one': one, 'project': 'fusay'}
-    """
-
-
-@view_config(route_name='postfile', renderer='json', request_method='POST')
-def post_file(request):
-    print('Inicia procesamiento de la peticion:')
-
-    return {'estado': 200, 'msg': 'procesado'}
 
 
 @view_config(route_name='getlogopixel', request_method='GET')
@@ -39,24 +24,24 @@ def get_logo(request):
         pixel['px_id']
         px_pathlogo = pixel['px_pathlogo']
         px_tipo = pixel['px_tipo']
-
-        # fileutil = CargaArchivosUtil()
-        # base64 = fileutil.get_base64_from_file(px_pathlogo, px_tipo)
         response = FileResponse(px_pathlogo, content_type=px_tipo)
         return response
 
 
-db_err_msg = """\
-Pyramid is having a problem using your SQL database.  The problem
-might be caused by one of the following things:
+@view_config(route_name='grxdoc', request_method='GET')
+def get_rxdoc(request):
+    esquema = request.params['sqm']
+    cod = request.params['codoc']
+    request.dbsession.execute("SET search_path TO {0}".format(esquema))
+    rxdosdao = TOdRxDocsDao(request.dbsession)
+    datosdoc = rxdosdao.find_bycod(rxd_id=cod)
+    rxd_ruta = datosdoc['rxd_ruta']
+    rxd_ext = datosdoc['rxd_ext']
+    rxd_filename = datosdoc['rxd_filename']
+    response = FileResponse(rxd_ruta, content_type=rxd_ext)
 
-1.  You may need to initialize your database tables with `alembic`.
-    Check your README.txt for descriptions and try to run it.
-
-2.  Your database server may not be running.  Check that the
-    database server referred to by the "sqlalchemy.url" setting in
-    your "development.ini" file is running.
-
-After you fix the problem, please restart the Pyramid application to
-try it again.
-"""
+    atach = 'attachment'
+    if 'image' in rxd_ext:
+        atach = 'inline'
+    response.content_disposition = '{0}; filename="{1}"'.format(atach, rxd_filename)
+    return response
