@@ -239,12 +239,9 @@ class TConsultaMedicaDao(BaseDao):
             hasta = fechas.get_str_fecha(fechas.get_lastday_of_month(), ctes.APP_FMT_FECHA_DB)
             fechasstr = '{0}  -  {1}'.format(fechas.format_cadena(desde, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA),
                                              fechas.format_cadena(hasta, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA))
-
-        tipocitawhere = " and historia.cosm_tipo = {tipo}".format(tipo=tipocita)
-        swhere = "{0}".format(tipocitawhere)
+        swhere = " "
         if len(desde) > 0:
-            swhere = " {tipo} and date(historia.cosm_fechaproxcita) between '{desde}' and '{hasta}' ".format(
-                tipo=tipocitawhere,
+            swhere = " and date(cita.ct_fecha) between '{desde}' and '{hasta}' ".format(
                 desde=desde,
                 hasta=hasta)
 

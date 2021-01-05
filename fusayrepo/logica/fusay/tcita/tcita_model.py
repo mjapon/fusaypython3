@@ -5,7 +5,7 @@ Fecha de creacion 4/25/20
 """
 import logging
 
-from sqlalchemy import Column, Integer, TIMESTAMP, Text, Date, Numeric, Boolean, String
+from sqlalchemy import Column, Integer, TIMESTAMP, Text, Date, Numeric, Boolean, String, SMALLINT
 
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
@@ -30,3 +30,4 @@ class TCita(Declarative, JsonAlchemy):
     ct_td = Column(Boolean, nullable=False, default=False)
     ct_color = Column(String(50))
     ct_titulo = Column(String(80))
+    ct_tipo = Column(SMALLINT, nullable=False, default=1)  # 1-medico, 2-odonto

@@ -83,8 +83,9 @@ class TFuserRolDao(BaseDao):
             'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-sort-alt', 'items': tickets_list},
             'IG_LISTAR': {'label': 'Contabilidad', 'icon': 'pi pi-fw pi-sort-alt', 'items': contabilidad_list},
             'PRODS_LISTAR': {'label': 'Productos y Servicios', 'icon': 'pi pi-fw pi-microsoft', 'items': prods_list},
-            'HIST_LISTAR': {'label': 'Historias Clínicas', 'icon': 'pi pi-fw pi-calendar', 'items': hist_list},
-            'HISTO_LISTAR': {'label': 'Historias Clínicas', 'icon': 'pi pi-fw pi-bell', 'items': histo_list},
+            'HIST_LISTAR': {'label': 'Historias Clínicas Médicas', 'icon': 'pi pi-fw pi-calendar', 'items': hist_list},
+            'HISTO_LISTAR': {'label': 'Historias Clínicas Odontológicas', 'icon': 'pi pi-fw pi-bell',
+                             'items': histo_list},
             'US_LISTAR': {'label': 'Usuarios', 'icon': 'pi pi-fw pi-users', 'items': users_list},
         }
 

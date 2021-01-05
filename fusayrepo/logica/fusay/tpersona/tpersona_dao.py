@@ -161,6 +161,8 @@ class TPersonaDao(BaseDao):
                 # edad = fechas.get_edad_anios(fechas.parse_cadena(result['per_fechanac']))
                 edad = fechas.get_edad(fechas.parse_cadena(result['per_fechanac']))
                 result['per_edad'] = edad
+            else:
+                result['per_edad'] = {'years': 0, 'months': 0, 'days': 0}
         except:
             pass
 
@@ -212,18 +214,20 @@ class TPersonaDao(BaseDao):
                         coalesce(profval.lval_nombre,'') as profesion,
                         coalesce(tipsanval.lval_nombre, '') as tiposangre,
                         coalesce(lugar.lug_nombre,'') as residencia
-                        from fusay.tpersona paciente
-                            left join fusay.tlistavalores genlval on paciente.per_genero = genlval.lval_id and genlval.lval_cat=1
-                            left join fusay.tlistavalores estclval on paciente.per_estadocivil = estclval.lval_id and estclval.lval_cat=2
-                            left join fusay.tlistavalores profval on paciente.per_ocupacion = profval.lval_id and profval.lval_cat=3
-                            left join fusay.tlistavalores tipsanval on paciente.per_tiposangre = tipsanval.lval_id and tipsanval.lval_cat=4
-                            left join fusay.tlugar lugar on paciente.per_lugresidencia = lugar.lug_id
+                        from tpersona paciente
+                            left join tlistavalores genlval on paciente.per_genero = genlval.lval_id and genlval.lval_cat=1
+                            left join tlistavalores estclval on paciente.per_estadocivil = estclval.lval_id and estclval.lval_cat=2
+                            left join tlistavalores profval on paciente.per_ocupacion = profval.lval_id and profval.lval_cat=3
+                            left join tlistavalores tipsanval on paciente.per_tiposangre = tipsanval.lval_id and tipsanval.lval_cat=4
+                            left join tlugar lugar on paciente.per_lugresidencia = lugar.lug_id
                         where {0} = {1}""".format(cadenas.strip(propname), cadenas.strip(propvalue))
         result = self.first(sql, tupla_desc)
         try:
             if result is not None and cadenas.es_nonulo_novacio(result['per_fechanac']):
                 edad = fechas.get_edad(fechas.parse_cadena(result['per_fechanac']))
                 result['per_edad'] = edad
+            else:
+                result['per_edad'] = {'years': 0, 'months': 0, 'days': 0}
         except:
             pass
 
@@ -354,11 +358,13 @@ class TPersonaDao(BaseDao):
 
             current_email = cadenas.strip(tpersona.per_email)
             per_email = cadenas.strip(form['per_email'])
+            """
             if current_email != per_email and cadenas.es_nonulo_novacio(current_email):
                 if self.existe_email(per_email=form['per_email']):
                     raise ErrorValidacionExc(
                         'Ya existe una persona registrada con la dirección de correo, ingrese otra: {0}'.format(
                             form['per_email']))
+            """
 
             if not cadenas.es_nonulo_novacio(per_email):
                 per_email = None
@@ -453,9 +459,11 @@ class TPersonaDao(BaseDao):
             raise ErrorValidacionExc('Ingrese los nombres')
 
         if cadenas.es_nonulo_novacio(form['per_email']):
+            """
             if self.existe_email(per_email=form['per_email']):
                 raise ErrorValidacionExc(
                     'Ya existe una persona registrada con la dirección de correo: {0}'.format(form['per_email']))
+            """
         else:
             form['per_email'] = None
 

@@ -62,7 +62,8 @@ class TCitaDao(BaseDao):
             'ct_estado': 0,
             'ct_td': False,
             'ct_color': '#1175f7',
-            'ct_titulo': ''
+            'ct_titulo': '',
+            'ct_tipo': 1
         }
 
     def get_new_hora(self, horanum):
@@ -81,10 +82,10 @@ class TCitaDao(BaseDao):
 
     def get_detalles_cita(self, ct_id):
         sql = """
-        select a.ct_id, date(a.ct_fecha) as ct_fecha, a.ct_hora, a.ct_hora_fin, a.pac_id, a.ct_obs, a.med_id, a.ct_titulo,
+        select a.ct_id, date(a.ct_fecha) as ct_fecha, a.ct_hora, a.ct_hora_fin, coalesce(a.pac_id,0) as pac_id, a.ct_obs, a.med_id, a.ct_titulo,
                per.per_nombres||' '||per.per_apellidos as paciente, per.per_ciruc as ciruc_pac,
                med.per_nombres||' '||med.per_apellidos as medico, med.per_ciruc as ciruc_med, 
-        a.ct_color, a.ct_fechacrea, a.user_crea, a.ct_estado 
+        a.ct_color, a.ct_fechacrea, a.user_crea, a.ct_estado, a.ct_tipo  
         from tcita a 
         left join tpersona per on a.pac_id = per.per_id
         left join tpersona med on a.med_id = med.per_id
@@ -93,7 +94,7 @@ class TCitaDao(BaseDao):
 
         tupla_desc = (
             'ct_id', 'ct_fecha', 'ct_hora', 'ct_hora_fin', 'pac_id', 'ct_obs', 'med_id', 'ct_titulo', 'paciente',
-            'ciruc_pac', 'medico', 'ciruc_med', 'ct_color', 'ct_fechacrea', 'user_crea', 'ct_estado')
+            'ciruc_pac', 'medico', 'ciruc_med', 'ct_color', 'ct_fechacrea', 'user_crea', 'ct_estado', 'ct_tipo')
         res = self.first(sql, tupla_desc)
         if res is not None:
             res['ct_hora_str'] = fechas.num_to_hora(res['ct_hora'])
@@ -140,6 +141,10 @@ class TCitaDao(BaseDao):
         tcita.ct_td = form['ct_td']
         tcita.ct_color = form['ct_color']
         tcita.ct_titulo = cadenas.strip(form['ct_titulo'])
+        if 'ct_tipo' in form:
+            tcita.ct_tipo = form['ct_tipo']
+        else:
+            tcita.ct_tipo = 2  # 1-medico, 2:odontologo
 
         self.dbsession.add(tcita)
 
@@ -191,13 +196,13 @@ class TCitaDao(BaseDao):
         self.dbsession.add(tcita)
     """
 
-    def listar_validos(self, desde, hasta):
+    def listar_validos(self, desde, hasta, ct_tipo=1):
         sql = """
         select a.ct_id, date(a.ct_fecha) as ct_fecha, a.ct_hora, a.ct_hora_fin, a.pac_id, a.ct_obs, a.med_id, a.ct_titulo,
                per.per_nombres, per.per_apellidos, per.per_ciruc,
         a.ct_color, a.ct_fechacrea, a.user_crea from tcita a left join  tpersona per on
-        a.pac_id = per.per_id where a.ct_estado in (0,1) and  date(a.ct_fecha) between '{0}' and '{1}' order by a.ct_fecha
-        """.format(fechas.format_cadena_db(desde), fechas.format_cadena_db(hasta))
+        a.pac_id = per.per_id where a.ct_estado in (0,1) and a.ct_tipo ={2} and  date(a.ct_fecha) between '{0}' and '{1}' order by a.ct_fecha
+        """.format(fechas.format_cadena_db(desde), fechas.format_cadena_db(hasta), ct_tipo)
         tupla_desc = ('ct_id',
                       'ct_fecha',
                       'ct_hora',
@@ -212,11 +217,11 @@ class TCitaDao(BaseDao):
                       'ct_color', 'ct_fechacrea', 'user_crea')
         return self.all(sql, tupla_desc)
 
-    def contar_validos(self, desde, hasta):
+    def contar_validos(self, desde, hasta, ct_tipo=1):
         sql = """        
-        select count(*) as cuenta, date(a.ct_fecha) as ct_fecha  from tcita a where a.ct_estado in (0,1) and  date(a.ct_fecha) between '{0}' and '{1}'
+        select count(*) as cuenta, date(a.ct_fecha) as ct_fecha  from tcita a where a.ct_estado in (0,1) and a.ct_tipo={2} and date(a.ct_fecha) between '{0}' and '{1}'
             group by 2 order by 2
-                """.format(fechas.format_cadena_db(desde), fechas.format_cadena_db(hasta))
+                """.format(fechas.format_cadena_db(desde), fechas.format_cadena_db(hasta), ct_tipo)
         tupla_desc = ('cuenta',
                       'ct_fecha')
         return self.all(sql, tupla_desc)
@@ -344,3 +349,28 @@ class TCitaDao(BaseDao):
             tcita.ct_estado = estado
             tcita.ct_obs = observacion
             self.dbsession.add(tcita)
+
+    def get_last_valid_cita(self, per_id, ct_tipo):
+        sql = """
+        select ct_id, ct_fecha, pac_id, ct_obs, med_id, ct_serv, ct_hora, ct_hora_fin, ct_estado,
+        user_crea, ct_fechacrea, ct_td, ct_color, ct_titulo, ct_tipo from tcita where pac_id = {0} and 
+        ct_tipo = {1} and ct_estado != 2
+        """.format(per_id, ct_tipo)
+
+        tupla_desc = ('ct_id', 'ct_fecha', 'pac_id', 'ct_obs', 'med_id', 'ct_serv', 'ct_hora', 'ct_hora_fin',
+                      'ct_estado', 'user_crea', 'ct_fechacrea', 'ct_td', 'ct_color', 'ct_titulo', 'ct_tipo')
+
+        return self.first(sql, tupla_desc)
+
+    def get_prox_valid_cita(self, per_id, ct_tipo, ct_fecha):
+        ct_fecha_db = fechas.format_cadena_db(ct_fecha)
+        sql = """
+                select ct_id, ct_fecha, pac_id, ct_obs, med_id, ct_serv, ct_hora, ct_hora_fin, ct_estado,
+                user_crea, ct_fechacrea, ct_td, ct_color, ct_titulo, ct_tipo from tcita where pac_id = {0} and 
+                ct_tipo = {1} and ct_estado != 2 and ct_fecha>='{2}'
+                """.format(per_id, ct_tipo, ct_fecha_db)
+
+        tupla_desc = ('ct_id', 'ct_fecha', 'pac_id', 'ct_obs', 'med_id', 'ct_serv', 'ct_hora', 'ct_hora_fin',
+                      'ct_estado', 'user_crea', 'ct_fechacrea', 'ct_td', 'ct_color', 'ct_titulo', 'ct_tipo')
+
+        return self.first(sql, tupla_desc)
