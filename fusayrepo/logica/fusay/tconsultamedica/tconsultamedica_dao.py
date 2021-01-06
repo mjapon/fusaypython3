@@ -367,7 +367,7 @@ class TConsultaMedicaDao(BaseDao):
                 select  historia.cosm_id,
                         historia.cosm_fechacrea,
                         extract(month from historia.cosm_fechacrea)           as mescrea,
-                        to_char(historia.cosm_fechacrea, 'TMMonth')           as mescreastr,
+                        mes.mes_nombre as mescreastr,
                         to_char(historia.cosm_fechacrea, 'HH24:MI')           as horacreastr,
                         extract(day from historia.cosm_fechacrea)             as diacrea,
                         coalesce(paciente.per_genero, 1)                      as genero,
@@ -380,6 +380,7 @@ class TConsultaMedicaDao(BaseDao):
                         coalesce(tlugar.lug_nombre,'') as lugresidencia
                 from tconsultamedica historia
                         join tpersona paciente on historia.pac_id = paciente.per_id
+                        join public.tmes mes on mes.mes_id = extract(month from historia.cosm_fechacrea) 
                         left join tlugar on paciente.per_lugresidencia = tlugar.lug_id
                 """
 
@@ -610,13 +611,13 @@ class TConsultaMedicaDao(BaseDao):
     def get_valores_adc_citamedica(self, catc_id, cosm_id):
         sql = u"""
         select cmtval.cmtv_id, cmtval.cmtv_cat, cmtval.cmtv_nombre, cmtval.cmtv_valor, 
-               cmtval.cmtv_tinput, coalesce(cval.valcm_valor,'') as valorreg 
+               cmtval.cmtv_tinput, coalesce(cval.valcm_valor,'') as valorreg, cmtval.cmtv_unidad 
             from tconsultam_tiposval cmtval
             left join tconsultam_valores cval on cmtval.cmtv_id = cval.valcm_tipo
                         where cmtv_cat = {0} and cval.cosm_id = {1} order by cmtval.cmtv_orden;
         """.format(catc_id, cosm_id)
 
-        tupla_desc = ('cmtv_id', 'cmtv_cat', 'cmtv_nombre', 'cmtv_valor', 'cmtv_tinput', 'valorreg')
+        tupla_desc = ('cmtv_id', 'cmtv_cat', 'cmtv_nombre', 'cmtv_valor', 'cmtv_tinput', 'valorreg', 'cmtv_unidad')
         return self.all(sql, tupla_desc)
 
     def get_valores_adc_odonto(self, catc_id, od_antid):
