@@ -8,10 +8,10 @@ from datetime import datetime
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
-from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_model import TItemConfig
 from fusayrepo.logica.fusay.titemconfig_datosprod.titemconfigdatosprod_model import TItemConfigDatosProd
+from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.utils import cadenas, ivautil, fechas
 
 log = logging.getLogger(__name__)
@@ -31,6 +31,47 @@ class TItemConfigDao(BaseDao):
         tgrid_dao = TGridDao(self.dbsession)
         data = tgrid_dao.run_grid(grid_nombre='trubros')
         return data
+
+    def busca_serv_dentales_filtro(self, filtro):
+        limit = 50
+        sql = """
+        select a.ic_id, a.ic_nombre, a.ic_code,
+               td.icdp_grabaiva,               
+               td.icdp_preciocompra,
+               td.icdp_precioventa,
+               td.icdp_precioventamin,               
+               case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
+               case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventa),2) else td.icdp_precioventa end as icdp_precioventa_iva,
+               case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventamin),2) else td.icdp_precioventamin end as icdp_precioventamin_iva
+        from titemconfig a 
+        join titemconfig_datosprod td on a.ic_id = td.ic_id
+        where a.ic_estado = 1 and a.ic_dental = true and (a.ic_code like '{0}%' or a.ic_nombre like '{0}%') order by a.ic_nombre limit {1}
+        """.format(cadenas.strip_upper(filtro), limit)
+
+        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'icdp_grabaiva', 'icdp_preciocompra', 'icdp_precioventa',
+                      'icdp_precioventamin', 'icdp_preciocompra_iva', 'icdp_precioventa_iva', 'icdp_precioventamin_iva')
+
+        return self.all(sql, tupla_desc)
+
+    def busca_serv_dentales_all(self):
+        sql = """
+                select a.ic_id, a.ic_nombre, a.ic_code,
+                       td.icdp_grabaiva,               
+                       td.icdp_preciocompra,
+                       td.icdp_precioventa,
+                       td.icdp_precioventamin,               
+                       case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
+                       case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventa),2) else td.icdp_precioventa end as icdp_precioventa_iva,
+                       case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventamin),2) else td.icdp_precioventamin end as icdp_precioventamin_iva
+                from titemconfig a 
+                join titemconfig_datosprod td on a.ic_id = td.ic_id
+                where a.ic_estado = 1 and a.ic_dental = true  order by a.ic_nombre
+                """
+
+        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'icdp_grabaiva', 'icdp_preciocompra', 'icdp_precioventa',
+                      'icdp_precioventamin', 'icdp_preciocompra_iva', 'icdp_precioventa_iva', 'icdp_precioventamin_iva')
+
+        return self.all(sql, tupla_desc)
 
     def listar_teleservicios(self):
         sql = """
@@ -65,7 +106,8 @@ class TItemConfigDao(BaseDao):
             'icdp_precioventamin': 0.0,
             'icdp_proveedor': -2,
             'icdp_modcontab': 0,
-            'icdp_fechacaducidad': ''
+            'icdp_fechacaducidad': '',
+            'ic_dental': False
         }
 
         return formic
@@ -216,6 +258,7 @@ class TItemConfigDao(BaseDao):
         itemconfig.tipic_id = form['tipic_id']
         itemconfig.ic_nota = form['ic_nota']
         itemconfig.catic_id = form['catic_id']
+        itemconfig.ic_dental = form['ic_dental']
         itemconfig.ic_usercrea = user_crea
         itemconfig.ic_fechacrea = datetime.now()
 

@@ -269,7 +269,7 @@ class TConsultaMedicaDao(BaseDao):
                     select  aten.ate_id,
                             aten.ate_fechacrea,
                             extract(month from aten.ate_fechacrea)  as mescrea,
-                            to_char(aten.ate_fechacrea, 'TMMonth') as mescreastr,
+                            mes.mes_nombre as mescreastr,
                             to_char(aten.ate_fechacrea, 'HH24:MI') as horacreastr,
                             extract(day from aten.ate_fechacrea)   as diacrea,
                             coalesce(paciente.per_genero, 1)        as genero,
@@ -283,6 +283,7 @@ class TConsultaMedicaDao(BaseDao):
                             coalesce(tlugar.lug_nombre,'') as lugresidencia
                     from todatenciones aten
                             join tpersona paciente on aten.pac_id = paciente.per_id
+                            join public.tmes mes on mes.mes_id = extract(month from aten.ate_fechacrea) 
                             left join tlugar on paciente.per_lugresidencia = tlugar.lug_id"""
 
         solo_cedulas = True

@@ -5,7 +5,7 @@ Fecha de creacion 2/15/20
 """
 import logging
 
-from sqlalchemy import Column, Integer, TIMESTAMP, Text, Boolean
+from sqlalchemy import Column, Integer, TIMESTAMP, Text, Boolean, String
 from sqlalchemy.sql.functions import current_date
 
 from fusayrepo.models.conf import Declarative
@@ -31,3 +31,4 @@ class TItemConfig(Declarative, JsonAlchemy):
     ic_useractualiza = Column(Integer)
     ic_fechaactualiza = Column(TIMESTAMP)
     ic_dental = Column(Boolean, default=False)
+    ic_clasecc = Column(String(2))

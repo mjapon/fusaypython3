@@ -7,8 +7,8 @@ import logging
 
 from cornice.resource import resource
 
-from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
+from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tventatickets.tventatickets_dao import TVentaTicketsDao
 from fusayrepo.utils.pyramidutil import TokenView, FusayPublicView
 
@@ -51,6 +51,13 @@ class TItemConfigRest(TokenView):
             vtdao = TVentaTicketsDao(self.dbsession)
             tipos = vtdao.get_tipos_cuentas()
             return {'status': 200, 'form': form, 'tipos': tipos}
+        elif 'gservdent' == accion:
+            filtro = self.get_request_param('filtro')
+            items = titemconfig_dao.busca_serv_dentales_filtro(filtro)
+            return self.res200({'items': items})
+        elif 'gservdentall' == accion:
+            items = titemconfig_dao.busca_serv_dentales_all()
+            return self.res200({'items': items})
         else:
             return {'status': 404, 'msg': 'accion desconocida'}
 

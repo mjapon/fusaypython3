@@ -158,7 +158,6 @@ class TPersonaDao(BaseDao):
         result = self.first(sql, tupla_desc=self.BASE_TUPLA_DESC)
         try:
             if result is not None and cadenas.es_nonulo_novacio(result['per_fechanac']):
-                # edad = fechas.get_edad_anios(fechas.parse_cadena(result['per_fechanac']))
                 edad = fechas.get_edad(fechas.parse_cadena(result['per_fechanac']))
                 result['per_edad'] = edad
             else:
