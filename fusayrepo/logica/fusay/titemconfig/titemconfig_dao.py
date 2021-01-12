@@ -257,7 +257,11 @@ class TItemConfigDao(BaseDao):
         itemconfig.ic_code = ic_code
         itemconfig.tipic_id = form['tipic_id']
         itemconfig.ic_nota = form['ic_nota']
-        itemconfig.catic_id = form['catic_id']
+        if type(form['catic_id']) is dict:
+            itemconfig.catic_id = form['catic_id']['catic_id']
+        else:
+            itemconfig.catic_id = form['catic_id']
+
         itemconfig.ic_dental = form['ic_dental']
         itemconfig.ic_usercrea = user_crea
         itemconfig.ic_fechacrea = datetime.now()
@@ -320,7 +324,11 @@ class TItemConfigDao(BaseDao):
 
             titemconfig.ic_nombre = ic_nombre
             titemconfig.ic_nota = form['ic_nota']
-            titemconfig.catic_id = form['catic_id']
+            if type(form['catic_id']) is dict:
+                titemconfig.catic_id = form['catic_id']['catic_id']
+            else:
+                titemconfig.catic_id = form['catic_id']
+
             titemconfig.ic_useractualiza = user_actualiza
             titemconfig.ic_fechaactualiza = datetime.now()
 
