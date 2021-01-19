@@ -580,7 +580,7 @@ class TasientoDao(BaseDao):
                 self.dbsession.add(detpago)
                 self.dbsession.flush()
                 dt_codigo = detpago.dt_codigo
-                if ic_clasecc == 'C' and pago['dt_valor'] > 0.0:
+                if ic_clasecc == 'C' and float(pago['dt_valor']) > 0.0:
                     creditodao = TAsicreditoDao(self.dbsession)
                     tra_codigo_cred = ctes.TRA_CODIGO_CREDITO_VENTA
                     if int(tra_codigo) == ctes.TRA_CODIGO_FACTURA_COMPRA:

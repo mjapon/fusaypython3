@@ -442,7 +442,7 @@ class TPersonaDao(BaseDao):
                     per_ocupacion = form['per_ocupacion']
                 tpersona.per_ocupacion = per_ocupacion
 
-            if 'per_tiposangre' in form:
+            if 'per_tiposangre' in form and cadenas.es_nonulo_novacio(form['per_tiposangre']):
                 if type(form['per_tiposangre']) is dict:
                     per_tiposangre = form['per_tiposangre']['lval_id']
                 else:
@@ -543,7 +543,7 @@ class TPersonaDao(BaseDao):
                 per_ocupacion = form['per_ocupacion']
             tpersona.per_ocupacion = per_ocupacion
 
-        if 'per_tiposangre' in form:
+        if 'per_tiposangre' in form and cadenas.es_nonulo_novacio(form['per_tiposangre']):
             if type(form['per_tiposangre']) is dict:
                 per_tiposangre = form['per_tiposangre']['lval_id']
             else:
