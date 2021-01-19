@@ -43,6 +43,13 @@ class TPersonaRest(TokenView):
                 return {'status': 200, 'persona': res}
             else:
                 return {'status': 404}
+        elif 'buscaporid' == accion:
+            tpersonadao = TPersonaDao(self.dbsession)
+            res = tpersonadao.buscar_porcodigo(per_id=self.get_request_param('perid'))
+            if res is not None:
+                return self.res200({'persona': res})
+            else:
+                return self.res404()
 
         elif 'buscaemail' == accion:
             tpersonadao = TPersonaDao(self.dbsession)

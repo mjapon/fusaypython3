@@ -75,7 +75,9 @@ class TTransaccPdvDao(BaseDao):
         else:
             tdv_numero = TtpdvDao(self.dbsession).get_tdv_numero(tdv_codigo)
 
-        estab_ptoemi = "{0}{1}".format(alm_nroest, tdv_numero)
+        estab_ptoemi = "000000"
+        if alm_nroest is not None:
+            estab_ptoemi = "{0}{1}".format(alm_nroest, tdv_numero)
 
         return {
             'estabptoemi': estab_ptoemi,

@@ -44,3 +44,11 @@ class TParamsDao(BaseDao):
             raise ErrorValidacionExc(
                 u'El parametro pathSaveJobs no está registrado en la base de datos, favor verificar')
         return val
+
+    def aplica_dental(self):
+        prmvalue = self.get_param_value('ARTS_DENTAL')
+        appldent = False
+        if prmvalue is not None:
+            appldent = prmvalue == '1'
+
+        return appldent

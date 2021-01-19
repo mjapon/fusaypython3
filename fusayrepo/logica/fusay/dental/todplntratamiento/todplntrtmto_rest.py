@@ -12,6 +12,7 @@ from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
+from fusayrepo.logica.fusay.ttransaccpago.ttransaccpago_dao import TTransaccPagoDao
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -23,18 +24,20 @@ class TodPlanTrantamientoRest(TokenView):
     def collection_get(self):
         accion = self.get_request_param('accion')
         plantrata_dao = TOdPlanTratamientoDao(self.dbsession)
+        tasientodao = TasientoDao(self.dbsession)
+        ttransaccdao = TTransaccDao(self.dbsession)
+        ttransaccpagodao = TTransaccPagoDao(self.dbsession)
 
         if accion == 'form':
             formplan = plantrata_dao.get_form(pac_id=self.get_request_param('pac'))
-            tasientodao = TasientoDao(self.dbsession)
-            ttransaccdao = TTransaccDao(self.dbsession)
+
             tra_codigo = self.get_request_param('tra_cod')
             tdv_codigo = self.get_request_param('tdv_codigo')
             ttpdvdao = TtpdvDao(self.dbsession)
             alm_codigo = ttpdvdao.get_alm_codigo_from_tdv_codigo(tdv_codigo)
             form_cab = tasientodao.get_form_cabecera(tra_codigo, alm_codigo, 0, tdv_codigo)
             ttransacc = ttransaccdao.get_ttransacc(tra_codigo=tra_codigo)
-            formaspago = ttransaccdao.get_formas_pago(tra_codigo=tra_codigo)
+            formaspago = ttransaccpagodao.get_formas_pago(tra_codigo=tra_codigo)
             form_det = tasientodao.get_form_detalle()
             form_pago = tasientodao.get_form_pago()
 

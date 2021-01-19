@@ -30,12 +30,13 @@ sudo supervisorctl restart fusay-gunicorn
 -- #http://www.clinicavespucio.cl/calculo-de-fecha-de-parto/   --Revisar pagina
 -- https://es.slideshare.net/HUGOGERARDOTELLES/clculo-de-semanas-de-gestacin?next_slideshow=1
 
+to_char(historia.cosm_fechacrea, 'TMMonth')
 
- to_char(historia.cosm_fechacrea, 'TMMonth')
+'dt_codigo']
+['cre_fecini']
+['cre_fecven']
+['cre_intere']
+['cre_intmor']
 
-
-
-
-
-ic_id, ic_nombre, ic_code, icdp_grabaiva,icdp_preciocompra,icdp_precioventa,icdp_precioventamin,icdp_preciocompra_iva,icdp_precioventa_iva,icdp_precioventamin_iva
-
+['cre_codban']
+'cre_saldopen']

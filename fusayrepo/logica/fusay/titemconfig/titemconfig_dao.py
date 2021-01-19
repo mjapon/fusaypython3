@@ -11,7 +11,9 @@ from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_model import TItemConfig
 from fusayrepo.logica.fusay.titemconfig_datosprod.titemconfigdatosprod_model import TItemConfigDatosProd
+from fusayrepo.logica.fusay.titemconfig_sec.titemconfigsec_dao import TItemConfigSecDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
+from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.utils import cadenas, ivautil, fechas
 
 log = logging.getLogger(__name__)
@@ -31,6 +33,33 @@ class TItemConfigDao(BaseDao):
         tgrid_dao = TGridDao(self.dbsession)
         data = tgrid_dao.run_grid(grid_nombre='trubros')
         return data
+
+    def buscar_articulos(self, filtro, sec_id):
+        joinsecs = ''
+        if sec_id is not None and int(sec_id) > 0:
+            joinsecs = ' join titemconfig_sec ics on ics.ic_id = a.ic_id and ics.sec_id = {0}'.format(sec_id)
+
+        limit = 50
+        sql = """
+                select a.ic_id, 
+                       a.ic_nombre, 
+                       a.ic_code,
+                       td.icdp_grabaiva,               
+                       td.icdp_preciocompra,
+                       td.icdp_precioventa,
+                       td.icdp_precioventamin,               
+                       case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
+                       case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventa),2) else td.icdp_precioventa end as icdp_precioventa_iva,
+                       case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventamin),2) else td.icdp_precioventamin end as icdp_precioventamin_iva
+                from titemconfig a                
+                join titemconfig_datosprod td on a.ic_id = td.ic_id {joinsecs}
+                where a.ic_estado = 1 and (a.ic_code like '{filtro}%' or a.ic_nombre like '{filtro}%') order by a.ic_nombre limit {limit}
+                """.format(filtro=cadenas.strip_upper(filtro), limit=limit, joinsecs=joinsecs)
+
+        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'icdp_grabaiva', 'icdp_preciocompra', 'icdp_precioventa',
+                      'icdp_precioventamin', 'icdp_preciocompra_iva', 'icdp_precioventa_iva', 'icdp_precioventamin_iva')
+
+        return self.all(sql, tupla_desc)
 
     def busca_serv_dentales_filtro(self, filtro):
         limit = 50
@@ -91,6 +120,13 @@ class TItemConfigDao(BaseDao):
         return self.all(sql, tupla_desc)
 
     def get_form(self):
+        tparamdao = TParamsDao(self.dbsession)
+        aplicadental = tparamdao.aplica_dental()
+        tsecciondao = TSeccionDao(self.dbsession)
+        secciones = tsecciondao.listar()
+        for seccion in secciones:
+            seccion['marca'] = False
+
         formic = {
             'ic_id': 0,
             'ic_nombre': '',
@@ -107,7 +143,9 @@ class TItemConfigDao(BaseDao):
             'icdp_proveedor': -2,
             'icdp_modcontab': 0,
             'icdp_fechacaducidad': '',
-            'ic_dental': False
+            'ic_dental': False,
+            'aplicadental': aplicadental,
+            'secciones': secciones
         }
 
         return formic
@@ -294,7 +332,17 @@ class TItemConfigDao(BaseDao):
         if codbar_auto:
             tparamdao.update_sequence_codbar()
 
+        self.save_secciones(secciones=form['seccionesf'], ic_id=ic_id)
+
         return ic_id
+
+    def save_secciones(self, secciones, ic_id):
+        secslist = list(filter(lambda itsec: itsec['value'], secciones))
+        if len(secslist) == 0:
+            raise ErrorValidacionExc('Debe seleccionar al menos una sección para este producto/servicio')
+
+        itemconfigsecdao = TItemConfigSecDao(self.dbsession)
+        itemconfigsecdao.create_from_list(ic_id=ic_id, secs_list=secslist)
 
     def actualizar(self, form, user_actualiza):
         # Datos para actualizar:
@@ -353,6 +401,8 @@ class TItemConfigDao(BaseDao):
                 self.dbsession.add(titemconfigdp)
 
             self.dbsession.flush()
+            self.save_secciones(secciones=form['seccionesf'], ic_id=ic_id)
+
             return ic_id
 
     def get_detalles_prod(self, ic_id):

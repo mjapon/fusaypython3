@@ -19,7 +19,7 @@ class TAsicredito(Declarative, JsonAlchemy):
     cre_codigo = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
     dt_codigo = Column(Integer, nullable=False)
     cre_fecini = Column(Date, nullable=False)
-    cre_fecven = Column(Date, nullable=False)
+    cre_fecven = Column(Date)
     cre_intere = Column(Numeric(4, 2), default=0.0)
     cre_intmor = Column(Numeric(4, 2), default=0.0)
     cre_compro = Column(String(15), nullable=False)

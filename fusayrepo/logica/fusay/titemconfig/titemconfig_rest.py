@@ -7,7 +7,9 @@ import logging
 
 from cornice.resource import resource
 
+from fusayrepo.logica.fusay.timpuesto.timpuesto_dao import TImpuestoDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
+from fusayrepo.logica.fusay.titemconfig_sec.titemconfigsec_dao import TItemConfigSecDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tventatickets.tventatickets_dao import TVentaTicketsDao
 from fusayrepo.utils.pyramidutil import TokenView, FusayPublicView
@@ -55,11 +57,20 @@ class TItemConfigRest(TokenView):
             filtro = self.get_request_param('filtro')
             items = titemconfig_dao.busca_serv_dentales_filtro(filtro)
             return self.res200({'items': items})
+        elif 'gartsserv' == accion:
+            filtro = self.get_request_param('filtro')
+            secid = self.get_request_param('sec')
+            items = titemconfig_dao.buscar_articulos(filtro=filtro, sec_id=secid)
+            return self.res200({'items': items})
         elif 'gservdentall' == accion:
             items = titemconfig_dao.busca_serv_dentales_all()
             return self.res200({'items': items})
+        elif 'gimpuestos' == accion:
+            timpuestodao = TImpuestoDao(self.dbsession)
+            impuestos = timpuestodao.get_impuestos()
+            return self.res200({'impuestos': impuestos})
         else:
-            return {'status': 404, 'msg': 'accion desconocida'}
+            return {'status': 404, 'msg': 'accion desconocida', 'accion': accion}
 
     def post(self):
         titemconfig_dao = TItemConfigDao(self.dbsession)
@@ -96,8 +107,6 @@ class TItemConfigRest(TokenView):
     def get(self):
         ic_id = self.get_request_matchdict('ic_id')
         titemconfig_dao = TItemConfigDao(self.dbsession)
-        res = titemconfig_dao.get_detalles_prod(ic_id=ic_id)
-
         accion = self.get_request_param('accion')
         if accion is not None:
             if accion == 'formrubroedit':
@@ -108,11 +117,12 @@ class TItemConfigRest(TokenView):
                     return {'status': 200, 'item': itemconfig, 'tipos': tipos}
                 else:
                     return {'status': 404, 'msg': 'No existe el registro'}
-
-        if res is not None:
-            return {'status': 200, 'datosprod': res}
         else:
-            return {'status': 404}
+            res = titemconfig_dao.get_detalles_prod(ic_id=ic_id)
+            itemconfigsec = TItemConfigSecDao(self.dbsession)
+            secciones = itemconfigsec.list_for_edit(ic_id=ic_id)
+
+            return {'status': 200, 'datosprod': res, 'secciones': secciones}
 
 
 @resource(collection_path='/api/public/titemconfig', path='/api/public/titemconfig/{ic_id}', cors_origins=('*',))

@@ -355,7 +355,7 @@ class TPersonaDao(BaseDao):
             if not cadenas.es_nonulo_novacio(form['per_nombres']):
                 raise ErrorValidacionExc('Ingrese los nombres')
 
-            current_email = cadenas.strip(tpersona.per_email)
+            # current_email = cadenas.strip(tpersona.per_email)
             per_email = cadenas.strip(form['per_email'])
             """
             if current_email != per_email and cadenas.es_nonulo_novacio(current_email):
@@ -369,21 +369,34 @@ class TPersonaDao(BaseDao):
                 per_email = None
 
             per_ciruc = cadenas.strip(form['per_ciruc'])
-            current_per_ciruc = cadenas.strip(tpersona.per_ciruc)
-            if per_ciruc != current_per_ciruc:
-                if self.existe_ciruc(per_ciruc=form['per_ciruc']):
-                    raise ErrorValidacionExc(
-                        'El número de ci/ruc o pasaporte {0} ya está registrado, ingrese otro'.format(
-                            form['per_ciruc']))
-                else:
-                    tpersona.per_ciruc = per_ciruc
 
-            tpersona.per_nombres = cadenas.strip_upper(form['per_nombres'])
-            tpersona.per_apellidos = cadenas.strip_upper(form['per_apellidos'])
-            tpersona.per_movil = cadenas.strip_upper(form['per_movil'])
+            if len(per_ciruc) > 0:
+                current_per_ciruc = cadenas.strip(tpersona.per_ciruc)
+                if per_ciruc != current_per_ciruc:
+                    if self.existe_ciruc(per_ciruc=form['per_ciruc']):
+                        raise ErrorValidacionExc(
+                            'El número de ci/ruc o pasaporte {0} ya está registrado, ingrese otro'.format(
+                                form['per_ciruc']))
+                    else:
+                        tpersona.per_ciruc = per_ciruc
+
+            per_nombres = cadenas.strip_upper(form['per_nombres'])
+            if len(per_nombres) > 0:
+                tpersona.per_nombres = per_nombres
+
+            per_apellidos = cadenas.strip_upper(form['per_apellidos'])
+            if len(per_apellidos) > 0:
+                tpersona.per_apellidos = per_apellidos
+
+            per_movil = cadenas.strip_upper(form['per_movil'])
+            if len(per_movil) > 0:
+                tpersona.per_movil = per_movil
+
             tpersona.per_email = per_email
             if 'per_direccion' in form:
-                tpersona.per_direccion = cadenas.strip(form['per_direccion'])
+                per_direccion = cadenas.strip(form['per_direccion'])
+                if len(per_direccion) > 0:
+                    tpersona.per_direccion = per_direccion
 
             # Columnas agregadas:
             if 'per_fechanacp' in form:

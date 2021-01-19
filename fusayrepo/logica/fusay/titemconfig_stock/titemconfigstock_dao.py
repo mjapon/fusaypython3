@@ -47,15 +47,17 @@ class TItemConfigStockDao(BaseDao):
         :return: Array con los datos de stock del articulo por seccion
         """
 
-        sql = """        
+        sql = """
         select
-        coalesce(ice.ice_id,0) as ice_id,
-        coalesce(ice.ic_id, {0}) as ic_id,
-        sec.sec_id,
-        sec.sec_nombre,
-        coalesce(ice.ice_stock, 0) as ice_stock from tseccion sec
-        left join titemconfig_stock ice on ice.sec_id= sec.sec_id and ice.ic_id = {0}
-        order by sec.sec_nombre asc;
+            coalesce(ice.ice_id,0) as ice_id,
+            coalesce(ice.ic_id, {0}) as ic_id,
+            sec.sec_id,
+            sec.sec_nombre,
+            coalesce(ice.ice_stock, 0) as ice_stock from titemconfig_sec ics
+            join tseccion sec on sec.sec_id = ics.sec_id
+            left join titemconfig_stock ice on ice.sec_id= sec.sec_id and ice.ic_id = ics.ic_id
+            where ics.ic_id = {0}
+            order by sec.sec_nombre asc;
         """.format(ic_id)
 
         tupla_desc = ('ice_id', 'ic_id', 'sec_id', 'sec_nombre', 'ice_stock')

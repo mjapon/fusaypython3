@@ -214,6 +214,9 @@ class TokenView(PyramidView):
     def res200(self, res):
         return {'status': 200, **res}
 
+    def res404(self, **res):
+        return {'status': 404, **res}
+
     def grqpa(self):
         return self.get_request_param('accion')
 

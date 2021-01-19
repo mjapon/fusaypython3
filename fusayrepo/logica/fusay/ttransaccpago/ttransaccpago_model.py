@@ -5,7 +5,7 @@ Fecha de creacion 11/9/20
 """
 import logging
 
-from sqlalchemy import Column, Integer, Text
+from sqlalchemy import Column, Integer, Text, String
 
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
@@ -22,3 +22,4 @@ class TTransaccPago(Declarative, JsonAlchemy):
     ttp_signo = Column(Integer, nullable=False, default=1)
     ttp_coddocs = Column(Text)
     ttp_tipcomprob = Column(Integer)
+    ttp_orden = Column(Integer, default=1)

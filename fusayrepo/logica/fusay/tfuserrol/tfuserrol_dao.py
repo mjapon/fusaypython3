@@ -78,6 +78,13 @@ class TFuserRolDao(BaseDao):
              'routerLink': ['/odonto']}
         ]
 
+        ventas_list = [
+            {'label': 'Movimientos', 'icon': 'pi pi-fw pi-briefcase',
+             'routerLink': ['/trndocs']},
+            {'label': 'Facturar', 'icon': 'pi pi-fw pi-money-bill',
+             'routerLink': ['/trndocform']}
+        ]
+
         all_menu = {
             '*': {'label': 'Inicio', 'icon': 'pi pi-fw pi-home', 'routerLink': ['/lghome']},
             'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-sort-alt', 'items': tickets_list},
@@ -87,6 +94,7 @@ class TFuserRolDao(BaseDao):
             'HISTO_LISTAR': {'label': 'Historias Clínicas Odontológicas', 'icon': 'pi pi-fw pi-bell',
                              'items': histo_list},
             'US_LISTAR': {'label': 'Usuarios', 'icon': 'pi pi-fw pi-users', 'items': users_list},
+            'VN_LISTAR': {'label': 'Ventas', 'icon': 'pi pi-fw pi-wallet', 'items': ventas_list}
         }
 
         menu = []
