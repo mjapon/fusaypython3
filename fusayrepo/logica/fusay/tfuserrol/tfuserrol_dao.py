@@ -86,15 +86,22 @@ class TFuserRolDao(BaseDao):
         ]
 
         all_menu = {
-            '*': {'label': 'Inicio', 'icon': 'pi pi-fw pi-home', 'routerLink': ['/lghome']},
-            'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-sort-alt', 'items': tickets_list},
-            'IG_LISTAR': {'label': 'Contabilidad', 'icon': 'pi pi-fw pi-sort-alt', 'items': contabilidad_list},
-            'PRODS_LISTAR': {'label': 'Productos y Servicios', 'icon': 'pi pi-fw pi-microsoft', 'items': prods_list},
-            'HIST_LISTAR': {'label': 'Historias Clínicas Médicas', 'icon': 'pi pi-fw pi-calendar', 'items': hist_list},
+            '*': {'label': 'Inicio', 'icon': 'pi pi-fw pi-home', 'cicon': 'fas fa-home', 'routerLink': ['/lghome']},
+            'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-sort-alt', 'cicon': 'fas fa-ticket-alt',
+                          'items': tickets_list},
+            'IG_LISTAR': {'label': 'Contabilidad', 'icon': 'pi pi-fw pi-sort-alt', 'cicon': 'fas fa-calculator',
+                          'items': contabilidad_list},
+            'PRODS_LISTAR': {'label': 'Productos y Servicios', 'icon': 'pi pi-fw pi-microsoft', 'cicon': 'fas fa-store',
+                             'items': prods_list},
+            'HIST_LISTAR': {'label': 'Historias Clínicas Médicas', 'icon': 'pi pi-fw pi-calendar',
+                            'cicon': 'fas fa-stethoscope', 'items': hist_list},
             'HISTO_LISTAR': {'label': 'Historias Clínicas Odontológicas', 'icon': 'pi pi-fw pi-bell',
+                             'cicon': 'fas fa-tooth',
                              'items': histo_list},
-            'US_LISTAR': {'label': 'Usuarios', 'icon': 'pi pi-fw pi-users', 'items': users_list},
-            'VN_LISTAR': {'label': 'Ventas', 'icon': 'pi pi-fw pi-wallet', 'items': ventas_list}
+            'US_LISTAR': {'label': 'Usuarios', 'icon': 'pi pi-fw pi-users', 'cicon': 'fas fa-users',
+                          'items': users_list},
+            'VN_LISTAR': {'label': 'Ventas', 'icon': 'pi pi-fw pi-wallet', 'cicon': 'fas fa-shopping-cart',
+                          'items': ventas_list}
         }
 
         menu = []

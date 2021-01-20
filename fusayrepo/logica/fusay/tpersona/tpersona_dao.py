@@ -411,18 +411,18 @@ class TPersonaDao(BaseDao):
                     per_fechanac = fechas.parse_cadena(per_fechanac_txt)
                     tpersona.per_fechanac = per_fechanac
 
-            if 'per_genero' in form:
+            if 'per_genero' in form and cadenas.es_nonulo_novacio(form['per_genero']):
                 per_genero = form['per_genero']
                 tpersona.per_genero = per_genero
 
-            if 'per_estadocivil' in form:
+            if 'per_estadocivil' in form and cadenas.es_nonulo_novacio(form['per_estadocivil']):
                 if type(form['per_estadocivil']) is dict:
                     per_estadocivil = form['per_estadocivil']['lval_id']
                 else:
                     per_estadocivil = form['per_estadocivil']
                 tpersona.per_estadocivil = per_estadocivil
 
-            if 'per_lugresidencia' in form:
+            if 'per_lugresidencia' in form and cadenas.es_nonulo_novacio(form['per_lugresidencia']):
                 if type(form['per_lugresidencia']) is dict:
                     per_lugresidencia = form['per_lugresidencia']['lug_id']
                 else:
@@ -435,7 +435,7 @@ class TPersonaDao(BaseDao):
                 per_telf = form['per_telf']
                 tpersona.per_telf = cadenas.strip(per_telf)
 
-            if 'per_ocupacion' in form:
+            if 'per_ocupacion' in form and cadenas.es_nonulo_novacio(form['per_ocupacion']):
                 if type(form['per_ocupacion']) is dict:
                     per_ocupacion = form['per_ocupacion']['lval_id']
                 else:
@@ -512,14 +512,14 @@ class TPersonaDao(BaseDao):
                 per_fechanac = fechas.parse_cadena(per_fechanac_txt)
                 tpersona.per_fechanac = per_fechanac
 
-        if 'per_estadocivil' in form:
+        if 'per_estadocivil' in form and cadenas.es_nonulo_novacio(form['per_estadocivil']):
             if type(form['per_estadocivil']) is dict:
                 per_estadocivil = form['per_estadocivil']['lval_id']
             else:
                 per_estadocivil = form['per_estadocivil']
             tpersona.per_estadocivil = per_estadocivil
 
-        if 'per_lugresidencia' in form:
+        if 'per_lugresidencia' in form and cadenas.es_nonulo_novacio(form['per_lugresidencia']):
             if type(form['per_lugresidencia']) is dict:
                 per_lugresidencia = form['per_lugresidencia']['lug_id']
             else:
@@ -528,7 +528,7 @@ class TPersonaDao(BaseDao):
             if per_lugresidencia != 0:
                 tpersona.per_lugresidencia = per_lugresidencia
 
-        if 'per_genero' in form:
+        if 'per_genero' in form and cadenas.es_nonulo_novacio(form['per_genero']):
             per_genero = form['per_genero']
             tpersona.per_genero = per_genero
 
@@ -536,7 +536,7 @@ class TPersonaDao(BaseDao):
             per_telf = form['per_telf']
             tpersona.per_telf = cadenas.strip(per_telf)
 
-        if 'per_ocupacion' in form:
+        if 'per_ocupacion' in form and cadenas.es_nonulo_novacio(form['per_ocupacion']):
             if type(form['per_ocupacion']) is dict:
                 per_ocupacion = form['per_ocupacion']['lval_id']
             else:

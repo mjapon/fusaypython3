@@ -92,6 +92,7 @@ class TasientoDao(BaseDao):
             'dt_debito': 0,
             'dt_preref': 0.0,
             'dt_decto': 0.0,
+            'dt_dectoin': 0.0,
             'dt_valor': 0.0,
             'dt_dectogen': 0.0,
             'dt_tipoitem': 1,
@@ -291,7 +292,7 @@ class TasientoDao(BaseDao):
             giva += ivaval
             gdescuentos += dt_decto
             gtotal += ftotal
-            gsubtotal = gsubtotal12 + gsubtotal0
+            gsubtotal += subtotal
 
         return {
             'subtotal': numeros.roundm2(gsubtotal),
@@ -469,7 +470,7 @@ class TasientoDao(BaseDao):
                 })
 
         per_codigo = int(form_persona['per_id'])
-        if creaupdpac and per_codigo > 0:
+        if creaupdpac and per_codigo >= 0:
             if per_codigo is not None and per_codigo > 0:
                 personadao.actualizar(per_id=per_codigo, form=form_persona)
             else:
