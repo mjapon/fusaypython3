@@ -116,6 +116,18 @@ class TAsicreditoDao(BaseDao):
 
         return self.first(sql, tupla_desc)
 
+    def get_total_deudas(self, per_codigo, tra_codigo):
+        sql = """
+                select 
+                    sum(cred.cre_saldopen) as totaldeuda
+                       from tasicredito cred
+                join tasidetalle detcred on cred.dt_codigo = detcred.dt_codigo
+                join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo and tasi.tra_codigo = {tra_codigo} and tasi.trn_docpen = 'F' and tasi.trn_valido = 0
+                join tpersona per on tasi.per_codigo = per.per_id and per.per_id = {per_codigo}
+                """.format(tra_codigo=tra_codigo, per_codigo=per_codigo)
+        totaldeuda = self.first_col(sql, 'totaldeuda')
+        return self.type_json(totaldeuda)
+
     def listar_creditos(self, per_codigo, tra_codigo, solo_pendientes=True):
         """
         Retorna listado de creditos de un referente y de una transaccion especificada

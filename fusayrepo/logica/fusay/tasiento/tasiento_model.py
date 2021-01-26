@@ -10,6 +10,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, Date, Numeric
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
 
+
 log = logging.getLogger(__name__)
 
 

@@ -217,7 +217,11 @@ class TokenView(PyramidView):
     def res404(self, **res):
         return {'status': 404, **res}
 
-    def grqpa(self):
+    def get_rqpa(self):
+        """
+        get_request_param accion
+        :return:
+        """
         return self.get_request_param('accion')
 
 

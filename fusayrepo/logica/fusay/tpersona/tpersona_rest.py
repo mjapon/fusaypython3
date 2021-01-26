@@ -7,7 +7,9 @@ import logging
 
 from cornice.resource import resource
 
+from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
+from fusayrepo.utils import ctes
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -78,7 +80,7 @@ class TPersonaRest(TokenView):
                 log.error('Error al parsear a int la pagina', ex)
 
             tpersonadao = TPersonaDao(self.dbsession)
-            limit = 40
+            limit = 50
             offset = intlastpage * limit
             items = tpersonadao.buscar_pornomapelci(filtro, solo_cedulas=True, limit=limit, offsset=offset)
             hasMore = items is not None and len(items) == limit
@@ -88,6 +90,13 @@ class TPersonaRest(TokenView):
             tpersonadao = TPersonaDao(self.dbsession)
             medicos = tpersonadao.listar_medicos(med_tipo=tipo)
             return {'status': 200, 'medicos': medicos}
+
+        elif 'gtotaldeudas':
+            tasicreditodao = TAsicreditoDao(self.dbsession)
+            percodigo = self.get_request_param('codper')
+            totaldeudas = tasicreditodao.get_total_deudas(per_codigo=percodigo,
+                                                          tra_codigo=ctes.TRA_CODIGO_FACTURA_VENTA)
+            return self.res200({'deudas': totaldeudas})
 
     def post(self):
         tpersonadao = TPersonaDao(self.dbsession)

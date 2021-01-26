@@ -62,6 +62,7 @@ class TOdRxDocsDao(BaseDao):
                 select rxd_id, rxd_nombre,  rxd_ruta, rxd_ext, rxd_nota, pac_id, user_crea, rxd_fechacrea, rxd_nropieza, 
                 rxd_tipo, rxd_estado, rxd_filename from todrxdocs where rxd_id = {0} 
                 """.format(rxd_id)
+
         tupla_desc = (
             'rxd_id', 'rxd_nombre', 'rxd_ruta', 'rxd_ext', 'rxd_nota', 'pac_id', 'user_crea', 'rxd_fechacrea',
             'rxd_nropieza',

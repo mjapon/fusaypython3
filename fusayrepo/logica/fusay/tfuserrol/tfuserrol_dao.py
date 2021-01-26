@@ -61,6 +61,7 @@ class TFuserRolDao(BaseDao):
 
         prods_list = [
             {'label': 'Listado', 'icon': 'pi pi-fw pi-th-large', 'routerLink': ['/mercaderia']},
+            {'label': 'Planes', 'icon': 'pi pi-fw pi-th-large', 'routerLink': ['/planes']},
         ]
 
         users_list = [
@@ -85,6 +86,11 @@ class TFuserRolDao(BaseDao):
              'routerLink': ['/trndocform']}
         ]
 
+        refs_list = [
+            {'label': 'Listado', 'icon': 'pi pi-fw pi-users',
+             'routerLink': ['/referentes']},
+        ]
+
         all_menu = {
             '*': {'label': 'Inicio', 'icon': 'pi pi-fw pi-home', 'cicon': 'fas fa-home', 'routerLink': ['/lghome']},
             'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-sort-alt', 'cicon': 'fas fa-ticket-alt',
@@ -101,7 +107,9 @@ class TFuserRolDao(BaseDao):
             'US_LISTAR': {'label': 'Usuarios', 'icon': 'pi pi-fw pi-users', 'cicon': 'fas fa-users',
                           'items': users_list},
             'VN_LISTAR': {'label': 'Ventas', 'icon': 'pi pi-fw pi-wallet', 'cicon': 'fas fa-shopping-cart',
-                          'items': ventas_list}
+                          'items': ventas_list},
+            'REF_LISTAR': {'label': 'Referentes', 'icon': 'pi pi-fw pi-wallet', 'cicon': 'fas fa-user-friends',
+                           'items': refs_list}
         }
 
         menu = []

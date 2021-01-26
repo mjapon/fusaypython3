@@ -16,6 +16,7 @@ from fusayrepo.logica.fusay.tasiento.tasiento_model import TAsiento
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.timpuesto.timpuesto_dao import TImpuestoDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
+from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
 from fusayrepo.logica.fusay.ttransaccimp.ttransaccimp_dao import TTransaccImpDao
 from fusayrepo.logica.fusay.ttransaccpdv.ttransaccpdv_dao import TTransaccPdvDao
@@ -97,7 +98,7 @@ class TasientoDao(BaseDao):
             'dt_dectogen': 0.0,
             'dt_tipoitem': 1,
             'dt_valdto': 0.0,
-            'dto_valdtogen': 0.0,
+            'dt_valdtogen': 0.0,
             'dt_codsec': 1,
             'dai_imp0': None,
             'dai_impg': None,
@@ -174,6 +175,8 @@ class TasientoDao(BaseDao):
                       'dt_precio', 'dt_debito', 'dt_preref', 'dt_decto', 'dt_valor', 'dt_dectogen', 'dt_tipoitem',
                       'dt_valdto', 'dt_valdtogen', 'dt_codsec', 'ic_nombre', 'ic_clasecc', 'ic_code', 'dai_imp0',
                       'dai_impg', 'dai_ise', 'dai_ice')
+
+        print('sql que se ejecuta:', sql)
 
         detalles = self.all(sql, tupla_desc)
 
@@ -428,6 +431,32 @@ class TasientoDao(BaseDao):
     def marcar_errado(self, trn_codigo, user_do):
         self.aux_cambia_estado(trn_codigo, user_do=user_do, obs='', new_state=2)
 
+    def duplicar_comprobante(self, trn_codigo, user_crea, tra_codigo):
+        tasiento = self.dbsession.query(TAsiento).filter(TAsiento.trn_codigo == trn_codigo).first()
+        if tasiento is not None:
+            detalles = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=ctes.DT_TIPO_ITEM_DETALLE)
+
+            for detalle in detalles:
+                for key in detalle.keys():
+                    if not cadenas.es_nonulo_novacio(detalle[key]):
+                        detalle[key] = None
+
+            # impuestos = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=ctes.DT_TIPO_ITEM_IMPUESTO)
+            pagos = self.get_detalles_doc(trn_codigo=trn_codigo, joinarts=False, dt_tipoitem=ctes.DT_TIPO_ITEM_PAGO)
+
+            totales = self.calcular_totales(detalles)
+
+            ttpdvdao = TtpdvDao(self.dbsession)
+            alm_codigo = ttpdvdao.get_alm_codigo_from_tdv_codigo(tasiento.tdv_codigo)
+            formcab = self.get_form_cabecera(tra_codigo=tra_codigo, alm_codigo=alm_codigo,
+                                             sec_codigo=tasiento.sec_codigo, tdv_codigo=tasiento.tdv_codigo)
+            formcab['trn_docpen'] = 'F'
+            formcab['tra_codigo'] = tra_codigo
+
+            formpersona = {'per_id': tasiento.per_codigo}
+            return self.crear(form=formcab, form_persona=formpersona, user_crea=user_crea, detalles=detalles,
+                              pagos=pagos, totales=totales)
+
     def crear(self, form, form_persona, user_crea, detalles, pagos, totales, creaupdpac=True):
         dia_codigo = form['dia_codigo']
         trn_fecreg = fechas.parse_cadena(form['trn_fecreg'])
@@ -533,7 +562,7 @@ class TasientoDao(BaseDao):
             tasidetalle.dt_dectogen = detalle['dt_dectogen']
             tasidetalle.dt_tipoitem = ctes.DT_TIPO_ITEM_DETALLE
             tasidetalle.dt_valdto = detalle['dt_valdto']
-            tasidetalle.dto_valdtogen = detalle['dto_valdtogen']
+            tasidetalle.dt_valdtogen = detalle['dt_valdtogen']
             tasidetalle.dt_codsec = detalle['dt_codsec']
 
             self.dbsession.add(tasidetalle)

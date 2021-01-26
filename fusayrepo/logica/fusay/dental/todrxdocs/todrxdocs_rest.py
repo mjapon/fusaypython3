@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 class TodRxDocsRest(TokenView):
 
     def collection_get(self):
-        accion = self.grqpa()
+        accion = self.get_rqpa()
         rxdocsdao = TOdRxDocsDao(self.dbsession)
         if accion == 'form':
             pac_id = self.get_request_param('pac_id')
@@ -31,7 +31,7 @@ class TodRxDocsRest(TokenView):
             return self.res200({'docs': docs})
 
     def collection_post(self):
-        accion = self.grqpa()
+        accion = self.get_rqpa()
         rxdocsdao = TOdRxDocsDao(self.dbsession)
         jsonbody = self.get_request_json_body()
         if accion == 'crear':

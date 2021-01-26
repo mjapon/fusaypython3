@@ -12,6 +12,7 @@ from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
 from fusayrepo.logica.fusay.ttransaccpago.ttransaccpago_dao import TTransaccPagoDao
+from fusayrepo.utils import ctes
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -81,3 +82,9 @@ class TAsientoRest(TokenView):
             tasientodao.marcar_errado(trn_codigo=form['trncod'], user_do=self.get_user_id())
             msg = 'Operación exitosa'
             return self.res200({'msg': msg})
+        elif accion == 'duplicar':
+            body = self.get_json_body()
+            trn_codigo = tasientodao.duplicar_comprobante(trn_codigo=body['trn_codigo'],
+                                                          user_crea=self.get_user_id(),
+                                                          tra_codigo=ctes.TRA_CODIGO_FACTURA_VENTA)
+            return self.res200({'trn_codig': trn_codigo, 'msg': 'Duplicado exitoso'})

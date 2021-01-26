@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 class TodRecetasRest(TokenView):
 
     def collection_get(self):
-        accion = self.grqpa()
+        accion = self.get_rqpa()
         recetadao = TOdRecetasDao(self.dbsession)
         if accion == 'form':
             form = recetadao.get_form()
@@ -28,7 +28,7 @@ class TodRecetasRest(TokenView):
             return self.res200({'items': items})
 
     def collection_post(self):
-        accion = self.grqpa()
+        accion = self.get_rqpa()
         recetadao = TOdRecetasDao(self.dbsession)
         if accion == 'guardar':
             form = self.get_request_json_body()
