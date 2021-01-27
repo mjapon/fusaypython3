@@ -8,6 +8,7 @@ import logging
 from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tcita.tcita_dao import TCitaDao
+from fusayrepo.logica.fusay.tpersona.tpersoncitadao import TPersonCitaDao
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -58,6 +59,10 @@ class TCitaRest(TokenView):
                 return {'status': 200, 'cita': lastvalid}
             else:
                 return {'status': 404}
+        elif accion == 'gpercita':
+            tpersoncitadao = TPersonCitaDao(self.dbsession)
+            personscita = tpersoncitadao.listar()
+            return self.res200({'personscita': personscita})
 
     def collection_post(self):
         accion = self.get_request_param('accion')

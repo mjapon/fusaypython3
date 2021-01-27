@@ -91,7 +91,7 @@ class TPersonaRest(TokenView):
             medicos = tpersonadao.listar_medicos(med_tipo=tipo)
             return {'status': 200, 'medicos': medicos}
 
-        elif 'gtotaldeudas':
+        elif 'gtotaldeudas' == accion:
             tasicreditodao = TAsicreditoDao(self.dbsession)
             percodigo = self.get_request_param('codper')
             totaldeudas = tasicreditodao.get_total_deudas(per_codigo=percodigo,

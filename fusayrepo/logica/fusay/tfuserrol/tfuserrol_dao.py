@@ -91,6 +91,11 @@ class TFuserRolDao(BaseDao):
              'routerLink': ['/referentes']},
         ]
 
+        agn_list = [
+            {'label': 'Agenda', 'icon': 'pi pi-fw pi-calendar',
+             'routerLink': ['/calendario/1']},
+        ]
+
         all_menu = {
             '*': {'label': 'Inicio', 'icon': 'pi pi-fw pi-home', 'cicon': 'fas fa-home', 'routerLink': ['/lghome']},
             'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-sort-alt', 'cicon': 'fas fa-ticket-alt',
@@ -109,7 +114,9 @@ class TFuserRolDao(BaseDao):
             'VN_LISTAR': {'label': 'Ventas', 'icon': 'pi pi-fw pi-wallet', 'cicon': 'fas fa-shopping-cart',
                           'items': ventas_list},
             'REF_LISTAR': {'label': 'Referentes', 'icon': 'pi pi-fw pi-wallet', 'cicon': 'fas fa-user-friends',
-                           'items': refs_list}
+                           'items': refs_list},
+            'AGN_LISTAR': {'label': 'Agenda', 'icon': 'pi pi-fw pi-calendar', 'cicon': 'far fa-calendar-plus',
+                           'items': agn_list}
         }
 
         menu = []
