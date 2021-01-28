@@ -82,8 +82,10 @@ class TConsultaMedicaRest(TokenView):
             tipo = self.get_request_param('tipocita')
             if int(tipo) == 2:
                 res, fechastr = tconsultam_dao.listarproxcitasod_grid(int(tipofecha))
-            else:
+            elif int(tipo) == 1:
                 res, fechastr = tconsultam_dao.listarproxcita_grid(int(tipofecha), tipocita=tipo)
+            else:
+                res, fechastr = tconsultam_dao.listarproxcitasgen_grid(int(tipofecha), tipocita=tipo)
 
             return {'status': 200, 'grid': res, 'fechas': fechastr}
 

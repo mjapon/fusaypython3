@@ -178,12 +178,22 @@ class TConsultaMedicaDao(BaseDao):
         else:
             raise ErrorValidacionExc('No existe ningún registro de historia clínica con el código:{0}'.format(cosm_id))
 
-    def listarproxcitasod_grid(self, tipofecha):
+    def listarproxcitasgen_grid(self, tipofecha, tipocita):
         tgrid_dao = TGridDao(self.dbsession)
+        desde, hasta, fechasstr = self.aux_getfechas(tipofecha)
+        swhere = " and cita.ct_tipo = {0} ".format(tipocita)
+        if len(desde) > 0:
+            swhere += " and date(cita.ct_fecha) between '{desde}' and '{hasta}' ".format(
+                desde=desde,
+                hasta=hasta)
 
+        data = tgrid_dao.run_grid(grid_nombre='proxcitasgen', swhere=swhere)
+        return data, fechasstr
+
+    def aux_getfechas(self, tipofecha):
+        hoy = datetime.now()
         desde = ''
         hasta = ''
-        hoy = datetime.now()
         fechasstr = ''
         if tipofecha == 1:  # hoy
             desde = fechas.get_str_fecha_actual(ctes.APP_FMT_FECHA_DB)
@@ -204,6 +214,13 @@ class TConsultaMedicaDao(BaseDao):
             hasta = fechas.get_str_fecha(fechas.get_lastday_of_month(), ctes.APP_FMT_FECHA_DB)
             fechasstr = '{0}  -  {1}'.format(fechas.format_cadena(desde, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA),
                                              fechas.format_cadena(hasta, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA))
+        return desde, hasta, fechasstr
+
+    def listarproxcitasod_grid(self, tipofecha):
+        tgrid_dao = TGridDao(self.dbsession)
+
+        desde, hasta, fechasstr = self.aux_getfechas(tipofecha)
+
         swhere = " "
         if len(desde) > 0:
             swhere = " and date(cita.ct_fecha) between '{desde}' and '{hasta}' ".format(
@@ -215,30 +232,7 @@ class TConsultaMedicaDao(BaseDao):
 
     def listarproxcita_grid(self, tipofecha, tipocita):
         tgrid_dao = TGridDao(self.dbsession)
-
-        desde = ''
-        hasta = ''
-        hoy = datetime.now()
-        fechasstr = ''
-        if tipofecha == 1:  # hoy
-            desde = fechas.get_str_fecha_actual(ctes.APP_FMT_FECHA_DB)
-            hasta = fechas.get_str_fecha_actual(ctes.APP_FMT_FECHA_DB)
-            fechasstr = fechas.format_cadena(desde, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA)
-        elif tipofecha == 2:  # mañana
-            maniana = fechas.sumar_dias(hoy, 1)
-            desde = fechas.get_str_fecha(maniana, ctes.APP_FMT_FECHA_DB)
-            hasta = fechas.get_str_fecha(maniana, ctes.APP_FMT_FECHA_DB)
-            fechasstr = fechas.format_cadena(desde, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA)
-        elif tipofecha == 3:  # Esta semana
-            desde = fechas.get_str_fecha(hoy, ctes.APP_FMT_FECHA_DB)
-            hasta = fechas.get_str_fecha(fechas.get_lastday_of_week(), ctes.APP_FMT_FECHA_DB)
-            fechasstr = '{0}  -  {1}'.format(fechas.format_cadena(desde, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA),
-                                             fechas.format_cadena(hasta, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA))
-        elif tipofecha == 4:  # Este mesa
-            desde = fechas.get_str_fecha(hoy, ctes.APP_FMT_FECHA_DB)
-            hasta = fechas.get_str_fecha(fechas.get_lastday_of_month(), ctes.APP_FMT_FECHA_DB)
-            fechasstr = '{0}  -  {1}'.format(fechas.format_cadena(desde, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA),
-                                             fechas.format_cadena(hasta, ctes.APP_FMT_FECHA_DB, ctes.APP_FMT_FECHA))
+        desde, hasta, fechasstr = self.aux_getfechas(tipofecha)
         swhere = " "
         if len(desde) > 0:
             swhere = " and date(cita.ct_fecha) between '{desde}' and '{hasta}' ".format(

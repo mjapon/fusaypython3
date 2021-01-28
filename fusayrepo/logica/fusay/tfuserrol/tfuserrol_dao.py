@@ -93,7 +93,7 @@ class TFuserRolDao(BaseDao):
 
         agn_list = [
             {'label': 'Agenda', 'icon': 'pi pi-fw pi-calendar',
-             'routerLink': ['/calendario/1']},
+             'routerLink': ['/agenda/1']},
         ]
 
         all_menu = {

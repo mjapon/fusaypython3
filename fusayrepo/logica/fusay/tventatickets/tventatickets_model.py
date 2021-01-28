@@ -24,3 +24,7 @@ class TVentaTickets(Declarative, JsonAlchemy):
     vt_obs = Column(Text)
     vt_clase = Column(Integer, default=1)
     vt_fecha = Column(Date, nullable=False)
+    vt_usercrea = Column(Integer, default=0)
+    vt_useranula = Column(Integer, default=0)
+    vt_fechanul = Column(TIMESTAMP)
+    vt_codadj = Column(Integer, default=0)

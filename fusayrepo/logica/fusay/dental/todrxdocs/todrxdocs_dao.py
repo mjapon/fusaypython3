@@ -82,9 +82,6 @@ class TOdRxDocsDao(BaseDao):
             os.makedirs(rutafolder)
         rutasave = '{0}/{1}'.format(rutafolder, filename)
 
-        print('Ruta save es:')
-        print(rutasave)
-
         uploadFileUtil = CargaArchivosUtil()
         resdecodedfile = uploadFileUtil.get_decoded_file_data_type(file)
 
@@ -104,6 +101,8 @@ class TOdRxDocsDao(BaseDao):
         todrxdoc.rxd_filename = filename
 
         self.dbsession.add(todrxdoc)
+        self.dbsession.flush()
+        return todrxdoc.rxd_id
 
     def find_by_id(self, rxd_id):
         return self.dbsession.query(TOdRxDocs).filter(TOdRxDocs.rxd_id == rxd_id).first()

@@ -40,23 +40,27 @@ class TVentaTicketsRest(TokenView):
             tipo = self.get_request_param('tipo')
             cuentas = vtdao.get_cuentas(tipo=tipo)
             return {'status': 200, 'cuentas': cuentas}
+        elif 'gdet' == accion:
+            vtkcod = self.get_request_param('vtkcod')
+            detallesvtk = vtdao.get_detalles(vtkid=vtkcod)
+            return self.res200({'detalles': detallesvtk})
 
     def collection_post(self):
         accion = self.get_request_param('accion')
         if accion == 'guardar':
             form = self.get_request_json_body()
             vtdao = TVentaTicketsDao(self.dbsession)
-            vtdao.crear(form)
+            vtdao.crear(form, usercrea=self.get_user_id())
             return {'status': 200, 'msg': 'Registro exitoso'}
         elif accion == 'anular':
             form = self.get_request_json_body()
             vt_id = form['vt_id']
             vtdao = TVentaTicketsDao(self.dbsession)
-            vtdao.anular(vt_id)
+            vtdao.anular(vt_id, useranula=self.get_user_id())
             return {'status': 200, 'msg': 'Registro anulado existósamemente'}
         elif accion == 'confirmar':
             form = self.get_request_json_body()
             vt_id = form['vt_id']
             vtdao = TVentaTicketsDao(self.dbsession)
-            vtdao.confirmar(vt_id)
-            return {'status': 200, 'msg': 'Registro confirmado exitosamente'}
+            vtdao.confirmar(vt_id, userconfirma=self.get_user_id())
+            return {'status': 200, 'msg': 'Registro confirmado exitósamente'}
