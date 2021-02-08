@@ -52,7 +52,9 @@ class TFuserRolDao(BaseDao):
 
         contabilidad_list = [
             {'label': 'Ingresos y Gastos', 'icon': 'pi pi-fw pi-sort-alt', 'routerLink': ['/vtickets']},
-            {'label': 'Cuentas', 'icon': 'pi pi-fw pi-cog', 'routerLink': ['/rubros']},
+            {'label': 'Cuentas', 'icon': '', 'routerLink': ['/rubros']},
+            {'label': 'Plan de cuentas', 'icon': '', 'routerLink': ['/plancuentas']},
+            {'label': 'Libro Diario', 'icon': '', 'routerLink': ['/librodiario']}
         ]
         tickets_list = [
             {'label': 'Listado', 'icon': 'pi pi-fw pi-ticket', 'routerLink': ['/tickets']},
@@ -60,8 +62,8 @@ class TFuserRolDao(BaseDao):
         ]
 
         prods_list = [
-            {'label': 'Listado', 'icon': 'pi pi-fw pi-th-large', 'routerLink': ['/mercaderia']},
-            {'label': 'Planes', 'icon': 'pi pi-fw pi-th-large', 'routerLink': ['/planes']},
+            {'label': 'Listado', 'icon': '', 'routerLink': ['/mercaderia']},
+            {'label': 'Planes', 'icon': '', 'routerLink': ['/planes']},
         ]
 
         users_list = [

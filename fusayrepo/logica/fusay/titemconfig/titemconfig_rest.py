@@ -62,6 +62,10 @@ class TItemConfigRest(TokenView):
             secid = self.get_request_param('sec')
             items = titemconfig_dao.buscar_articulos(filtro=filtro, sec_id=secid)
             return self.res200({'items': items})
+        elif 'gctascontables' == accion:
+            filtro = self.get_request_param('filtro')
+            items = titemconfig_dao.buscar_ctascontables(filtro=filtro)
+            return self.res200({'items': items})
         elif 'gservdentall' == accion:
             items = titemconfig_dao.busca_serv_dentales_all()
             return self.res200({'items': items})
@@ -69,8 +73,43 @@ class TItemConfigRest(TokenView):
             timpuestodao = TImpuestoDao(self.dbsession)
             impuestos = timpuestodao.get_impuestos()
             return self.res200({'impuestos': impuestos})
+        elif 'gplanc' == accion:
+            raizpc = titemconfig_dao.lista_raiz_plan_cuentas()
+            padrexpand = self.get_request_param('padrexpand')
+            padrexp = None
+            if padrexpand is not None and int(padrexpand) > 0:
+                padrexp = int(padrexpand)
+            tree = titemconfig_dao.build_treenode(raizpc, padre_expanded=padrexp)
+            return self.res200({'tree': tree})
+        elif 'gplancchild' == accion:
+            padre = self.get_request_param('padre')
+            hijospc = titemconfig_dao.listar_hijos_plancuentas(padre=padre)
+            return self.res200({'hijospc': hijospc})
+        elif 'gformplancta' == accion:
+            padre = self.get_request_param('padre')
+            form = titemconfig_dao.get_form_plan_cuentas(padre)
+            return self.res200({'form': form})
+        elif 'gdetctacontable' == accion:
+            ic_ic = self.get_request_param('codcta')
+            datoscta = titemconfig_dao.get_detalles_ctacontable(ic_id=ic_ic)
+            return self.res200({'datoscta': datoscta})
         else:
             return {'status': 404, 'msg': 'accion desconocida', 'accion': accion}
+
+    def collection_post(self):
+        accion = self.get_rqpa()
+        titemconfig_dao = TItemConfigDao(self.dbsession)
+        if accion == 'guardaplancta':
+            form = self.get_json_body()
+            msg = 'Cuenta contable creada exitósamente'
+            if int(form['ic_id']) > 0:
+                msg = 'Actualizado exitosamente'
+                titemconfig_dao.actualizar_plan_cta(form=form, user_actualiza=self.get_user_id())
+            else:
+                titemconfig_dao.crea_ctacontable(form=form, usercrea=self.get_user_id())
+            return self.res200({'msg': msg})
+        elif accion == 'updatectacontable':
+            titemconfig_dao.actualizar_plan_cta(form=self.get_json_body(), user_actualiza=self.get_user_id())
 
     def post(self):
         titemconfig_dao = TItemConfigDao(self.dbsession)
@@ -94,6 +133,9 @@ class TItemConfigRest(TokenView):
                     msg = 'Rubro editado exitosamente'
                     titemconfig_dao.editar_rubro(form, self.get_user_id())
                 return {'status': 200, 'msg': msg}
+            elif accion == 'guardaplancta':
+                titemconfig_dao.crea_ctacontable(form=self.get_json_body(), usercrea=self.get_user_id())
+                return self.res200({'msg': 'Cuenta contable creada exitósamente'})
         else:
             if ic_id == 0:
                 msg = u'Registrado exitósamente'
@@ -132,7 +174,6 @@ class PublicItemConfigRest(FusayPublicView):
         accion = self.get_request_param('accion')
         titemconfig_dao = TItemConfigDao(self.dbsession)
         if 'teleservicios' == accion:
-            sec_id = 1
             data = titemconfig_dao.listar_teleservicios()
             return {'status': 200, 'data': data}
         else:

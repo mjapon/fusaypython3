@@ -10,7 +10,7 @@ from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.logica.fusay.ttickets.tticket_model import TTicket
-from fusayrepo.utils import fechas
+from fusayrepo.utils import fechas, cadenas
 
 log = logging.getLogger(__name__)
 
@@ -26,10 +26,40 @@ class TTicketDao(BaseDao):
             tticket.tk_estado = 2
             self.dbsession.add(tticket)
 
-    def listar(self, dia, sec_id):
+    def listar(self, dia, sec_id, desde, hasta, servicios):
         tgrid_dao = TGridDao(self.dbsession)
         diadb = fechas.format_cadena_db(dia)
-        data = tgrid_dao.run_grid(grid_nombre='tickets', tk_dia=diadb, sec_id=sec_id)
+
+        sqlserv = ''
+        if cadenas.es_nonulo_novacio(servicios):
+            servlist = servicios.split(',')
+            likeservlist = []
+            for serv in servlist:
+                likeservlist.append('a.tk_servicios like \'%{0}%\''.format(serv))
+            sqlserv = ' or '.join(likeservlist)
+
+        sqlfechas = ''
+        if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
+            sqlfechas = " and date(a.tk_dia) between '{desde}' and '{hasta}' ".format(
+                desde=fechas.format_cadena_db(desde),
+                hasta=fechas.format_cadena_db(hasta))
+        elif cadenas.es_nonulo_novacio(desde) and not cadenas.es_nonulo_novacio(hasta):
+            sqlfechas = " and date(a.tk_dia) >= '{desde}' ".format(
+                desde=fechas.format_cadena_db(desde))
+        elif not cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
+            sqlfechas = " and date(a.tk_dia) <= '{hasta}' ".format(
+                hasta=fechas.format_cadena_db(hasta))
+        else:
+            sqlfechas = " and date(a.tk_dia) = '{dia}' ".format(diadb)
+
+        if len(sqlserv) > 0:
+            sqlserv = ' and ({0})'.format(sqlserv)
+
+        sqlsec = ''
+        if int(sec_id) > 0:
+            sqlsec = ' and a.sec_id = {0} '.format(sec_id)
+
+        data = tgrid_dao.run_grid(grid_nombre='tickets', sqlfechas=sqlfechas, sqlsec=sqlsec, sqlserv=sqlserv)
         return data
 
     def get_next_ticket(self, dia, sec_id):

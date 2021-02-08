@@ -71,21 +71,6 @@ class TPersonaDao(BaseDao):
             'per_ocupacion': None,
             'per_edad': {'years': 0, 'months': 0, 'days': 0}
         }
-        """
-        return {
-            'per_id': 0,
-            'per_ciruc': '',
-            'per_nombres': '',
-            'per_apellidos': '',
-            'per_direccion': '',
-            'per_telf': '',
-            'per_movil': '',
-            'per_email': '',
-            'per_tipo': 1,
-            'per_lugnac': 0,
-            'per_nota': ''
-        }
-        """
 
     def get_tipos(self):
         tipos = [{

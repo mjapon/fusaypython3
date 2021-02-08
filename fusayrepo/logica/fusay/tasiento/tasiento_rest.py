@@ -60,6 +60,9 @@ class TAsientoRest(TokenView):
         elif accion == 'gridventas':
             grid = tasientodao.listar_grid_ventas()
             return self.res200({'grid': grid})
+        elif accion == 'formasiento':
+            form = tasientodao.get_form_asiento()
+            return self.res200({'form': form})
 
     def collection_post(self):
         accion = self.get_request_param('accion')
@@ -88,3 +91,4 @@ class TAsientoRest(TokenView):
                                                           user_crea=self.get_user_id(),
                                                           tra_codigo=ctes.TRA_CODIGO_FACTURA_VENTA)
             return self.res200({'trn_codig': trn_codigo, 'msg': 'Duplicado exitoso'})
+

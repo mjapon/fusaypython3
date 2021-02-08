@@ -14,7 +14,7 @@ from fusayrepo.logica.fusay.titemconfig_datosprod.titemconfigdatosprod_model imp
 from fusayrepo.logica.fusay.titemconfig_sec.titemconfigsec_dao import TItemConfigSecDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
-from fusayrepo.utils import cadenas, ivautil, fechas
+from fusayrepo.utils import cadenas, ivautil, fechas, ctes
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +33,19 @@ class TItemConfigDao(BaseDao):
         tgrid_dao = TGridDao(self.dbsession)
         data = tgrid_dao.run_grid(grid_nombre='trubros')
         return data
+
+    def buscar_ctascontables(self, filtro):
+        limit = 50
+        sql = """
+        select a.ic_id, a.ic_code, a.ic_nombre, a.ic_clasecc, a.ic_alias, a.ic_padre, 
+        a.ic_code||' '||a.ic_nombre  as ctacontab 
+        from titemconfig a where a.tipc_id = {tipo} and a.ic_estado = 1 and (
+            a.ic_code like '{filtro}%' or a.ic_nombre like '{filtro}%'
+        ) limit {limit} order by a.ic_nombre            
+        """.format(tipo=ctes.TIPOITEM_CNTACONTABLE, filtro=filtro, limit=limit)
+
+        tupla_desc = ('ic_id', 'ic_code', 'ic_nombre', 'ic_clasecc', 'ic_alias', 'ic_padre')
+        return self.all(sql, tupla_desc)
 
     def buscar_articulos(self, filtro, sec_id):
         joinsecs = ''
@@ -59,6 +72,21 @@ class TItemConfigDao(BaseDao):
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'icdp_grabaiva', 'icdp_preciocompra', 'icdp_precioventa',
                       'icdp_precioventamin', 'icdp_preciocompra_iva', 'icdp_precioventa_iva', 'icdp_precioventamin_iva')
 
+        return self.all(sql, tupla_desc)
+
+    def buscar_ctascontables(self, filtro):
+        limit = 50
+        sql = """        
+        select ic_id, ic_nombre, ic_code, ic_padre, clsic_id, ic_clasecc, ic_alias
+                from titemconfig where tipic_id = 3 and ic_estado = 1  
+                and (ic_code like '{filtro}%' or ic_nombre like '{filtro}%') 
+                order by ic_nombre limit {limit}                          
+        """.format(filtro=cadenas.strip_upper(filtro), limit=limit)
+
+        print('Valor de sql es:')
+        print(sql)
+
+        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'clsic_id', 'ic_clasecc', 'ic_alias')
         return self.all(sql, tupla_desc)
 
     def busca_serv_dentales_filtro(self, filtro):
@@ -344,6 +372,29 @@ class TItemConfigDao(BaseDao):
         itemconfigsecdao = TItemConfigSecDao(self.dbsession)
         itemconfigsecdao.create_from_list(ic_id=ic_id, secs_list=secslist)
 
+    def actualizar_plan_cta(self, form, user_actualiza):
+        titemconfig = self.find_byid(ic_id=form['ic_id'])
+        if not cadenas.es_nonulo_novacio(form['ic_nombre']):
+            raise ErrorValidacionExc('Debe ingresar el nombre de la cuenta contable')
+
+        ic_nombre = cadenas.strip_upper(form['ic_nombre'])
+
+        if cadenas.strip_upper(titemconfig.ic_nombre) != cadenas.strip_upper(ic_nombre):
+            if self.existe_nombre_cta_contable(ic_nombre):
+                raise ErrorValidacionExc(
+                    'Ya existe una cuenta contable con el nombre: {0}'.format(ic_nombre))
+
+        titemconfig.ic_nombre = ic_nombre
+        # titemconfig.ic_code = ic_code
+        # titemconfig.ic_padre = form['ic_padre']
+        # titemconfig.tipic_id = form['tipic_id']
+        titemconfig.ic_useractualiza = user_actualiza
+        titemconfig.ic_fechaactualiza = datetime.now()
+        titemconfig.ic_nota = cadenas.strip(form['ic_nota'])
+        titemconfig.ic_clasecc = form['ic_clasecc']
+        titemconfig.ic_alias = cadenas.strip(form['ic_alias'])
+        self.dbsession.add(titemconfig)
+
     def actualizar(self, form, user_actualiza):
         # Datos para actualizar:
 
@@ -457,3 +508,165 @@ class TItemConfigDao(BaseDao):
                 else:
                     titemconfig.ic_code = newbarcode_strip
                     self.dbsession.add(titemconfig)
+
+    def get_form_plan_cuentas(self, padre):
+        sql = "select ic_code from titemconfig where ic_id = {0}".format(padre)
+        ic_code_padre = self.first_col(sql, 'ic_code')
+        sql = "select max(ic_code) as maxiccode from titemconfig where ic_padre = {0} and ic_estado = 1".format(padre)
+        maxiccode = self.first_col(sql, 'maxiccode')
+        sec = 0
+        if maxiccode is not None:
+            splited = maxiccode.split('.')
+            sec = splited[len(splited) - 1]
+
+        form = {
+            'ic_id': 0,
+            'ic_nombre': '',
+            'ic_code': '',
+            'ic_padre': padre,
+            'tipic_id': ctes.TIPOITEM_CNTACONTABLE,
+            'catic_id': 1,
+            'clsic_id': 0,
+            'ic_nota': '',
+            'ic_clasecc': '',
+            'ic_alias': '',
+            'sec': int(sec) + 1,
+            'ic_code_padre': '{0}.'.format(ic_code_padre)
+        }
+        return form
+
+    def existe_nombre_cta_contable(self, ic_nombre):
+        sql = """
+                select count(*) as cuenta from titemconfig where ic_nombre = '{0}' 
+                and ic_estado = 1 and tipic_id = 3 
+                """.format(cadenas.strip_upper(ic_nombre))
+
+        cuenta = self.first_col(sql, 'cuenta')
+        return cuenta > 0
+
+    def existe_ctacontable(self, ic_code, ic_nombre):
+        sql = """
+        select count(*) as cuenta from titemconfig where (ic_code = '{0}' or ic_nombre = '{1}') 
+        and ic_estado = 1 and tipic_id = 3 
+        """.format(cadenas.strip_upper(ic_code), cadenas.strip_upper(ic_nombre))
+
+        cuenta = self.first_col(sql, 'cuenta')
+        return cuenta > 0
+
+    def crea_ctacontable(self, form, usercrea):
+        if not cadenas.es_nonulo_novacio(form['sec']):
+            raise ErrorValidacionExc('Debe ingresar la secuencia')
+        if not cadenas.es_nonulo_novacio(form['ic_nombre']):
+            raise ErrorValidacionExc('Debe ingresar el nombre de la cuenta contable')
+        if not cadenas.es_nonulo_novacio(form['ic_padre']):
+            raise ErrorValidacionExc('La cuenta contable debe tener un superior')
+
+        ic_code = '{0}{1}'.format(form['ic_code_padre'], cadenas.strip(str(form['sec'])))
+
+        ic_nombre = cadenas.strip_upper(form['ic_nombre'])
+
+        if self.existe_ctacontable(ic_code, ic_nombre):
+            raise ErrorValidacionExc(
+                'Ya existe una cuenta contable con el código {0} o con el nombre: {1}'.format(ic_code, ic_nombre))
+
+        titemconfig = TItemConfig()
+        titemconfig.ic_nombre = ic_nombre
+        titemconfig.ic_code = ic_code
+        titemconfig.ic_padre = form['ic_padre']
+        titemconfig.tipic_id = form['tipic_id']
+        titemconfig.ic_fechacrea = datetime.now()
+        titemconfig.ic_usercrea = usercrea
+        titemconfig.ic_estado = 1
+        titemconfig.ic_nota = cadenas.strip(form['ic_nota'])
+        titemconfig.catic_id = form['catic_id']
+        titemconfig.clsic_id = form['clsic_id']
+        titemconfig.ic_clasecc = form['ic_clasecc']
+        titemconfig.ic_alias = cadenas.strip(form['ic_alias'])
+
+        self.dbsession.add(titemconfig)
+
+    def get_detalles_ctacontable(self, ic_id):
+        sql = """
+            select a.ic_id, a.ic_nombre, a.ic_code, a.ic_padre, a.tipic_id, a.ic_fechacrea, a.ic_estado, a.clsic_id, 
+            a.ic_clasecc, a.ic_alias, coalesce(b.ic_code)||' '|| coalesce(b.ic_nombre) as padre, a.ic_nota
+                    from titemconfig a left join titemconfig b on a.ic_padre = b.ic_id where a.ic_id = {0}
+            """.format(ic_id)
+
+        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'tipic_id',
+                      'ic_fechacrea', 'ic_estado', 'clsic_id', 'ic_clasecc', 'ic_alias', 'padre', 'ic_nota')
+        return self.first(sql, tupla_desc)
+
+    def listar_hijos_plancuentas(self, padre):
+        sql = """
+                select ic_id, ic_nombre, ic_code, ic_padre, tipic_id, ic_fechacrea, ic_estado, clsic_id, ic_clasecc, ic_alias
+                        from titemconfig where tipic_id = 3 and ic_estado = 1 and ic_padre  = {0} order by ic_code
+                """.format(padre)
+
+        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'tipic_id',
+                      'ic_fechacrea', 'ic_estado', 'clsic_id', 'ic_clasecc', 'ic_alias')
+
+        return self.all(sql, tupla_desc)
+
+    def lista_raiz_plan_cuentas(self):
+        sql = """
+        select ic_id, ic_nombre, ic_code, ic_padre, tipic_id, ic_fechacrea, ic_estado, clsic_id, ic_clasecc, ic_alias
+                from titemconfig where tipic_id = 3 and ic_estado = 1 and ic_padre is null order by ic_code
+        """
+        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'tipic_id',
+                      'ic_fechacrea', 'ic_estado', 'clsic_id', 'ic_clasecc', 'ic_alias')
+
+        return self.all(sql, tupla_desc)
+
+    def get_padres_recusivo(self, padre):
+        sql = 'select ic_id, ic_padre from titemconfig where ic_id = {0}'.format(padre)
+        tupla_desc = ('ic_id', 'ic_padre')
+
+        reslista = []
+        res = self.first(sql, tupla_desc)
+        if res is not None and cadenas.es_nonulo_novacio(res['ic_padre']):
+            respadres = self.get_padres_recusivo(padre=res['ic_padre'])
+            reslista += respadres
+
+        reslista.append(res)
+
+        return reslista
+
+    def build_treenode(self, planctaslist, padre_expanded=None, ppadresdict=None):
+        treenodes = []
+        padresdict = {}
+        if ppadresdict is not None:
+            padresdict = ppadresdict
+        elif padre_expanded is not None:
+            padres = self.get_padres_recusivo(padre=padre_expanded)
+            for padre in padres:
+                padresdict[padre['ic_id']] = padre
+
+        for item in planctaslist:
+            expanded = False
+            if item['ic_id'] in padresdict.keys():
+                expanded = True
+
+            label = '{0} {1}'.format(item['ic_code'], item['ic_nombre'])
+            data = label
+            expandedicon = 'pi pi-folder-open',
+            collapseicon = 'pi pi-folder',
+            hijos = self.listar_hijos_plancuentas(padre=item['ic_id'])
+            children = None
+            if hijos is not None and len(hijos) > 0:
+                children = self.build_treenode(hijos, ppadresdict=padresdict)
+
+            node = {
+                'label': label,
+                'data': data,
+                'expandedIcon': expandedicon,
+                'collapsedIcon': collapseicon,
+                'dbdata': item,
+                'expanded': expanded
+            }
+
+            if children is not None:
+                node['children'] = children
+
+            treenodes.append(node)
+
+        return treenodes

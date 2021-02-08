@@ -17,7 +17,6 @@ from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.timpuesto.timpuesto_dao import TImpuestoDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
-from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
 from fusayrepo.logica.fusay.ttransaccimp.ttransaccimp_dao import TTransaccImpDao
 from fusayrepo.logica.fusay.ttransaccpdv.ttransaccpdv_dao import TTransaccPdvDao
 from fusayrepo.utils import fechas, numeros, ctes, cadenas
@@ -30,6 +29,22 @@ class TasientoDao(BaseDao):
     def find_entity_byid(self, trn_codigo):
         return self.dbsession.query(TAsiento).filter(TAsiento.trn_codigo == trn_codigo).first()
 
+    def get_form_asiento(self):
+        formasiento = self.get_form_cabecera(tra_codigo=ctes.TRA_CODIGO_ASIENTO_CONTABLE,
+                                             alm_codigo=0, sec_codigo=0, tdv_codigo=0)
+        formdet = self.get_form_detalle_asiento()
+        persondao = TPersonaDao(self.dbsession)
+        formref = persondao.getform()
+
+        # Por defecto se lo pone en consumidor final
+        formref['per_id'] = -1
+
+        return {
+            'formasiento': formasiento,
+            'formref': formref,
+            'formdet': formdet
+        }
+
     def get_form_cabecera(self, tra_codigo, alm_codigo, sec_codigo, tdv_codigo):
         ttransacc_pdv = TTransaccPdvDao(self.dbsession)
         resestabsec = ttransacc_pdv.get_estabptoemi_secuencia(alm_codigo=alm_codigo, tra_codigo=tra_codigo,
@@ -41,6 +56,7 @@ class TasientoDao(BaseDao):
         form_asiento = {
             'dia_codigo': 0,
             'trn_fecreg': fechas.parse_fecha(fechas.get_now()),
+            'trn_fecregobj': fechas.parse_fecha(fechas.get_now()),
             'trn_compro': trn_compro,
             'trn_docpen': 'F',
             'trn_pagpen': 'F',
@@ -316,12 +332,115 @@ class TasientoDao(BaseDao):
         }
         return form
 
-    def crear_asiento(self, formcab, per_codigo, user_crea, detalles):
+    def crear_asiento(self, formcab, formref, usercrea, detalles):
+        secuencia = formcab['secuencia']
+        trn_compro = "{0}{1}".format(formcab['estabptoemi'], str(secuencia).zfill(ctes.LEN_DOC_SECUENCIA))
+
+        # Verificar que el comprobante no este siendo utilizado
+        tra_codigo = formcab['tra_codigo']
+        if formcab['trn_docpen'] == 'F':
+            if self.existe_doc_valido(trn_compro, tra_codigo=tra_codigo):
+                raise ErrorValidacionExc('Ya existe un comprobante registrado con el número: {0}'.format(trn_compro))
+
+        trn_compro = trn_compro
+        trn_fecha = datetime.now()
+        trn_valido = 0
+        trn_docpen = formcab['trn_docpen']
+        trn_pagpen = formcab['trn_pagpen']
+        sec_codigo = formcab['sec_codigo']
+        us_id = usercrea
+        trn_observ = formcab['trn_observ']
+        tdv_codigo = formcab['tdv_codigo']
+        fol_codigo = int(formcab['fol_codigo'])
+        trn_tipcom = formcab['trn_tipcom']
+        trn_suscom = formcab['trn_suscom']
+        per_codres = None
+
+        persodao = TPersonaDao(self.dbsession)
+
+        per_codigo = int(formref['per_id'])
+        if per_codigo == 0:
+            per_codigo = persodao.crear(form=formref)
+        elif per_codigo > 0:
+            per_codigo = persodao.actualizar(form=formref)
+
+        tasiento = TAsiento()
+        tasiento.dia_codigo = formcab['dia_codigo']
+        tasiento.trn_fecreg = fechas.parse_cadena(formcab['trn_fecreg'])
+        tasiento.trn_compro = trn_compro
+        tasiento.trn_fecha = trn_fecha
+        tasiento.trn_valido = trn_valido
+        tasiento.trn_docpen = trn_docpen
+        tasiento.trn_pagpen = trn_pagpen
+        tasiento.sec_codigo = sec_codigo
+        tasiento.per_codigo = per_codigo
+        tasiento.tra_codigo = tra_codigo
+        tasiento.us_id = us_id
+        tasiento.trn_observ = trn_observ
+        tasiento.tdv_codigo = tdv_codigo
+        tasiento.fol_codigo = fol_codigo
+        tasiento.trn_tipcom = trn_tipcom
+        tasiento.trn_suscom = trn_suscom
+        tasiento.per_codres = per_codres
+        tasiento.trn_impref = 0
+
+        tps_codigo = formcab['tps_codigo']
+        if tps_codigo is not None:
+            transaccpdv_dao = TTransaccPdvDao(self.dbsession)
+            transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
+
+        self.dbsession.add(tasiento)
+        self.dbsession.flush()
+
+        trn_codigo = tasiento.trn_codigo
+
+        creditodao = TAsicreditoDao(self.dbsession)
+        for detalle in detalles:
+            detasiento = TAsidetalle()
+            if float(detalle['dt_valor']) > 0.0:
+                detasiento.trn_codigo = trn_codigo
+                detasiento.per_codigo = per_codigo
+                detasiento.cta_codigo = detalle['cta_codigo']
+                detasiento.art_codigo = 0
+                detasiento.dt_debito = detalle['dt_debito']
+                detasiento.dt_valor = float(detalle['dt_valor'])
+                detasiento.dt_tipoitem = ctes.DT_TIPO_ITEM_DETASIENTO
+                detasiento.dt_codsec = detalle['dt_codsec']
+
+                ic_clasecc = detalle['ic_clasecc']
+
+                self.dbsession.add(detasiento)
+                self.dbsession.flush()
+                dt_codigo = detasiento.dt_codigo
+                if ic_clasecc == 'C':
+                    tra_codigo_int = int(tra_codigo)
+                    if (tra_codigo_int == ctes.TRA_CODIGO_ABONO_COMPRA) or (
+                            tra_codigo_int == ctes.TRA_CODIGO_ABONO_VENTA):
+                        # Se debe registrar abono
+                        abonodao = TAsiAbonoDao(self.dbsession)
+                        abonodao.crear(dt_codigo, detalle['dt_codcred'], detasiento.dt_valor)
+                    else:
+                        tra_codigo_cred = ctes.TRA_CODIGO_CREDITO_VENTA
+                        if int(tra_codigo) == ctes.TRA_CODIGO_FACTURA_COMPRA:
+                            tra_codigo_cred = ctes.TRA_CODIGO_CREDITO_COMPRA
+
+                        formcre = {
+                            'dt_codigo': dt_codigo,
+                            'cre_fecini': formcab['trn_fecreg'],
+                            'cre_fecven': None,
+                            'cre_intere': 0.0,
+                            'cre_intmor': 0.0,
+                            'cre_codban': None,
+                            'cre_saldopen': detasiento.dt_valor
+                        }
+                        creditodao.crear(form=formcre, tra_codigo_cred=tra_codigo_cred)
+
+        return trn_codigo
+
+    def crear_asiento_cxcp(self, formcab, per_codigo, user_crea, detalles):
         len_compro = ctes.LEN_DOC_SECUENCIA
         secuencia = formcab['secuencia']
         trn_compro = "{0}{1}".format(formcab['estabptoemi'], str(secuencia).zfill(len_compro))
-
-        ttransaccdao = TTransaccDao(self.dbsession)
 
         # Verificar que el comprobante no este siendo utilizado
         tra_codigo = formcab['tra_codigo']
@@ -397,7 +516,6 @@ class TasientoDao(BaseDao):
                             tra_codigo_int == ctes.TRA_CODIGO_ABONO_VENTA):
                         # Se debe registrar abono
                         abonodao = TAsiAbonoDao(self.dbsession)
-                        print('Valor de dt_codigo y dt_codcred', dt_codigo, detalle['dt_codcred'])
                         abonodao.crear(dt_codigo, detalle['dt_codcred'], detasiento.dt_valor)
                     else:
                         tra_codigo_cred = ctes.TRA_CODIGO_CREDITO_VENTA

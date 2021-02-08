@@ -10,6 +10,7 @@ from cornice.resource import resource
 
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
+from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.logica.fusay.ttickets.tticket_dao import TTicketDao
 from fusayrepo.utils import fechas
 from fusayrepo.utils.pyramidutil import TokenView
@@ -28,7 +29,9 @@ class TTicketRest(TokenView):
             tk_dia = fechas.parse_fecha(datetime.now())
             form = ticket_dao.get_form(tk_dia, self.get_sec_id())
             formcli = persona_dao.getform()
-            return {'status': 200, 'form': form, 'formcli': formcli}
+            secciondao = TSeccionDao(self.dbsession)
+            datossec = secciondao.get_byid(sec_id=self.get_sec_id())
+            return {'status': 200, 'form': form, 'formcli': formcli, 'seccion': datossec}
 
         if 'servticktes' == accion:
             itemconfigdao = TItemConfigDao(self.dbsession)
@@ -36,10 +39,23 @@ class TTicketRest(TokenView):
             return {'status': 200, 'items': prods}
 
         if 'forml' == accion:
-            return {'dia': fechas.parse_fecha(datetime.now())}
+            tsecciondao = TSeccionDao(self.dbsession)
+            secs = tsecciondao.listar()
+            secciones = [{'sec_id': 0, 'sec_nombre': 'Todos'}] + secs
+            sec_id = self.get_sec_id()
+            itemconfigdao = TItemConfigDao(self.dbsession)
+            prods = itemconfigdao.get_prods_for_tickets()
+            hoy = fechas.parse_fecha(datetime.now())
+            return {'dia': hoy, 'secciones': secciones, 'sec_def': sec_id,
+                    'prods': prods, 'desde': hoy, 'hasta': hoy}
 
         if 'listar' == accion:
-            res = ticket_dao.listar(dia=self.get_request_param('dia'), sec_id=self.get_sec_id())
+            desde = self.get_request_param('desde')
+            hasta = self.get_request_param('hasta')
+            seccion = self.get_request_param('seccion')
+            servicios = self.get_request_param('servicios')
+            res = ticket_dao.listar(dia=self.get_request_param('dia'), sec_id=seccion,
+                                    desde=desde, hasta=hasta, servicios=servicios)
             data = res['data']
             sumamonto = sum(it['tk_costo'] for it in data)
             return {'status': 200, 'res': res, 'suma': sumamonto}
