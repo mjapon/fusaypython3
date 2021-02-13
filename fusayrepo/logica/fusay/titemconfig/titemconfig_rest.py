@@ -26,8 +26,9 @@ class TItemConfigRest(TokenView):
         if 'listar' == accion:
             filtro = self.get_request_param('filtro')
             sec_id = self.get_request_param('sec_id')
-            data = titemconfig_dao.listar(filtro, sec_id=sec_id)
-            return {'status': 200, 'data': data}
+            codcat = self.get_request_param('codcat')
+            data, tot = titemconfig_dao.listar(filtro, sec_id=sec_id, codcat=codcat)
+            return {'status': 200, 'data': data, 'tot': tot}
         elif 'formcrea' == accion:
             form = titemconfig_dao.get_form()
             return {'status': 200, 'form': form}

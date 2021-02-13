@@ -45,6 +45,108 @@ class TasientoDao(BaseDao):
             'formdet': formdet
         }
 
+    def listar_asientos(self):
+        sql = """
+        select a.trn_codigo, a.dia_codigo, a.trn_fecreg, extract(day from a.trn_fecreg) ||'-'|| m.mes_corto as fecdesc,  a.trn_compro::int, a.trn_fecha, a.trn_valido, a.trn_docpen,
+               a.per_codigo, a.us_id, a.trn_observ,
+               b.dt_debito, b.dt_codigo, b.cta_codigo, c.ic_code, c.ic_nombre, b.dt_valor
+               from tasiento a
+                join tasidetalle b on b.trn_codigo = a.trn_codigo
+                join titemconfig c on b.cta_codigo = c.ic_id
+                join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
+        where tra_codigo = {0} and trn_valido = 0 order by a.trn_fecha desc, a.trn_codigo, b.dt_debito desc, c.ic_nombre
+        """.format(ctes.TRA_CODIGO_ASIENTO_CONTABLE)
+        tupla_desc = (
+            'trn_codigo', 'dia_codigo', 'trn_fecreg', 'fecdesc', 'trn_compro', 'trn_fecha', 'trn_valido', 'trn_docpen',
+            'per_codigo', 'us_id', 'trn_observ', 'dt_debito',
+            'dt_codigo', 'cta_codigo', 'ic_code', 'ic_nombre', 'dt_valor')
+        items = self.all(sql, tupla_desc)
+        resultlist = []
+        lasttrncod = 0
+        asiprevius = None
+        totales = {
+            'debe': 0.0,
+            'haber': 0.0
+        }
+        for item in items:
+            trn_codigo = item['trn_codigo']
+            cab = False
+            if trn_codigo != lasttrncod:
+                cab = True
+                if lasttrncod != 0:
+                    resultlist.append({
+                        'trn_codigo': asiprevius['trn_codigo'],
+                        'dt_codigo': '',
+                        'cta_codigo': '',
+                        'ic_code': '',
+                        'trn_fecreg': '',
+                        'ic_nombre': asiprevius['trn_observ'],
+                        'dt_debito': 0,
+                        'debe': '',
+                        'haber': '',
+                        'tr': 2
+                    })
+                lasttrncod = trn_codigo
+                asiprevius = item
+            if cab:
+                resultlist.append({
+                    'trn_codigo': item['trn_codigo'],
+                    'dt_codigo': '',
+                    'cta_codigo': '',
+                    'ic_code': '',
+                    'trn_fecreg': item['fecdesc'],
+                    'ic_nombre': '--------------------- {0} ---------------------'.format(
+                        item['trn_compro']),
+                    'dt_debito': 0,
+                    'debe': '',
+                    'haber': '',
+                    'tr': 0
+                })
+            if item['dt_debito'] == 1:
+                totales['debe'] += item['dt_valor']
+                resultlist.append({
+                    'trn_codigo': item['trn_codigo'],
+                    'dt_codigo': item['dt_codigo'],
+                    'cta_codigo': item['cta_codigo'],
+                    'ic_code': item['ic_code'],
+                    'trn_fecreg': '',
+                    'ic_nombre': item['ic_nombre'],
+                    'dt_debito': item['dt_debito'],
+                    'debe': item['dt_valor'],
+                    'haber': '',
+                    'tr': 1
+                })
+            elif item['dt_debito'] == -1:
+                totales['haber'] += item['dt_valor']
+                resultlist.append({
+                    'trn_codigo': item['trn_codigo'],
+                    'dt_codigo': item['dt_codigo'],
+                    'cta_codigo': item['cta_codigo'],
+                    'ic_code': item['ic_code'],
+                    'trn_fecreg': '',
+                    'ic_nombre': item['ic_nombre'],
+                    'dt_debito': item['dt_debito'],
+                    'debe': '',
+                    'haber': item['dt_valor'],
+                    'tr': 1
+                })
+
+            if item == items[len(items) - 1]:
+                resultlist.append({
+                    'trn_codigo': asiprevius['trn_codigo'],
+                    'dt_codigo': '',
+                    'cta_codigo': '',
+                    'ic_code': '',
+                    'trn_fecreg': '',
+                    'ic_nombre': asiprevius['trn_observ'],
+                    'dt_debito': 0,
+                    'debe': '',
+                    'haber': '',
+                    'tr': 2
+                })
+
+        return resultlist, totales
+
     def get_form_cabecera(self, tra_codigo, alm_codigo, sec_codigo, tdv_codigo):
         ttransacc_pdv = TTransaccPdvDao(self.dbsession)
         resestabsec = ttransacc_pdv.get_estabptoemi_secuencia(alm_codigo=alm_codigo, tra_codigo=tra_codigo,
@@ -88,6 +190,7 @@ class TasientoDao(BaseDao):
             'pry_codigo': 0,
             'dt_debito': 0,
             'dt_valor': 0.0,
+            'dt_valor_in': 0.0,
             'dt_tipoitem': 4,
             'dt_codsec': 1,
             'ic_clasecc': ''
@@ -394,7 +497,21 @@ class TasientoDao(BaseDao):
 
         trn_codigo = tasiento.trn_codigo
 
-        creditodao = TAsicreditoDao(self.dbsession)
+        # Verificar la suma del debe con el haber
+        sumadebe = 0.0
+        sumahaber = 0.0
+        for det in detalles:
+            if det['dt_debito'] == 1:
+                sumadebe += float(det['dt_valor'])
+            else:
+                sumahaber += float(det['dt_valor'])
+
+        sumadeberound = numeros.roundm2(sumadebe)
+        sumahaberound = numeros.roundm2(sumahaber)
+        if sumadeberound != sumahaberound:
+            raise ErrorValidacionExc(
+                'La suma del debe ({0}) y del haber({1}) no coinciden, favor verificar'.format(sumadeberound,
+                                                                                               sumahaberound))
         for detalle in detalles:
             detasiento = TAsidetalle()
             if float(detalle['dt_valor']) > 0.0:
@@ -406,34 +523,7 @@ class TasientoDao(BaseDao):
                 detasiento.dt_valor = float(detalle['dt_valor'])
                 detasiento.dt_tipoitem = ctes.DT_TIPO_ITEM_DETASIENTO
                 detasiento.dt_codsec = detalle['dt_codsec']
-
-                ic_clasecc = detalle['ic_clasecc']
-
                 self.dbsession.add(detasiento)
-                self.dbsession.flush()
-                dt_codigo = detasiento.dt_codigo
-                if ic_clasecc == 'C':
-                    tra_codigo_int = int(tra_codigo)
-                    if (tra_codigo_int == ctes.TRA_CODIGO_ABONO_COMPRA) or (
-                            tra_codigo_int == ctes.TRA_CODIGO_ABONO_VENTA):
-                        # Se debe registrar abono
-                        abonodao = TAsiAbonoDao(self.dbsession)
-                        abonodao.crear(dt_codigo, detalle['dt_codcred'], detasiento.dt_valor)
-                    else:
-                        tra_codigo_cred = ctes.TRA_CODIGO_CREDITO_VENTA
-                        if int(tra_codigo) == ctes.TRA_CODIGO_FACTURA_COMPRA:
-                            tra_codigo_cred = ctes.TRA_CODIGO_CREDITO_COMPRA
-
-                        formcre = {
-                            'dt_codigo': dt_codigo,
-                            'cre_fecini': formcab['trn_fecreg'],
-                            'cre_fecven': None,
-                            'cre_intere': 0.0,
-                            'cre_intmor': 0.0,
-                            'cre_codban': None,
-                            'cre_saldopen': detasiento.dt_valor
-                        }
-                        creditodao.crear(form=formcre, tra_codigo_cred=tra_codigo_cred)
 
         return trn_codigo
 

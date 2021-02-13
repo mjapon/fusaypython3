@@ -14,20 +14,47 @@ from fusayrepo.logica.fusay.titemconfig_datosprod.titemconfigdatosprod_model imp
 from fusayrepo.logica.fusay.titemconfig_sec.titemconfigsec_dao import TItemConfigSecDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
-from fusayrepo.utils import cadenas, ivautil, fechas, ctes
+from fusayrepo.utils import cadenas, ivautil, fechas, ctes, numeros
 
 log = logging.getLogger(__name__)
 
 
 class TItemConfigDao(BaseDao):
 
-    def listar(self, filtro, sec_id):
+    def listar(self, filtro, sec_id, codcat):
         tgrid_dao = TGridDao(self.dbsession)
-        swhere = u"ic.ic_code like '{0}%' or ic.ic_nombre like '{0}%'".format(
-            cadenas.strip_upper(filtro)
+        swherecat = ' '
+        if codcat is not None and int(codcat) > 0:
+            swherecat = ' and ic.catic_id = {0}'.format(codcat)
+
+        swhere = u" (ic.ic_code like '{0}%' or ic.ic_nombre like '{0}%') {1}".format(
+            cadenas.strip_upper(filtro), swherecat
         )
+
         data = tgrid_dao.run_grid(grid_nombre='productos', where=swhere, order='ic_nombre', sec_id=sec_id)
-        return data
+
+        tpc = 0.0
+        tpciva = 0.0
+        tpv = 0.0
+        tpviva = 0.0
+        toti = 0
+
+        for item in data['data']:
+            tpc += item['icdp_preciocompra']
+            tpciva += item['preciocompraiva']
+            tpv += item['icdp_precioventa']
+            tpviva += item['precioventaiva']
+            toti += item['ice_stock']
+
+        totales = {
+            'tpc': numeros.roundm2(tpc),
+            'tpciva': numeros.roundm2(tpciva),
+            'tpv': numeros.roundm2(tpv),
+            'tpviva': numeros.roundm2(tpviva),
+            'toti': numeros.roundm(toti, 0)
+        }
+
+        return data, totales
 
     def listarrubros_grid(self):
         tgrid_dao = TGridDao(self.dbsession)
