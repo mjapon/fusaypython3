@@ -54,7 +54,7 @@ class TasientoDao(BaseDao):
                 join tasidetalle b on b.trn_codigo = a.trn_codigo
                 join titemconfig c on b.cta_codigo = c.ic_id
                 join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
-        where tra_codigo = {0} and trn_valido = 0 order by a.trn_fecha desc, a.trn_codigo, b.dt_debito desc, c.ic_nombre
+        where tra_codigo = {0} and trn_valido = 0 order by a.trn_fecreg desc, a.trn_codigo, b.dt_debito desc, c.ic_nombre
         """.format(ctes.TRA_CODIGO_ASIENTO_CONTABLE)
         tupla_desc = (
             'trn_codigo', 'dia_codigo', 'trn_fecreg', 'fecdesc', 'trn_compro', 'trn_fecha', 'trn_valido', 'trn_docpen',
@@ -144,6 +144,11 @@ class TasientoDao(BaseDao):
                     'haber': '',
                     'tr': 2
                 })
+
+        totales = {
+            'debe': numeros.roundm2(totales['debe']),
+            'haber': numeros.roundm2(totales['haber'])
+        }
 
         return resultlist, totales
 
@@ -520,7 +525,7 @@ class TasientoDao(BaseDao):
                 detasiento.cta_codigo = detalle['cta_codigo']
                 detasiento.art_codigo = 0
                 detasiento.dt_debito = detalle['dt_debito']
-                detasiento.dt_valor = float(detalle['dt_valor'])
+                detasiento.dt_valor = numeros.roundm2(float(detalle['dt_valor']))
                 detasiento.dt_tipoitem = ctes.DT_TIPO_ITEM_DETASIENTO
                 detasiento.dt_codsec = detalle['dt_codsec']
                 self.dbsession.add(detasiento)
@@ -591,7 +596,7 @@ class TasientoDao(BaseDao):
                 detasiento.cta_codigo = detalle['cta_codigo']
                 detasiento.art_codigo = 0
                 detasiento.dt_debito = detalle['dt_debito']
-                detasiento.dt_valor = float(detalle['dt_valor'])
+                detasiento.dt_valor = numeros.roundm2(float(detalle['dt_valor']))
                 detasiento.dt_tipoitem = ctes.DT_TIPO_ITEM_DETASIENTO
                 detasiento.dt_codsec = detalle['dt_codsec']
 

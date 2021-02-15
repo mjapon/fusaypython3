@@ -40,10 +40,10 @@ class TItemConfigDao(BaseDao):
         toti = 0
 
         for item in data['data']:
-            tpc += item['icdp_preciocompra']
-            tpciva += item['preciocompraiva']
-            tpv += item['icdp_precioventa']
-            tpviva += item['precioventaiva']
+            tpc += item['icdp_preciocompra'] * item['ice_stock']
+            tpciva += item['preciocompraiva'] * item['ice_stock']
+            tpv += item['icdp_precioventa'] * item['ice_stock']
+            tpviva += item['precioventaiva'] * item['ice_stock']
             toti += item['ice_stock']
 
         totales = {
@@ -60,19 +60,6 @@ class TItemConfigDao(BaseDao):
         tgrid_dao = TGridDao(self.dbsession)
         data = tgrid_dao.run_grid(grid_nombre='trubros')
         return data
-
-    def buscar_ctascontables(self, filtro):
-        limit = 50
-        sql = """
-        select a.ic_id, a.ic_code, a.ic_nombre, a.ic_clasecc, a.ic_alias, a.ic_padre, 
-        a.ic_code||' '||a.ic_nombre  as ctacontab 
-        from titemconfig a where a.tipc_id = {tipo} and a.ic_estado = 1 and (
-            a.ic_code like '{filtro}%' or a.ic_nombre like '{filtro}%'
-        ) limit {limit} order by a.ic_nombre            
-        """.format(tipo=ctes.TIPOITEM_CNTACONTABLE, filtro=filtro, limit=limit)
-
-        tupla_desc = ('ic_id', 'ic_code', 'ic_nombre', 'ic_clasecc', 'ic_alias', 'ic_padre')
-        return self.all(sql, tupla_desc)
 
     def buscar_articulos(self, filtro, sec_id):
         joinsecs = ''
@@ -104,16 +91,14 @@ class TItemConfigDao(BaseDao):
     def buscar_ctascontables(self, filtro):
         limit = 50
         sql = """        
-        select ic_id, ic_nombre, ic_code, ic_padre, clsic_id, ic_clasecc, ic_alias
+            select ic_id, ic_nombre, ic_code, ic_padre, clsic_id, ic_clasecc, ic_alias,
+                ic_code||' '||ic_nombre  as ctacontab
                 from titemconfig where tipic_id = 3 and ic_estado = 1  
-                and (ic_code like '{filtro}%' or ic_nombre like '{filtro}%') 
+                and (ic_code like '{filtro}%' or ic_nombre like '%{filtro}%') 
                 order by ic_nombre limit {limit}                          
         """.format(filtro=cadenas.strip_upper(filtro), limit=limit)
 
-        print('Valor de sql es:')
-        print(sql)
-
-        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'clsic_id', 'ic_clasecc', 'ic_alias')
+        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'clsic_id', 'ic_clasecc', 'ic_alias', 'ctacontab')
         return self.all(sql, tupla_desc)
 
     def busca_serv_dentales_filtro(self, filtro):
