@@ -101,6 +101,16 @@ class TItemConfigDao(BaseDao):
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'clsic_id', 'ic_clasecc', 'ic_alias', 'ctacontab')
         return self.all(sql, tupla_desc)
 
+    def get_allctascontables(self):
+        sql = """
+        select ic_id, ic_nombre, ic_code, ic_padre, clsic_id, ic_clasecc, ic_alias,
+                ic_code||' '||ic_nombre  as ctacontab
+                from titemconfig where tipic_id = 3 and ic_estado = 1
+                order by ic_nombre
+        """
+        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'clsic_id', 'ic_clasecc', 'ic_alias', 'ctacontab')
+        return self.all(sql, tupla_desc)
+
     def busca_serv_dentales_filtro(self, filtro):
         limit = 50
         sql = """

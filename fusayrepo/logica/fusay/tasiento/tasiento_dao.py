@@ -5,6 +5,7 @@ Fecha de creacion 11/13/20
 """
 import logging
 from datetime import datetime
+from functools import reduce
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
@@ -45,6 +46,40 @@ class TasientoDao(BaseDao):
             'formdet': formdet
         }
 
+    def get_form_libromayor(self):
+
+        hoy = datetime.today().date()
+        fdm = hoy.replace(day=1)
+        return {
+            'cta_codigo': 0,
+            'desde': fechas.parse_fecha(fdm),
+            'hasta': fechas.get_str_fecha_actual()
+        }
+
+    def listar_movs_ctacontable(self, cta_codigo, desde, hasta):
+        gridado = TGridDao(self.dbsession)
+        resgrid = gridado.run_grid('libromayor', cta_codigo=cta_codigo,
+                                   desde=fechas.format_cadena_db(desde),
+                                   hasta=fechas.format_cadena_db(hasta))
+        data = resgrid['data']
+        debe = map(lambda x: x['debe'], filter((lambda x: x['dt_debito'] == 1), data))
+        haber = map(lambda x: x['haber'], filter((lambda x: x['dt_debito'] == -1), data))
+
+        totdebe = reduce((lambda x, y: x + y), debe, 0.0)
+        tothaber = reduce((lambda x, y: x + y), haber, 0.0)
+
+        resta = totdebe - tothaber
+        totales = {
+            'totdebe': numeros.roundm2(totdebe),
+            'tothaber': numeros.roundm2(tothaber),
+            'resta': numeros.roundm2(resta)
+        }
+
+        return {
+            'grid': resgrid,
+            'totales': totales
+        }
+
     def listar_asientos(self):
         sql = """
         select a.trn_codigo, a.dia_codigo, a.trn_fecreg, extract(day from a.trn_fecreg) ||'-'|| m.mes_corto as fecdesc,  a.trn_compro::int, a.trn_fecha, a.trn_valido, a.trn_docpen,
@@ -54,7 +89,7 @@ class TasientoDao(BaseDao):
                 join tasidetalle b on b.trn_codigo = a.trn_codigo
                 join titemconfig c on b.cta_codigo = c.ic_id
                 join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
-        where tra_codigo = {0} and trn_valido = 0 order by a.trn_fecreg desc, a.trn_codigo, b.dt_debito desc, c.ic_nombre
+        where tra_codigo = {0} and trn_valido = 0 order by a.trn_fecreg desc, a.trn_compro::int desc, b.dt_debito desc, c.ic_nombre
         """.format(ctes.TRA_CODIGO_ASIENTO_CONTABLE)
         tupla_desc = (
             'trn_codigo', 'dia_codigo', 'trn_fecreg', 'fecdesc', 'trn_compro', 'trn_fecha', 'trn_valido', 'trn_docpen',

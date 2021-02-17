@@ -67,6 +67,9 @@ class TItemConfigRest(TokenView):
             filtro = self.get_request_param('filtro')
             items = titemconfig_dao.buscar_ctascontables(filtro=filtro)
             return self.res200({'items': items})
+        elif 'gallctascontables' == accion:
+            items = titemconfig_dao.get_allctascontables()
+            return self.res200({'items': items})
         elif 'gservdentall' == accion:
             items = titemconfig_dao.busca_serv_dentales_all()
             return self.res200({'items': items})

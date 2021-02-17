@@ -66,6 +66,15 @@ class TAsientoRest(TokenView):
         elif accion == 'getasientos':
             items, totales = tasientodao.listar_asientos()
             return self.res200({'items': items, 'totales': totales})
+        elif accion == 'getmovscta':
+            cta_codigo = self.get_request_param('cta')
+            desde = self.get_request_param('desde')
+            hasta = self.get_request_param('hasta')
+            res = tasientodao.listar_movs_ctacontable(cta_codigo=cta_codigo, desde=desde, hasta=hasta)
+            return self.res200({'res': res})
+        elif accion == 'getformlibromayor':
+            forml = tasientodao.get_form_libromayor()
+            return self.res200({'form': forml})
 
     def collection_post(self):
         accion = self.get_request_param('accion')
