@@ -5,11 +5,10 @@ Fecha de creacion 11/9/20
 """
 import logging
 
-from sqlalchemy import Column, Integer, String, DateTime, Text, Date, Numeric
+from sqlalchemy import Column, Integer, String, DateTime, Text, Date, Numeric, TIMESTAMP
 
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
-
 
 log = logging.getLogger(__name__)
 
@@ -35,3 +34,13 @@ class TAsiento(Declarative, JsonAlchemy):
     trn_suscom = Column(String(2))
     per_codres = Column(Integer)
     trn_impref = Column(Numeric(4, 2))
+
+
+class TAsientoAud(Declarative, JsonAlchemy):
+    __tablename__ = 'tasientoaud'
+    aud_id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
+    trn_codigo = Column(Integer, nullable=False)
+    aud_accion = Column(Integer, nullable=False)  # 1: Anular, 2:Errar, 3:Editar, 4:Borrar
+    aud_fecha = Column(TIMESTAMP, nullable=False)
+    aud_user = Column(Integer, nullable=False)
+    aud_obs = Column(Text)

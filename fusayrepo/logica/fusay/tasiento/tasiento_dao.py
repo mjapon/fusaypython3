@@ -13,7 +13,7 @@ from fusayrepo.logica.fusay.tasiabono.tasiabono_dao import TAsiAbonoDao
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.tasidetalle.tasidetalle_model import TAsidetalle
 from fusayrepo.logica.fusay.tasidetimp.tasidetimp_model import TAsidetimp
-from fusayrepo.logica.fusay.tasiento.tasiento_model import TAsiento
+from fusayrepo.logica.fusay.tasiento.tasiento_model import TAsiento, TAsientoAud
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.timpuesto.timpuesto_dao import TImpuestoDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
@@ -89,7 +89,7 @@ class TasientoDao(BaseDao):
                 join tasidetalle b on b.trn_codigo = a.trn_codigo
                 join titemconfig c on b.cta_codigo = c.ic_id
                 join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
-        where tra_codigo = {0} and trn_valido = 0 order by a.trn_fecreg desc, a.trn_compro::int desc, b.dt_debito desc, c.ic_nombre
+        where tra_codigo = {0} and trn_valido = 0 order by a.trn_fecreg desc, a.trn_compro::int desc, b.dt_debito desc, b.dt_codigo
         """.format(ctes.TRA_CODIGO_ASIENTO_CONTABLE)
         tupla_desc = (
             'trn_codigo', 'dia_codigo', 'trn_fecreg', 'fecdesc', 'trn_compro', 'trn_fecha', 'trn_valido', 'trn_docpen',
@@ -223,6 +223,30 @@ class TasientoDao(BaseDao):
         data = tgrid_dao.run_grid(grid_nombre='ventas')
         return data
 
+    def get_datos_asientocontable(self, trn_codigo):
+        formasiento = self.get_cabecera_asiento(trn_codigo=trn_codigo)
+        formasiento['secuencia'] = int(formasiento['trn_compro'][6:])
+        formasiento['tps_codigo'] = 0
+
+        sqldet = """
+        select det.dt_codigo, det.cta_codigo, det.dt_cant, det.dt_debito, det.dt_tipoitem, det.dt_valor,
+               det.dt_valor as dt_valor_in, ic.ic_clasecc, ic.ic_code, ic.ic_nombre, det.per_codigo, det.pry_codigo,
+               det.dt_codsec
+            from tasidetalle det
+            join titemconfig ic on det.cta_codigo = ic.ic_id
+            where det.trn_codigo = {0} order by det.dt_codigo        
+        """.format(trn_codigo)
+
+        tupla_desc = ('dt_codigo', 'cta_codigo', 'dt_cant', 'dt_debito', 'dt_tipoitem', 'dt_valor',
+                      'dt_valor_in', 'ic_clasecc', 'ic_code', 'ic_nombre', 'per_codigo', 'pry_codigo', 'dt_codsec')
+
+        detalles = self.all(sqldet, tupla_desc)
+
+        return {
+            'cabecera': formasiento,
+            'detalles': detalles
+        }
+
     def get_form_detalle_asiento(self):
         form = {
             'cta_codigo': 0,
@@ -335,13 +359,11 @@ class TasientoDao(BaseDao):
                       'dt_valdto', 'dt_valdtogen', 'dt_codsec', 'ic_nombre', 'ic_clasecc', 'ic_code', 'dai_imp0',
                       'dai_impg', 'dai_ise', 'dai_ice')
 
-        print('sql que se ejecuta:', sql)
-
         detalles = self.all(sql, tupla_desc)
 
         return detalles
 
-    def get_documento(self, trn_codigo):
+    def get_cabecera_asiento(self, trn_codigo):
         sql = """
         select trn_codigo,
         dia_codigo,
@@ -393,6 +415,10 @@ class TasientoDao(BaseDao):
                       'per_direccion')
 
         tasiento = self.first(sql, tupla_desc)
+        return tasiento
+
+    def get_documento(self, trn_codigo):
+        tasiento = self.get_cabecera_asiento(trn_codigo=trn_codigo)
         detalles = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=1)
         pagos = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=2, joinarts=False)
         impuestos = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=3, joinarts=False)
@@ -475,6 +501,23 @@ class TasientoDao(BaseDao):
         }
         return form
 
+    def editar_asiento(self, formcab, formref, useredita, detalles, obs):
+        trn_codigo = formcab['trn_codigo']
+        tasiento = self.find_entity_byid(trn_codigo=trn_codigo)
+        tasiento.trn_valido = 1
+        self.dbsession.add(tasiento)
+
+        tasientoaud = TAsientoAud()
+        tasientoaud.trn_codigo = trn_codigo
+        tasientoaud.aud_accion = ctes.AUD_ASIENTO_ANULAR
+        tasientoaud.aud_obs = obs
+        tasientoaud.aud_user = useredita
+        self.dbsession.add(tasientoaud)
+
+        new_trn_codigo = self.crear_asiento(formcab=formcab, formref=formref, usercrea=useredita, detalles=detalles)
+
+        return new_trn_codigo
+
     def crear_asiento(self, formcab, formref, usercrea, detalles):
         secuencia = formcab['secuencia']
         trn_compro = "{0}{1}".format(formcab['estabptoemi'], str(secuencia).zfill(ctes.LEN_DOC_SECUENCIA))
@@ -528,7 +571,7 @@ class TasientoDao(BaseDao):
         tasiento.trn_impref = 0
 
         tps_codigo = formcab['tps_codigo']
-        if tps_codigo is not None:
+        if tps_codigo is not None and tps_codigo > 0:
             transaccpdv_dao = TTransaccPdvDao(self.dbsession)
             transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
 

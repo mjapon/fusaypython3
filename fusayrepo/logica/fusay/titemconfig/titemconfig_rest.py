@@ -129,6 +129,9 @@ class TItemConfigRest(TokenView):
             elif accion == 'updatecode':
                 titemconfig_dao.update_barcode(ic_id=ic_id, newbarcode=form['new_ic_code'])
                 return {'status': 200, 'msg': u'Actualizado exitósamente'}
+            elif accion == 'anulactacontab':
+                titemconfig_dao.anular_ctacontable(ic_id=ic_id, useranula=self.get_user_id())
+                return {'status': 200, 'msg': u'Anulado exitósamente'}
             elif accion == 'guardarubro':
                 msg = 'Rubro creado exitosamente'
                 if result_ic_id == 0:
@@ -137,9 +140,9 @@ class TItemConfigRest(TokenView):
                     msg = 'Rubro editado exitosamente'
                     titemconfig_dao.editar_rubro(form, self.get_user_id())
                 return {'status': 200, 'msg': msg}
-            elif accion == 'guardaplancta':
+            """elif accion == 'guardaplancta':
                 titemconfig_dao.crea_ctacontable(form=self.get_json_body(), usercrea=self.get_user_id())
-                return self.res200({'msg': 'Cuenta contable creada exitósamente'})
+                return self.res200({'msg': 'Cuenta contable creada exitósamente'})"""
         else:
             if ic_id == 0:
                 msg = u'Registrado exitósamente'

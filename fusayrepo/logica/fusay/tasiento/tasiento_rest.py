@@ -75,6 +75,10 @@ class TAsientoRest(TokenView):
         elif accion == 'getformlibromayor':
             forml = tasientodao.get_form_libromayor()
             return self.res200({'form': forml})
+        elif accion == 'getdatosasiconta':
+            trn_codigo = self.get_request_param('cod')
+            res = tasientodao.get_datos_asientocontable(trn_codigo=trn_codigo)
+            return self.res200({'datoasi': res})
 
     def collection_post(self):
         accion = self.get_request_param('accion')
@@ -109,3 +113,9 @@ class TAsientoRest(TokenView):
                                                    usercrea=self.get_user_id(),
                                                    detalles=body['detalles'])
             return self.res200({'msg': 'Asiento registrado exitosamente', 'trn_codigo': trn_codigo})
+        elif accion == 'editasiento':
+            body = self.get_json_body()
+            trn_codigo = tasientodao.editar_asiento(formcab=body['formcab'], formref=body['formref'],
+                                                    useredita=self.get_user_id(),
+                                                    detalles=body['detalles'], obs='')
+            return self.res200({'msg': 'Asiento actualizado exitosamente', 'trn_codigo': trn_codigo})

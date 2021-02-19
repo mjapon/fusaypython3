@@ -32,3 +32,4 @@ class TItemConfig(Declarative, JsonAlchemy):
     ic_fechaactualiza = Column(TIMESTAMP)
     ic_dental = Column(Boolean, default=False)
     ic_clasecc = Column(String(2))
+    ic_haschild = Column(Boolean, default=False, nullable=False)

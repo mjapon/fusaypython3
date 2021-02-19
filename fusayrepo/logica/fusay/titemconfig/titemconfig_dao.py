@@ -93,7 +93,7 @@ class TItemConfigDao(BaseDao):
         sql = """        
             select ic_id, ic_nombre, ic_code, ic_padre, clsic_id, ic_clasecc, ic_alias,
                 ic_code||' '||ic_nombre  as ctacontab
-                from titemconfig where tipic_id = 3 and ic_estado = 1  
+                from titemconfig where tipic_id = 3 and ic_estado = 1 and ic_haschild=False  
                 and (ic_code like '{filtro}%' or ic_nombre like '%{filtro}%') 
                 order by ic_nombre limit {limit}                          
         """.format(filtro=cadenas.strip_upper(filtro), limit=limit)
@@ -106,7 +106,7 @@ class TItemConfigDao(BaseDao):
         select ic_id, ic_nombre, ic_code, ic_padre, clsic_id, ic_clasecc, ic_alias,
                 ic_code||' '||ic_nombre  as ctacontab
                 from titemconfig where tipic_id = 3 and ic_estado = 1
-                order by ic_nombre
+                order by ic_code
         """
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'clsic_id', 'ic_clasecc', 'ic_alias', 'ctacontab')
         return self.all(sql, tupla_desc)
@@ -517,6 +517,25 @@ class TItemConfigDao(BaseDao):
             titemconfig.ic_fechaactualiza = datetime.now()
             self.dbsession.add(titemconfig)
 
+    def anular_ctacontable(self, ic_id, useranula):
+        self.anular(ic_id=ic_id, useranula=useranula)
+        # Verificar si no tiene hijos
+
+        ctacontable = self.find_byid(ic_id=ic_id)
+        if ctacontable is not None:
+            if ctacontable.ic_padre is not None:
+                if not self.ctacontable_has_child(ic_id=ctacontable.ic_padre):
+                    ctacontablepadre = self.find_byid(ic_id=ctacontable.ic_padre)
+                    ctacontablepadre.ic_haschild = False
+
+    def ctacontable_has_child(self, ic_id):
+        sql = """
+        select count(*) as cuenta from titemconfig where tipic_id = 3 and ic_estado = 1 and ic_padre = {0}
+        """.format(ic_id)
+
+        cuenta = self.first_col(sql, 'cuenta')
+        return cuenta > 0
+
     def update_barcode(self, ic_id, newbarcode):
         titemconfig = self.dbsession.query(TItemConfig).filter(TItemConfig.ic_id == ic_id).first()
         newbarcode_strip = cadenas.strip(str(newbarcode))
@@ -604,6 +623,10 @@ class TItemConfigDao(BaseDao):
         titemconfig.clsic_id = form['clsic_id']
         titemconfig.ic_clasecc = form['ic_clasecc']
         titemconfig.ic_alias = cadenas.strip(form['ic_alias'])
+
+        icpadre = self.find_byid(ic_id=form['ic_padre'])
+        if icpadre is not None:
+            icpadre.ic_haschild = True
 
         self.dbsession.add(titemconfig)
 
