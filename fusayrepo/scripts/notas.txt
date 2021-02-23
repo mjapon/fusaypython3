@@ -1,42 +1,4 @@
-ng build --prod --aot --output-hashing=all
-
-ruta aplicacion typescript:
-cd /Users/mjapon/dev/FUSAY/ngsyscontabfact/ngfusayfactcontab
-ng serve --host=0.0.0.0
-
-COMANDOS DB EJECUCION SERVIDOR DIGITALOCEAN:
-su - postgres
-psql imprentadb postgres
-\i ruta del archivo
-\dt --->LISTA LAS TABLAS
-
-DATOS DE LOS SERVIDORES DE DIGITAL OCEAN:
-157.230.129.131
-usuario: root
-clave: hart471
----------------------
-Datos servidor Lucho:
-206.189.239.86
-usuario: root
-clave: LuisGuaman92achel
-
-https://www.codingforentrepreneurs.com/blog/hello-linux-setup-gunicorn-and-supervisor
-nueva ruta de la aplicacion:
-sudo supervisorctl status fusay-gunicorn
-sudo supervisorctl restart fusay-gunicorn
-
--- So la pacientes esta embarazada (Esta embarazada
--- edad gestacional - en semanas
--- #http://www.clinicavespucio.cl/calculo-de-fecha-de-parto/   --Revisar pagina
--- https://es.slideshare.net/HUGOGERARDOTELLES/clculo-de-semanas-de-gestacin?next_slideshow=1
-
-to_char(historia.cosm_fechacrea, 'TMMonth')
-
-'dt_codigo']
-['cre_fecini']
-['cre_fecven']
-['cre_intere']
-['cre_intmor']
-
-['cre_codban']
-'cre_saldopen']
+select det.cta_codigo, ic.ic_nombre, sum(det.dt_debito*det.dt_valor) from tasidetalle det
+join tasiento t on det.trn_codigo = t.trn_codigo and t.tra_codigo =13
+join titemconfig ic on det.cta_codigo = ic.ic_id
+group by det.cta_codigo, ic.ic_nombre

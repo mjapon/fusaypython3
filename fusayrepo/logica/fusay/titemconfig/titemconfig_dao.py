@@ -641,26 +641,38 @@ class TItemConfigDao(BaseDao):
                       'ic_fechacrea', 'ic_estado', 'clsic_id', 'ic_clasecc', 'ic_alias', 'padre', 'ic_nota')
         return self.first(sql, tupla_desc)
 
-    def listar_hijos_plancuentas(self, padre):
+    def aux_listar_plan_cuentas(self, where):
         sql = """
-                select ic_id, ic_nombre, ic_code, ic_padre, tipic_id, ic_fechacrea, ic_estado, clsic_id, ic_clasecc, ic_alias
-                        from titemconfig where tipic_id = 3 and ic_estado = 1 and ic_padre  = {0} order by ic_code
-                """.format(padre)
+                select ic_id, ic_nombre, ic_code, ic_padre, tipic_id, ic_fechacrea, ic_estado, clsic_id, ic_clasecc, 
+                ic_alias, ic_haschild
+                from titemconfig where tipic_id = 3 and ic_estado = 1 {0} order by ic_code
+                """.format(where)
 
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'tipic_id',
-                      'ic_fechacrea', 'ic_estado', 'clsic_id', 'ic_clasecc', 'ic_alias')
-
+                      'ic_fechacrea', 'ic_estado', 'clsic_id', 'ic_clasecc', 'ic_alias', 'ic_haschild')
         return self.all(sql, tupla_desc)
+
+    def listar_hijos_plancuentas(self, padre):
+        return self.aux_listar_plan_cuentas(where='and ic_padre = {0}'.format(padre))
 
     def lista_raiz_plan_cuentas(self):
-        sql = """
-        select ic_id, ic_nombre, ic_code, ic_padre, tipic_id, ic_fechacrea, ic_estado, clsic_id, ic_clasecc, ic_alias
-                from titemconfig where tipic_id = 3 and ic_estado = 1 and ic_padre is null order by ic_code
-        """
-        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'tipic_id',
-                      'ic_fechacrea', 'ic_estado', 'clsic_id', 'ic_clasecc', 'ic_alias')
+        return self.aux_listar_plan_cuentas(where='and ic_padre is null')
 
-        return self.all(sql, tupla_desc)
+    def listar_raiz_balance_general(self):
+        swhere = 'and ic_padre is null and ic_code in (\'1\',\'2\',\'3\')'
+        return self.aux_listar_plan_cuentas(where=swhere)
+
+    def listar_raiz_estado_resultados(self):
+        swhere = 'and ic_padre is null and ic_code in (\'4\',\'5\')'
+        return self.aux_listar_plan_cuentas(where=swhere)
+
+    def build_tree_balance_general(self):
+        raizbalg = self.listar_raiz_balance_general()
+        return self.build_treenode(raizbalg)
+
+    def build_tree_estado_resultados(self):
+        raizbalg = self.listar_raiz_estado_resultados()
+        return self.build_treenode(raizbalg)
 
     def get_padres_recusivo(self, padre):
         sql = 'select ic_id, ic_padre from titemconfig where ic_id = {0}'.format(padre)
@@ -706,7 +718,8 @@ class TItemConfigDao(BaseDao):
                 'expandedIcon': expandedicon,
                 'collapsedIcon': collapseicon,
                 'dbdata': item,
-                'expanded': expanded
+                'expanded': expanded,
+                'total': 0.0
             }
 
             if children is not None:

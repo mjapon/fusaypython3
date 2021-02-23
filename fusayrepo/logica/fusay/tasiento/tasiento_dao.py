@@ -16,6 +16,7 @@ from fusayrepo.logica.fusay.tasidetimp.tasidetimp_model import TAsidetimp
 from fusayrepo.logica.fusay.tasiento.tasiento_model import TAsiento, TAsientoAud
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.timpuesto.timpuesto_dao import TImpuestoDao
+from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
 from fusayrepo.logica.fusay.ttransaccimp.ttransaccimp_dao import TTransaccImpDao
@@ -222,6 +223,129 @@ class TasientoDao(BaseDao):
         tgrid_dao = TGridDao(self.dbsession)
         data = tgrid_dao.run_grid(grid_nombre='ventas')
         return data
+
+    def aux_get_cod_cuentas_repconta(self, cuentas, codcuentas):
+        for cuenta in cuentas:
+            dbdata_it = cuenta['dbdata']
+            codcuentas.append('\'{0}\''.format(dbdata_it['ic_id']))
+            if 'children' in cuenta:
+                codcuentas = self.aux_get_cod_cuentas_repconta(cuentas=cuenta['children'], codcuentas=codcuentas)
+
+        return codcuentas
+
+    """
+    def aux_totalizar_nodo(self, nodo):
+        totalnodo = 0.0
+        if 'children' in nodo and len(nodo['children']) > 0:
+            for hijonodo in nodo['children']:
+                totalnodo += self.aux_totalizar_nodo(hijonodo)
+            nodo['total'] = totalnodo
+        else:
+            totalnodo = nodo['total']
+
+        return totalnodo
+    """
+
+    def aux_totalizar_nodo(self, nodo, planctasdict):
+        totalnodo = 0.0
+        if 'children' in nodo and len(nodo['children']) > 0:
+            for hijonodo in nodo['children']:
+                totalnodo += self.aux_totalizar_nodo(hijonodo, planctasdict)
+            nodo['total'] = numeros.roundm2(totalnodo)
+        else:
+            itemdb = nodo['dbdata']
+            item_codcta = itemdb['ic_id']
+            if item_codcta in planctasdict:
+                nodo['total'] = numeros.roundm2(planctasdict[item_codcta]['total'])
+
+            totalnodo = numeros.roundm2(nodo['total'])
+
+        return totalnodo
+
+    """
+    def aux_set_total_nodo(self, nodo, planctasdict):
+        if 'children' in nodo and len(nodo['children']) > 0:
+            for hijonodo in nodo['children']:
+                self.aux_set_total_nodo(hijonodo, planctasdict)
+        else:
+            itemdb = nodo['dbdata']
+            item_codcta = itemdb['ic_id']
+            if item_codcta in planctasdict:
+                nodo['total'] = planctasdict[item_codcta]['total']
+    """
+
+    def aux_tree_to_list(self, nodo, alllist, acpasress):
+        codnodo = nodo['dbdata']['ic_code']
+        if codnodo == '1':
+            acpasress['1'] = {'total': nodo['total']}
+        elif codnodo == '2':
+            acpasress['2'] = {'total': nodo['total']}
+        elif codnodo == '3':
+            acpasress['3'] = {'total': nodo['total']}
+        elif codnodo == '4':
+            acpasress['4'] = {'total': nodo['total']}
+        elif codnodo == '5':
+            acpasress['5'] = {'total': nodo['total']}
+
+        alllist.append(nodo)
+        if 'children' in nodo and len(nodo['children']) > 0:
+            for hijonodo in nodo['children']:
+                self.aux_tree_to_list(hijonodo, alllist, acpasress)
+
+    def buid_rep_conta(self, desde, hasta, wherecodparents, isestadores=False):
+
+        sqlbalgen = """
+        select ic_id, ic_code, ic_nombre, ic_padre, ic_haschild, 0.0 as total from titemconfig
+        where tipic_id = 3 and ic_estado = 1 and ({0})
+        order by ic_code asc
+        """.format(wherecodparents)
+
+        tdgb = ('ic_id', 'ic_code', 'ic_nombre', 'ic_padre', 'ic_haschild', 'total')
+        planctabalg = self.all(sqlbalgen, tdgb)
+
+        planctasdict = {}
+        codcuentaslist = []
+        for item in planctabalg:
+            planctasdict[item['ic_id']] = item
+            codcuentaslist.append('\'{0}\''.format(item['ic_id']))
+
+        sql = """
+        select det.cta_codigo, round(sum(det.dt_debito*det.dt_valor),2) as total 
+        from tasidetalle det
+        join tasiento t on det.trn_codigo = t.trn_codigo 
+        join titemconfig ic on det.cta_codigo = ic.ic_id
+        where
+        t.tra_codigo = {0} and t.trn_valido = 0 and  t.trn_fecreg between '{1}' and '{2}') 
+        and det.cta_codigo in ({3})
+        group by det.cta_codigo order by det.cta_codigo, det.dt_debito
+        """.format(ctes.TRA_CODIGO_ASIENTO_CONTABLE,
+                   fechas.format_cadena_db(desde),
+                   fechas.format_cadena_db(hasta),
+                   ','.join(codcuentaslist))
+        log.info('sql es repconta:')
+        log.info(sql)
+
+        tupla_desc = ('cta_codigo', 'total')
+        result = self.all(sql, tupla_desc)
+        for item in result:
+            if item['cta_codigo'] in planctasdict:
+                planctasdict[item['cta_codigo']]['total'] = item['total']
+
+        itemconfigdao = TItemConfigDao(self.dbsession)
+        if isestadores:
+            treebg = itemconfigdao.build_tree_estado_resultados()
+        else:
+            treebg = itemconfigdao.build_tree_balance_general()
+
+        for item in treebg:
+            item['total'] = self.aux_totalizar_nodo(item, planctasdict)
+
+        resultlist = []
+        parentsdict = {}
+        for item in treebg:
+            self.aux_tree_to_list(item, resultlist, parentsdict)
+
+        return resultlist, parentsdict
 
     def get_datos_asientocontable(self, trn_codigo):
         formasiento = self.get_cabecera_asiento(trn_codigo=trn_codigo)
