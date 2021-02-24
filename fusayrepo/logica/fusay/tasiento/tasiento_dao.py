@@ -233,19 +233,6 @@ class TasientoDao(BaseDao):
 
         return codcuentas
 
-    """
-    def aux_totalizar_nodo(self, nodo):
-        totalnodo = 0.0
-        if 'children' in nodo and len(nodo['children']) > 0:
-            for hijonodo in nodo['children']:
-                totalnodo += self.aux_totalizar_nodo(hijonodo)
-            nodo['total'] = totalnodo
-        else:
-            totalnodo = nodo['total']
-
-        return totalnodo
-    """
-
     def aux_totalizar_nodo(self, nodo, planctasdict):
         totalnodo = 0.0
         if 'children' in nodo and len(nodo['children']) > 0:
@@ -262,32 +249,13 @@ class TasientoDao(BaseDao):
 
         return totalnodo
 
-    """
-    def aux_set_total_nodo(self, nodo, planctasdict):
-        if 'children' in nodo and len(nodo['children']) > 0:
-            for hijonodo in nodo['children']:
-                self.aux_set_total_nodo(hijonodo, planctasdict)
-        else:
-            itemdb = nodo['dbdata']
-            item_codcta = itemdb['ic_id']
-            if item_codcta in planctasdict:
-                nodo['total'] = planctasdict[item_codcta]['total']
-    """
-
     def aux_tree_to_list(self, nodo, alllist, acpasress):
         codnodo = nodo['dbdata']['ic_code']
-        if codnodo == '1':
-            acpasress['1'] = {'total': nodo['total']}
-        elif codnodo == '2':
-            acpasress['2'] = {'total': nodo['total']}
-        elif codnodo == '3':
-            acpasress['3'] = {'total': nodo['total']}
-        elif codnodo == '4':
-            acpasress['4'] = {'total': nodo['total']}
-        elif codnodo == '5':
-            acpasress['5'] = {'total': nodo['total']}
-
-        alllist.append(nodo)
+        acpasress[codnodo] = {'total': nodo['total']}
+        nodo['expanded'] = True
+        alllist.append(
+            {'codigo': codnodo, 'nombre': nodo['dbdata']['ic_nombre'], 'total': numeros.roundm2(nodo['total'])}
+        )
         if 'children' in nodo and len(nodo['children']) > 0:
             for hijonodo in nodo['children']:
                 self.aux_tree_to_list(hijonodo, alllist, acpasress)
@@ -340,13 +308,13 @@ class TasientoDao(BaseDao):
             self.aux_tree_to_list(item, resultlist, parentsdict)
 
         parentestres = {}
+        restulttree = treebg
         if not isestadores:
             # Debe generar el resultado del ejercicio:
-            resultestres, parentestres, auxparentestres = self.buid_rep_conta(desde, hasta,
-                                                                              wherecodparents="ic_code like '4%' or ic_code like '5%'",
-                                                                              isestadores=True)
-
-        return resultlist, parentsdict, parentestres
+            resultestres, parentestres, auxparentestres, auxrestree = self.buid_rep_conta(desde, hasta,
+                                                                                          wherecodparents="ic_code like '4%' or ic_code like '5%'",
+                                                                                          isestadores=True)
+        return resultlist, parentsdict, parentestres, restulttree
 
     def get_datos_asientocontable(self, trn_codigo):
         formasiento = self.get_cabecera_asiento(trn_codigo=trn_codigo)
