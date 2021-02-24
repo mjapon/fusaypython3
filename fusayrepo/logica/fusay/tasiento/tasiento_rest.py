@@ -82,15 +82,15 @@ class TAsientoRest(TokenView):
         elif accion == 'getbalancegeneral':
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
-            balancegen, parents = tasientodao.buid_rep_conta(desde, hasta,
-                                                             wherecodparents="ic_code like '1%' or ic_code like '2%' or ic_code like '3%'")
-            return self.res200({'balance': balancegen, 'parents': parents})
+            balancegen, parents, parentestres = tasientodao.buid_rep_conta(desde, hasta,
+                                                                           wherecodparents="ic_code like '1%' or ic_code like '2%' or ic_code like '3%'")
+            return self.res200({'balance': balancegen, 'parents': parents, 'parentres': parentestres})
         elif accion == 'getestadoresultados':
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
-            balancegen, parents = tasientodao.buid_rep_conta(desde, hasta,
-                                                             wherecodparents="ic_code like '4%' or ic_code like '5%'",
-                                                             isestadores=True)
+            balancegen, parents, parentestres = tasientodao.buid_rep_conta(desde, hasta,
+                                                                           wherecodparents="ic_code like '4%' or ic_code like '5%'",
+                                                                           isestadores=True)
             return self.res200({'balance': balancegen, 'parents': parents})
 
     def collection_post(self):

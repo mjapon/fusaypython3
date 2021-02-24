@@ -304,10 +304,8 @@ class TasientoDao(BaseDao):
         planctabalg = self.all(sqlbalgen, tdgb)
 
         planctasdict = {}
-        codcuentaslist = []
         for item in planctabalg:
             planctasdict[item['ic_id']] = item
-            codcuentaslist.append('\'{0}\''.format(item['ic_id']))
 
         sql = """
         select det.cta_codigo, round(sum(det.dt_debito*det.dt_valor),2) as total 
@@ -315,15 +313,11 @@ class TasientoDao(BaseDao):
         join tasiento t on det.trn_codigo = t.trn_codigo 
         join titemconfig ic on det.cta_codigo = ic.ic_id
         where
-        t.tra_codigo = {0} and t.trn_valido = 0 and  t.trn_fecreg between '{1}' and '{2}') 
-        and det.cta_codigo in ({3})
-        group by det.cta_codigo order by det.cta_codigo, det.dt_debito
+        t.tra_codigo = {0} and t.trn_valido = 0 and  t.trn_fecreg between '{1}' and '{2}'
+        group by det.cta_codigo order by det.cta_codigo
         """.format(ctes.TRA_CODIGO_ASIENTO_CONTABLE,
                    fechas.format_cadena_db(desde),
-                   fechas.format_cadena_db(hasta),
-                   ','.join(codcuentaslist))
-        log.info('sql es repconta:')
-        log.info(sql)
+                   fechas.format_cadena_db(hasta))
 
         tupla_desc = ('cta_codigo', 'total')
         result = self.all(sql, tupla_desc)
@@ -345,7 +339,14 @@ class TasientoDao(BaseDao):
         for item in treebg:
             self.aux_tree_to_list(item, resultlist, parentsdict)
 
-        return resultlist, parentsdict
+        parentestres = {}
+        if not isestadores:
+            # Debe generar el resultado del ejercicio:
+            resultestres, parentestres, auxparentestres = self.buid_rep_conta(desde, hasta,
+                                                                              wherecodparents="ic_code like '4%' or ic_code like '5%'",
+                                                                              isestadores=True)
+
+        return resultlist, parentsdict, parentestres
 
     def get_datos_asientocontable(self, trn_codigo):
         formasiento = self.get_cabecera_asiento(trn_codigo=trn_codigo)
