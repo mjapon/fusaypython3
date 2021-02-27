@@ -355,7 +355,7 @@ class TasientoDao(BaseDao):
 
         return form
 
-    def get_form_detalle(self):
+    def get_form_detalle(self, sec_codigo):
         form = {
             'cta_codigo': 0,
             'art_codigo': 0,
@@ -375,7 +375,7 @@ class TasientoDao(BaseDao):
             'dt_tipoitem': 1,
             'dt_valdto': 0.0,
             'dt_valdtogen': 0.0,
-            'dt_codsec': 1,
+            'dt_codsec': sec_codigo,
             'dai_imp0': None,
             'dai_impg': None,
             'dai_ise': None,

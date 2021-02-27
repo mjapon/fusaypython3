@@ -62,29 +62,32 @@ class TItemConfigDao(BaseDao):
         return data
 
     def buscar_articulos(self, filtro, sec_id):
-        joinsecs = ''
-        if sec_id is not None and int(sec_id) > 0:
-            joinsecs = ' join titemconfig_sec ics on ics.ic_id = a.ic_id and ics.sec_id = {0}'.format(sec_id)
-
         limit = 50
         sql = """
-                select a.ic_id, 
-                       a.ic_nombre, 
+                select a.ic_id,
+                       a.ic_nombre,
                        a.ic_code,
-                       td.icdp_grabaiva,               
+                       a.tipic_id,
+                       td.icdp_grabaiva,
                        td.icdp_preciocompra,
                        td.icdp_precioventa,
-                       td.icdp_precioventamin,               
+                       td.icdp_precioventamin,
                        case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
                        case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventa),2) else td.icdp_precioventa end as icdp_precioventa_iva,
-                       case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventamin),2) else td.icdp_precioventamin end as icdp_precioventamin_iva
-                from titemconfig a                
-                join titemconfig_datosprod td on a.ic_id = td.ic_id {joinsecs}
+                       case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventamin),2) else td.icdp_precioventamin end as icdp_precioventamin_iva,
+                       coalesce(ick.ice_stock, 0) ice_stock
+                from titemconfig a
+                join titemconfig_datosprod td on a.ic_id = td.ic_id
+                join titemconfig_sec ics on ics.ic_id = a.ic_id and ics.sec_id = {sec_id}
+                left join titemconfig_stock ick on ick.ic_id = a.ic_id and ick.sec_id = {sec_id}
                 where a.ic_estado = 1 and (a.ic_code like '{filtro}%' or a.ic_nombre like '{filtro}%') order by a.ic_nombre limit {limit}
-                """.format(filtro=cadenas.strip_upper(filtro), limit=limit, joinsecs=joinsecs)
+                """.format(filtro=cadenas.strip_upper(filtro), limit=limit, sec_id=sec_id)
 
-        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'icdp_grabaiva', 'icdp_preciocompra', 'icdp_precioventa',
-                      'icdp_precioventamin', 'icdp_preciocompra_iva', 'icdp_precioventa_iva', 'icdp_precioventamin_iva')
+        tupla_desc = (
+            'ic_id', 'ic_nombre', 'ic_code', 'tipic_id', 'icdp_grabaiva', 'icdp_preciocompra',
+            'icdp_precioventa', 'icdp_precioventamin', 'icdp_preciocompra_iva', 'icdp_precioventa_iva',
+            'icdp_precioventamin_iva', 'ice_stock'
+        )
 
         return self.all(sql, tupla_desc)
 
@@ -318,7 +321,7 @@ class TItemConfigDao(BaseDao):
         ic_code = cadenas.strip(str(form['ic_code']))
         tparamdao = TParamsDao(self.dbsession)
         if codbar_auto:
-            ic_code = tparamdao.get_next_sequence_codbar()
+            ic_code = "PRODSERV_{0}".format(tparamdao.get_next_sequence_codbar())
 
         icdp_preciocompra = form['icdp_preciocompra']
         icdp_precioventa = form['icdp_precioventa']
