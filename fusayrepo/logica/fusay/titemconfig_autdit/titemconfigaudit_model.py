@@ -10,7 +10,7 @@ from fusayrepo.utils.jsonutil import JsonAlchemy
 
 log = logging.getLogger(__name__)
 
-from sqlalchemy import Column, Integer, TIMESTAMP, Numeric, CHAR
+from sqlalchemy import Column, Integer, TIMESTAMP, Numeric, CHAR, Text
 
 
 class TItemConfigAudit(Declarative, JsonAlchemy):
@@ -24,3 +24,6 @@ class TItemConfigAudit(Declarative, JsonAlchemy):
     ica_valantes = Column(Numeric(10, 4))
     ica_valdespues = Column(Numeric(10, 4))
     sec_id = Column(Integer, nullable=False)
+    ica_ref = Column(Integer, default=0)
+    ica_obs = Column(Text)
+    ica_tracod = Column(Integer)

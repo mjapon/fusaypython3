@@ -16,9 +16,21 @@ log = logging.getLogger(__name__)
 class TCatItemConfigDao(BaseDao):
 
     def listar(self):
-        sql = "select catic_id, catic_nombre from tcatitemconfig where catic_estado = 1 order by catic_id"
-        tupla = ('catic_id', 'catic_nombre')
+        sql = """
+        select c.catic_id, c.catic_nombre, coalesce(ic.ic_nombre,'') caja, coalesce(c.catic_caja, 0) catic_caja
+        from tcatitemconfig c
+        left join titemconfig ic on c.catic_caja = ic.ic_id 
+        where catic_estado = 1 order by catic_id
+        """
+        tupla = ('catic_id', 'catic_nombre', 'caja', 'catic_caja')
         return self.all(sql, tupla)
+
+    def get_form_crea(self):
+        return {
+            'catic_id': 0,
+            'catic_nombre': '',
+            'catic_caja': 0
+        }
 
     def existe(self, nombre_cat):
         sql = u"select count(*) as cuenta from tcatitemconfig where catic_nombre = '{0}' and catic_estado = 1 ".format(
@@ -26,7 +38,7 @@ class TCatItemConfigDao(BaseDao):
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
 
-    def crear(self, nombre):
+    def crear(self, nombre, caja):
         if not cadenas.es_nonulo_novacio(nombre):
             raise ErrorValidacionExc(u'Debe ingresar el nombre de la categoría')
 
@@ -36,11 +48,12 @@ class TCatItemConfigDao(BaseDao):
         tcategoria = TCatItemConfig()
         tcategoria.catic_nombre = cadenas.strip_upper(nombre)
         tcategoria.catic_estado = 1
+        tcategoria.catic_caja = caja
 
         self.dbsession.add(tcategoria)
 
-    def actualizar(self, catic_id, nombre):
-        tcatitem = self.dbsession.find(TCatItemConfig).filter(TCatItemConfig.catic_id == catic_id).first()
+    def actualizar(self, catic_id, nombre, caja):
+        tcatitem = self.dbsession.query(TCatItemConfig).filter(TCatItemConfig.catic_id == catic_id).first()
         if tcatitem is not None:
             catic_nombre = cadenas.strip_upper(tcatitem.catic_nombre)
             nombre_upper = cadenas.strip_upper(nombre)
@@ -49,10 +62,11 @@ class TCatItemConfigDao(BaseDao):
                     raise ErrorValidacionExc(u'Ya existe una categoría con el nombre {0}, ingrese otra'.format(nombre))
                 else:
                     tcatitem.catic_nombre = nombre_upper
-                    self.dbsession.add(tcatitem)
+            tcatitem.catic_caja = caja
+            self.dbsession.add(tcatitem)
 
     def anular(self, catic_id):
-        tcatitem = self.dbsession.find(TCatItemConfig).filter(TCatItemConfig.catic_id == catic_id).first()
+        tcatitem = self.dbsession.query(TCatItemConfig).filter(TCatItemConfig.catic_id == catic_id).first()
         if tcatitem is not None:
             tcatitem.catic_estado = 2
             self.dbsession.add(tcatitem)

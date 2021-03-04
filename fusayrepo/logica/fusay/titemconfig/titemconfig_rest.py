@@ -97,6 +97,9 @@ class TItemConfigRest(TokenView):
             ic_ic = self.get_request_param('codcta')
             datoscta = titemconfig_dao.get_detalles_ctacontable(ic_id=ic_ic)
             return self.res200({'datoscta': datoscta})
+        elif 'listatiposcaja' == accion:
+            tiposcajas = titemconfig_dao.listar_cajas()
+            return self.res200({'tiposcajas': tiposcajas})
         else:
             return {'status': 404, 'msg': 'accion desconocida', 'accion': accion}
 

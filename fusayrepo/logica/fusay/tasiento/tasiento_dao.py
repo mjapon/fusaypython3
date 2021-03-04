@@ -219,10 +219,37 @@ class TasientoDao(BaseDao):
 
         return form_asiento
 
-    def listar_grid_ventas(self):
+    def listar_grid_ventas(self, desde, hasta, filtro, tracod):
         tgrid_dao = TGridDao(self.dbsession)
-        data = tgrid_dao.run_grid(grid_nombre='ventas')
-        return data
+        sqladc = ''
+        if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
+            sqladc = " and (a.trn_fecreg between '{0}' and '{1}' )".format(fechas.format_cadena_db(desde),
+                                                                           fechas.format_cadena_db(hasta))
+
+        if cadenas.es_nonulo_novacio(filtro):
+            filtroupper = cadenas.strip_upper(filtro)
+            auxfiltroupper = '%'.join(filtroupper.split(' '))
+            filtrocedula = " ( ( (p.per_nombres || ' ' || coalesce(p.per_apellidos, '')) like '%{0}%' ) or (p.per_ciruc like '%{0}%') ) ".format(
+                auxfiltroupper)
+            filtronrocompro = " (a.trn_compro like '%{0}%') ".format(auxfiltroupper)
+            sqladc += " and ({0} or {1})".format(filtrocedula, filtronrocompro)
+
+        data = tgrid_dao.run_grid(grid_nombre='ventas', tracod=tracod, swhere=sqladc)
+
+        # Totalizar
+        totales = {'efectivo': 0.0, 'credito': 0.0, 'saldopend': 0.0, 'total': 0.0}
+        for item in data['data']:
+            totales['efectivo'] += item['efectivo']
+            totales['credito'] += item['credito']
+            totales['saldopend'] += item['saldopend']
+            totales['total'] += item['total']
+
+        totales['efectivo'] = numeros.roundm2(totales['efectivo'])
+        totales['credito'] = numeros.roundm2(totales['credito'])
+        totales['saldopend'] = numeros.roundm2(totales['saldopend'])
+        totales['total'] = numeros.roundm2(totales['total'])
+
+        return data, totales
 
     def aux_get_cod_cuentas_repconta(self, cuentas, codcuentas):
         for cuenta in cuentas:
@@ -412,10 +439,17 @@ class TasientoDao(BaseDao):
         :return: [trn_codigo, trn_fecreg, trn_fecha, trn_compro, trn_observ, pagos:{'dt_codigo', 'cta_codigo', 'ic_nombre', 'ic_clasecc', 'dt_valor'}]
         """
         sql = """
-        select trn_codigo, trn_fecreg, trn_fecha, trn_compro, trn_observ from tasiento where per_codigo = {0}
+        select a.trn_codigo, a.trn_fecreg, a.trn_fecha, a.trn_compro, a.trn_observ,
+        pagos.efectivo, pagos.credito, pagos.saldopend, pagos.total
+         from tasiento a
+         join get_pagos_factura(a.trn_codigo) as pagos(efectivo numeric, credito numeric, total numeric, saldopend numeric, trncodigo integer)
+         on a.trn_codigo = pagos.trncodigo 
+         where per_codigo = {0}
         and tra_codigo = {1} and trn_valido = 0 and trn_docpen = 'F' order by trn_fecha desc 
         """.format(per_codigo, tra_codigo)
-        tupla_desc = ('trn_codigo', 'trn_fecreg', 'trn_fecha', 'trn_compro', 'trn_observ')
+        tupla_desc = (
+            'trn_codigo', 'trn_fecreg', 'trn_fecha', 'trn_compro', 'trn_observ', 'efectivo', 'credito', 'saldopend',
+            'total')
 
         facturas = self.all(sql, tupla_desc)
         if find_pagos:
@@ -464,12 +498,18 @@ class TasientoDao(BaseDao):
         trn_compro,
         trn_fecha,
         trn_valido,
+        case 
+        when trn_valido = 0 then 'Valido'
+        when trn_valido = 1 then 'Anulado'
+        when trn_valido = 2 then 'Errado'
+        else 'Desconocido' end as estado,
         trn_docpen,
         trn_pagpen,
         sec_codigo,
         a.per_codigo,
         tra_codigo,
-        us_id,
+        a.us_id,
+        us.us_cuenta,
         trn_observ,
         tdv_codigo,
         fol_codigo,
@@ -481,7 +521,10 @@ class TasientoDao(BaseDao):
         per.per_ciruc,
         per.per_telf,
         per.per_direccion
-         from tasiento a join tpersona per on a.per_codigo = per.per_id  where trn_codigo = {0}
+         from tasiento a 
+         join tpersona per on a.per_codigo = per.per_id
+         join tfuser us on a.us_id = us.us_id  
+         where trn_codigo = {0}
         """.format(trn_codigo)
         tupla_desc = ('trn_codigo',
                       'dia_codigo',
@@ -489,12 +532,14 @@ class TasientoDao(BaseDao):
                       'trn_compro',
                       'trn_fecha',
                       'trn_valido',
+                      'estado',
                       'trn_docpen',
                       'trn_pagpen',
                       'sec_codigo',
                       'per_codigo',
                       'tra_codigo',
                       'us_id',
+                      'us_cuenta',
                       'trn_observ',
                       'tdv_codigo',
                       'fol_codigo',

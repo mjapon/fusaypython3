@@ -56,6 +56,13 @@ class TItemConfigDao(BaseDao):
 
         return data, totales
 
+    def listar_cajas(self):
+        sql = """
+        select ic_id, ic_nombre, ic_code from titemconfig where tipic_id = 3 and ic_estado =1 and ic_clasecc = 'E' order by ic_nombre
+        """
+        tupla_desc = ('ic_id', 'ic_nombre', 'ic_code')
+        return self.all(sql, tupla_desc)
+
     def listarrubros_grid(self):
         tgrid_dao = TGridDao(self.dbsession)
         data = tgrid_dao.run_grid(grid_nombre='trubros')

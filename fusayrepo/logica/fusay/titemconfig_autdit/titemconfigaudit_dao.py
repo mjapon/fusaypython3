@@ -39,3 +39,30 @@ class TItemConfigAuditDao(BaseDao):
         titemconfigaudit.ica_valdespues = Decimal(val_despues)
 
         self.dbsession.add(titemconfigaudit)
+
+    def listar_eventos(self, ic_id):
+        sql = """
+        select
+       a.ica_id,
+       a.ic_id,
+       a.fecha_crea,
+       case
+           when a.ica_tipo = 'c' then 'Creación'
+           when a.ica_tipo = 'p' then 'Cambio de precio'
+           when a.ica_tipo = 's' then 'Cambio de stock'
+        else 'Desconocido' end evento,
+           a.ica_valantes,
+           a.ica_valdespues,
+           coalesce(per.per_ciruc,'') ciruc,
+           coalesce(per.per_nombres,'')||' '||coalesce(per.per_apellidos,'') referente,
+           coalesce(tra.tra_nombre,'') transacc
+        from titemconfig_audit a
+        left join tpersona per on per.per_id = a.ica_ref
+        left join ttransacc tra on tra.tra_codigo = a.ica_tracod
+        where a.ic_id = {0} order by a.fecha_crea desc
+        """.format(ic_id)
+
+        tupla_desc = ('ica_id',
+                      'ic_id',
+                      'fecha_crea', 'evento', 'ica_valantes', 'ica_valdespues', 'ciruc', 'referente', 'transacc')
+        return self.all(sql, tupla_desc)

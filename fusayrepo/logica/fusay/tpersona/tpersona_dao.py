@@ -174,6 +174,7 @@ class TPersonaDao(BaseDao):
                       'estadocivil',
                       'profesion',
                       'tiposangre',
+                      'tiporef',
                       'residencia')
         sql = """   
                     select per_id,
@@ -197,12 +198,14 @@ class TPersonaDao(BaseDao):
                         coalesce(estclval.lval_nombre,'') as estadocivil,
                         coalesce(profval.lval_nombre,'') as profesion,
                         coalesce(tipsanval.lval_nombre, '') as tiposangre,
+                        coalesce(tiporefval.lval_nombre, '') as tiporef,
                         coalesce(lugar.lug_nombre,'') as residencia
                         from tpersona paciente
                             left join tlistavalores genlval on paciente.per_genero = genlval.lval_id and genlval.lval_cat=1
                             left join tlistavalores estclval on paciente.per_estadocivil = estclval.lval_id and estclval.lval_cat=2
                             left join tlistavalores profval on paciente.per_ocupacion = profval.lval_id and profval.lval_cat=3
                             left join tlistavalores tipsanval on paciente.per_tiposangre = tipsanval.lval_id and tipsanval.lval_cat=4
+                            left join tlistavalores tiporefval on paciente.per_tipo = coalesce(tiporefval.lval_valor,'1')::int and tiporefval.lval_cat=5
                             left join tlugar lugar on paciente.per_lugresidencia = lugar.lug_id
                         where {0} = {1}""".format(cadenas.strip(propname), cadenas.strip(propvalue))
         result = self.first(sql, tupla_desc)

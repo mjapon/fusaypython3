@@ -86,5 +86,4 @@ class TLugarDao(BaseDao):
         self.dbsession.add(tlugar)
 
     def editar(self, lug_id, nlug_nombre):
-
-        self.dbsession.find()
+        pass

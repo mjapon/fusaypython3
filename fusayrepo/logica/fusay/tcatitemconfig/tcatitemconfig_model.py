@@ -18,3 +18,4 @@ class TCatItemConfig(Declarative, JsonAlchemy):
     catic_id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     catic_nombre = Column(String(60), nullable=False)
     catic_estado = Column(Integer, default=1, nullable=False)
+    catic_caja = Column(Integer, default=0)

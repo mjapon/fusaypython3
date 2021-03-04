@@ -8,6 +8,8 @@ import logging
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.fusay.tfuserrol.tfuserrol_model import TFuserRol
+from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
+from fusayrepo.utils import cadenas
 
 log = logging.getLogger(__name__)
 
@@ -50,6 +52,12 @@ class TFuserRolDao(BaseDao):
 
     def build_menu(self, permisos):
 
+        paramsdao = TParamsDao(self.dbsession)
+        hasplanesvalue = paramsdao.get_param_value('EMP_HASPLANES')
+        hasplanes = False
+        if hasplanesvalue is not None:
+            hasplanes = cadenas.strip(hasplanesvalue) == '1'
+
         contabilidad_list = [
             {'label': 'Ingresos y Gastos', 'icon': 'pi pi-fw pi-sort-alt', 'routerLink': ['/vtickets']},
             {'label': 'Cuentas', 'icon': '', 'routerLink': ['/rubros']},
@@ -66,8 +74,11 @@ class TFuserRolDao(BaseDao):
 
         prods_list = [
             {'label': 'Listado', 'icon': '', 'routerLink': ['/mercaderia']},
-            {'label': 'Planes', 'icon': '', 'routerLink': ['/planes']},
+            {'label': 'Categorias', 'icon': '', 'routerLink': ['/categorias']}
         ]
+
+        if hasplanes:
+            prods_list.append({'label': 'Planes', 'icon': '', 'routerLink': ['/planes']})
 
         users_list = [
             {'label': 'Admin Usuarios', 'icon': 'pi pi-fw pi-users', 'routerLink': ['/usuarios']},

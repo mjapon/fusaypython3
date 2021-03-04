@@ -65,8 +65,12 @@ class TAsientoRest(TokenView):
             creds = tasicredao.listar_creditos(per_codigo=per_codigo, tra_codigo=tra_codigo, solo_pendientes=False)
             return self.res200({'creds': creds})
         elif accion == 'gridventas':
-            grid = tasientodao.listar_grid_ventas()
-            return self.res200({'grid': grid})
+            desde = self.get_request_param('desde')
+            hasta = self.get_request_param('hasta')
+            filtro = self.get_request_param('filtro')
+            tracod = self.get_request_param('tracod')
+            grid, totales = tasientodao.listar_grid_ventas(desde, hasta, filtro, tracod)
+            return self.res200({'grid': grid, 'totales': totales})
         elif accion == 'formasiento':
             form = tasientodao.get_form_asiento()
             return self.res200({'form': form})
