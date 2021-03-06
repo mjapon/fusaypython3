@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 def roundm(cantidad, ndec):
-    return round(cantidad, ndec)
+    return round(float(cantidad), ndec)
 
 
 def roundm2(valor):

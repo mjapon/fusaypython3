@@ -8,8 +8,10 @@ from datetime import datetime
 from decimal import Decimal
 
 from fusayrepo.logica.dao.base import BaseDao
+from fusayrepo.logica.fusay.titemconfig_autdit.titemconfigaudit_dao import TItemConfigAuditDao
 from fusayrepo.logica.fusay.titemconfig_stock.titemconfigstock_model import TItemConfigStock
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
+from fusayrepo.utils import numeros
 
 log = logging.getLogger(__name__)
 
@@ -63,7 +65,9 @@ class TItemConfigStockDao(BaseDao):
         tupla_desc = ('ice_id', 'ic_id', 'sec_id', 'sec_nombre', 'ice_stock')
         return self.all(sql, tupla_desc)
 
-    def crear_actualizar(self, form_secs, user_do):
+    def crear_actualizar(self, form_secs, user_do, sec_id):
+
+        titemconfigauditdao = TItemConfigAuditDao(self.dbsession)
 
         for item in form_secs:
             ice_id = int(item['ice_id'])
@@ -75,11 +79,23 @@ class TItemConfigStockDao(BaseDao):
                 itemconfigstock.user_crea = user_do
                 itemconfigstock.fecha_crea = datetime.now()
                 self.dbsession.add(itemconfigstock)
+                titemconfigauditdao.crear_audit_stock(ic_id=item['ic_id'], user_crea=user_do,
+                                                      sec_id=sec_id,
+                                                      val_antes='',
+                                                      val_despues=str(itemconfigstock.ice_stock),
+                                                      obs='Registro inicial de stock')
+
             else:
                 itemconfigstock = self.dbsession.query(TItemConfigStock).filter(
                     TItemConfigStock.ice_id == ice_id).first()
+                prevstock = itemconfigstock.ice_stock
                 if itemconfigstock is not None:
                     itemconfigstock.ice_stock = Decimal(item['ice_stock'])
                     itemconfigstock.user_actualiza = user_do
                     itemconfigstock.fecha_actualiza = datetime.now()
                     self.dbsession.add(itemconfigstock)
+                    if numeros.roundm2(prevstock) != numeros.roundm2(itemconfigstock.ice_stock):
+                        titemconfigauditdao.crear_audit_stock(ic_id=item['ic_id'], user_crea=user_do,
+                                                              sec_id=sec_id,
+                                                              val_antes=str(prevstock),
+                                                              val_despues=str(itemconfigstock.ice_stock))

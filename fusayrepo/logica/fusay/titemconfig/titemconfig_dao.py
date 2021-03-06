@@ -10,6 +10,7 @@ from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_model import TItemConfig
+from fusayrepo.logica.fusay.titemconfig_autdit.titemconfigaudit_dao import TItemConfigAuditDao
 from fusayrepo.logica.fusay.titemconfig_datosprod.titemconfigdatosprod_model import TItemConfigDatosProd
 from fusayrepo.logica.fusay.titemconfig_sec.titemconfigsec_dao import TItemConfigSecDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
@@ -316,7 +317,7 @@ class TItemConfigDao(BaseDao):
         titemconfig.clsic_id = clsic_id
         self.dbsession.add(titemconfig)
 
-    def crear(self, form, user_crea):
+    def crear(self, form, user_crea, sec_id):
         """
         Crea un nuevo articulo
         :param form:
@@ -393,6 +394,8 @@ class TItemConfigDao(BaseDao):
             tparamdao.update_sequence_codbar()
 
         self.save_secciones(secciones=form['seccionesf'], ic_id=ic_id)
+        titemconfigautditdao = TItemConfigAuditDao(self.dbsession)
+        titemconfigautditdao.crear_audit_alta(ic_id=ic_id, user_crea=user_crea, sec_id=sec_id)
 
         return ic_id
 
@@ -432,6 +435,7 @@ class TItemConfigDao(BaseDao):
 
         ic_id = form['ic_id']
         titemconfig = self.dbsession.query(TItemConfig).filter(TItemConfig.ic_id == ic_id).first()
+
         if titemconfig is not None:
             # Cosas que se pueden actualizar:
             # Nombre, categoria, proveedro, precio de compra, precio de venta, fecha de caducidad, observacion
@@ -467,6 +471,11 @@ class TItemConfigDao(BaseDao):
 
             titemconfigdp = self.dbsession.query(TItemConfigDatosProd).filter(
                 TItemConfigDatosProd.ic_id == ic_id).first()
+
+            curr_preciocompra = titemconfigdp.icdp_preciocompra
+            curr_precioventa = titemconfigdp.icdp_precioventa
+            curr_precioventamin = titemconfigdp.icdp_precioventamin
+
             if titemconfigdp is not None:
                 titemconfigdp.icdp_proveedor = form['icdp_proveedor']
 
@@ -480,12 +489,30 @@ class TItemConfigDao(BaseDao):
                 titemconfigdp.icdp_preciocompra = icdp_preciocompra
                 titemconfigdp.icdp_precioventa = icdp_precioventa
                 titemconfigdp.icdp_precioventamin = icdp_precioventamin
-                # TODO: Agregar logica para registrar kardek del articulo
+
                 self.dbsession.add(titemconfigdp)
 
+                titemconfigauditdao = TItemConfigAuditDao(self.dbsession)
+                if float(numeros.roundm2(curr_preciocompra)) != float(numeros.roundm2(titemconfigdp.icdp_preciocompra)):
+                    titemconfigauditdao.crear_audit_preciocompra(ic_id=ic_id, user_crea=user_actualiza, sec_id=0,
+                                                                 val_antes=str(curr_preciocompra),
+                                                                 val_despues=str(titemconfigdp.icdp_preciocompra))
+                if float(numeros.roundm2(curr_precioventa)) != float(numeros.roundm2(titemconfigdp.icdp_precioventa)):
+                    valantes = curr_precioventa
+                    valdespues = titemconfigdp.icdp_precioventa
+                    if icdp_grabaiva:
+                        valantes = numeros.roundm2(ivautil.poner_iva(valantes))
+                        valdespues = numeros.roundm2(ivautil.poner_iva(valdespues))
+                        titemconfigauditdao.crear_audit_precioventa(ic_id=ic_id, user_crea=user_actualiza, sec_id=0,
+                                                                    val_antes=str(valantes),
+                                                                    val_despues=str(valdespues))
+                if float(numeros.roundm2(curr_precioventamin)) != float(
+                        numeros.roundm2(titemconfigdp.icdp_precioventamin)):
+                    titemconfigauditdao.crear_audit_precioventamin(ic_id=ic_id, user_crea=user_actualiza, sec_id=0,
+                                                                   val_antes=str(curr_precioventamin),
+                                                                   val_despues=str(titemconfigdp.icdp_precioventamin))
             self.dbsession.flush()
             self.save_secciones(secciones=form['seccionesf'], ic_id=ic_id)
-
             return ic_id
 
     def get_detalles_prod(self, ic_id):
@@ -497,6 +524,7 @@ class TItemConfigDao(BaseDao):
                td.icdp_fechacaducidad,
                td.icdp_grabaiva,               
                td.icdp_preciocompra,
+               td.icdp_precioventa icdp_precioventasiniva,
                case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
                case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventa),2) else td.icdp_precioventa end as icdp_precioventa,
                case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventamin),2) else td.icdp_precioventamin end as icdp_precioventamin,
@@ -512,7 +540,7 @@ class TItemConfigDao(BaseDao):
 
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'tipic_id', 'ic_fechacrea', 'ic_nota', 'catic_id',
                       'catic_nombre', 'icdp_fechacaducidad', 'icdp_grabaiva', 'icdp_preciocompra',
-                      'icdp_preciocompra_iva', 'icdp_precioventa', 'icdp_precioventamin',
+                      'icdp_precioventasiniva', 'icdp_preciocompra_iva', 'icdp_precioventa', 'icdp_precioventamin',
                       'tipic_nombre', 'icdp_proveedor', 'proveedor')
 
         return self.first(sql, tupla_desc)

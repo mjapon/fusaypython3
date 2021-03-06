@@ -31,7 +31,7 @@ class TItemConfigStockRest(TokenView):
         if accion == 'guardar':
             form = self.get_request_json_body()
             titemconfigstock_dao = TItemConfigStockDao(self.dbsession)
-            titemconfigstock_dao.crear_actualizar(form_secs=form, user_do=self.get_user_id())
+            titemconfigstock_dao.crear_actualizar(form_secs=form, user_do=self.get_user_id(), sec_id=self.get_sec_id())
             return {'status': 200, 'msg': u'Operación Exitosa'}
         else:
             return {'status': 404, 'msg': u'Ninguna acción especificada'}

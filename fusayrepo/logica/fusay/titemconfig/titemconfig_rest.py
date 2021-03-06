@@ -149,7 +149,7 @@ class TItemConfigRest(TokenView):
         else:
             if ic_id == 0:
                 msg = u'Registrado exitósamente'
-                result_ic_id = titemconfig_dao.crear(form, self.get_user_id())
+                result_ic_id = titemconfig_dao.crear(form, self.get_user_id(),sec_id=self.get_sec_id())
             else:
                 msg = u'Actualizado exitósamente'
                 titemconfig_dao.actualizar(form, self.get_user_id())
