@@ -133,8 +133,17 @@ class TCitaDao(BaseDao):
         tcita.pac_id = form['pac_id']
         tcita.ct_obs = cadenas.strip(form['ct_obs'])
         tcita.med_id = form['med_id']
-        tcita.ct_hora = form['ct_hora']
-        tcita.ct_hora_fin = form['ct_hora_fin']
+
+        if isinstance(form['ct_hora'], dict):
+            tcita.ct_hora = form['ct_hora']['value']
+        else:
+            tcita.ct_hora = form['ct_hora']
+
+        if isinstance(form['ct_hora_fin'], dict):
+            tcita.ct_hora_fin = form['ct_hora_fin']['value']
+        else:
+            tcita.ct_hora_fin = form['ct_hora_fin']
+
         tcita.ct_estado = 0
         tcita.user_crea = user_crea
         tcita.ct_fechacrea = datetime.now()
@@ -154,8 +163,16 @@ class TCitaDao(BaseDao):
         if tcita is not None:
             tcita.ct_fecha = fechas.parse_cadena(form['ct_fecha'])
             tcita.ct_obs = cadenas.strip(form['ct_obs'])
-            tcita.ct_hora = form['ct_hora']
-            tcita.ct_hora_fin = form['ct_hora_fin']
+            if isinstance(form['ct_hora'], dict):
+                tcita.ct_hora = form['ct_hora']['value']
+            else:
+                tcita.ct_hora = form['ct_hora']
+
+            if isinstance(form['ct_hora_fin'], dict):
+                tcita.ct_hora_fin = form['ct_hora_fin']['value']
+            else:
+                tcita.ct_hora_fin = form['ct_hora_fin']
+
             tcita.ct_color = form['ct_color']
             tcita.ct_titulo = cadenas.strip(form['ct_titulo'])
 
