@@ -8,6 +8,7 @@ from datetime import datetime
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.fusay.tcita.tcita_model import TCita
+from fusayrepo.logica.fusay.ttipocita.ttipocita_dao import TTipoCitaDao
 from fusayrepo.utils import fechas, cadenas
 
 log = logging.getLogger(__name__)
@@ -72,12 +73,25 @@ class TCitaDao(BaseDao):
             'value': horanum
         }
 
-    def get_horas_for_form(self):
+    def get_horas_for_form(self, tipocita):
+        tipcitadao = TTipoCitaDao(self.dbsession)
+        datostipocita = tipcitadao.get_datos_tipo(tipc_id=tipocita)
         step = 0.25
+        cstart = 8.0
+        cend = 19.0
+
+        if datostipocita is not None:
+            cstart = datostipocita['tipc_calini']
+            cend = datostipocita['tipc_calfin']
+
         horas = []
-        for i in range(8, 19):
-            for j in range(4):
-                horas.append(self.get_new_hora(horanum=i + (j * step)))
+        for i in range(int(cstart), int(cend)):
+            if i == int(cend) - 1:
+                for j in range(0, 5):
+                    horas.append(self.get_new_hora(horanum=i + (j * step)))
+            else:
+                for j in range(4):
+                    horas.append(self.get_new_hora(horanum=i + (j * step)))
         return horas
 
     def get_detalles_cita(self, ct_id):

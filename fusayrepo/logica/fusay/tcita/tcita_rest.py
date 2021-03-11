@@ -9,6 +9,7 @@ from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tcita.tcita_dao import TCitaDao
 from fusayrepo.logica.fusay.tpersona.tpersoncitadao import TPersonCitaDao
+from fusayrepo.logica.fusay.ttipocita.ttipocita_dao import TTipoCitaDao
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -22,8 +23,9 @@ class TCitaRest(TokenView):
         tcitadao = TCitaDao(self.dbsession)
         if accion == 'form':
             pac_id = self.get_request_param('pac')
+            tipocita = self.get_request_param('tipocita')
             form = tcitadao.get_form(pac_id=pac_id)
-            horas = tcitadao.get_horas_for_form()
+            horas = tcitadao.get_horas_for_form(tipocita=tipocita)
             colores = tcitadao.get_lista_colores()
             return {'status': 200, 'form': form, 'horas': horas, 'colores': colores}
         elif accion == 'lstw':
@@ -63,6 +65,11 @@ class TCitaRest(TokenView):
             tpersoncitadao = TPersonCitaDao(self.dbsession)
             personscita = tpersoncitadao.listar()
             return self.res200({'personscita': personscita})
+        elif accion == 'gdatostipcita':
+            tipocita = self.get_request_param('tipcita')
+            tipcitadao = TTipoCitaDao(self.dbsession)
+            datostipocita = tipcitadao.get_datos_tipo(tipc_id=tipocita)
+            return self.res200({'dtipcita': datostipocita})
 
     def collection_post(self):
         accion = self.get_request_param('accion')
