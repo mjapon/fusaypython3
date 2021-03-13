@@ -61,6 +61,7 @@ class TItemConfigRest(TokenView):
         elif 'gartsserv' == accion:
             filtro = self.get_request_param('filtro')
             secid = self.get_request_param('sec')
+            tracod = self.get_request_param('tracod')
             items = titemconfig_dao.buscar_articulos(filtro=filtro, sec_id=secid)
             return self.res200({'items': items})
         elif 'gctascontables' == accion:

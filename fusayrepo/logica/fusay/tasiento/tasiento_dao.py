@@ -19,6 +19,7 @@ from fusayrepo.logica.fusay.timpuesto.timpuesto_dao import TImpuestoDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
+from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
 from fusayrepo.logica.fusay.ttransaccimp.ttransaccimp_dao import TTransaccImpDao
 from fusayrepo.logica.fusay.ttransaccpdv.ttransaccpdv_dao import TTransaccPdvDao
 from fusayrepo.utils import fechas, numeros, ctes, cadenas
@@ -408,6 +409,7 @@ class TasientoDao(BaseDao):
             'dai_ise': None,
             'dai_ice': None,
             'icdp_grabaiva': False,
+            'icdp_modcontab': 0,
             'subtotal': 0.0,
             'ivaval': 0.0,
             'total': 0.0
@@ -894,7 +896,10 @@ class TasientoDao(BaseDao):
         trn_compro = "{0}{1}".format(form['estabptoemi'], str(secuencia).zfill(len_compro))
 
         # Verificar que el comprobante no este siendo utilizado
+        ttransaccdao = TTransaccDao(self.dbsession)
         tra_codigo = form['tra_codigo']
+        ttransacc = ttransaccdao.get_ttransacc(tra_codigo)
+
         if form['trn_docpen'] == 'F':
             if self.existe_doc_valido(trn_compro, tra_codigo=tra_codigo):
                 raise ErrorValidacionExc('Ya existe un comprobante registrado con el número: {0}'.format(trn_compro))
@@ -971,6 +976,9 @@ class TasientoDao(BaseDao):
 
         for detalle in detalles:
             tasidetalle = TAsidetalle()
+
+            # TODO: Buscar el modelo contable para esta cuenta
+            detalle['icdp_modcontab']
 
             per_cod_det = int(detalle['per_codigo'])
             if per_cod_det == 0:

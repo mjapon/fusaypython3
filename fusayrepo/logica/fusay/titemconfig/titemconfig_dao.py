@@ -69,7 +69,7 @@ class TItemConfigDao(BaseDao):
         data = tgrid_dao.run_grid(grid_nombre='trubros')
         return data
 
-    def buscar_articulos(self, filtro, sec_id):
+    def buscar_articulos(self, filtro, sec_id, tracod):
         limit = 50
         sql = """
                 select a.ic_id,
@@ -80,6 +80,7 @@ class TItemConfigDao(BaseDao):
                        td.icdp_preciocompra,
                        td.icdp_precioventa,
                        td.icdp_precioventamin,
+                       td.icdp_modcontab,
                        case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
                        case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventa),2) else td.icdp_precioventa end as icdp_precioventa_iva,
                        case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventamin),2) else td.icdp_precioventamin end as icdp_precioventamin_iva,
@@ -93,7 +94,8 @@ class TItemConfigDao(BaseDao):
 
         tupla_desc = (
             'ic_id', 'ic_nombre', 'ic_code', 'tipic_id', 'icdp_grabaiva', 'icdp_preciocompra',
-            'icdp_precioventa', 'icdp_precioventamin', 'icdp_preciocompra_iva', 'icdp_precioventa_iva',
+            'icdp_precioventa', 'icdp_precioventamin', 'icdp_modcontab', 'icdp_preciocompra_iva',
+            'icdp_precioventa_iva',
             'icdp_precioventamin_iva', 'ice_stock'
         )
 
@@ -381,8 +383,8 @@ class TItemConfigDao(BaseDao):
             titemconfigdp.icdp_fechacaducidad = None
 
         titemconfigdp.icdp_proveedor = form['icdp_proveedor']
-        # titemconfigdp.icdp_modcontab = form['icdp_modcontab']
-        titemconfigdp.icdp_modcontab = None
+        titemconfigdp.icdp_modcontab = form['icdp_modcontab']
+        # titemconfigdp.icdp_modcontab = None
 
         titemconfigdp.icdp_preciocompra = icdp_preciocompra
         titemconfigdp.icdp_precioventa = icdp_precioventa
@@ -478,6 +480,7 @@ class TItemConfigDao(BaseDao):
 
             if titemconfigdp is not None:
                 titemconfigdp.icdp_proveedor = form['icdp_proveedor']
+                titemconfigdp.icdp_modcontab = form['icdp_modcontab']
 
                 icdp_fechacaducidad = form['icdp_fechacaducidad']
                 if cadenas.es_nonulo_novacio(icdp_fechacaducidad):
@@ -521,6 +524,7 @@ class TItemConfigDao(BaseDao):
         select a.ic_id, a.ic_nombre, a.ic_code, a.tipic_id,
                a.ic_fechacrea, a.ic_nota, a.catic_id,
                t.catic_nombre,
+               td.icdp_modcontab,
                td.icdp_fechacaducidad,
                td.icdp_grabaiva,               
                td.icdp_preciocompra,
@@ -539,7 +543,7 @@ class TItemConfigDao(BaseDao):
         """.format(ic_id)
 
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'tipic_id', 'ic_fechacrea', 'ic_nota', 'catic_id',
-                      'catic_nombre', 'icdp_fechacaducidad', 'icdp_grabaiva', 'icdp_preciocompra',
+                      'catic_nombre', 'icdp_modcontab', 'icdp_fechacaducidad', 'icdp_grabaiva', 'icdp_preciocompra',
                       'icdp_precioventasiniva', 'icdp_preciocompra_iva', 'icdp_precioventa', 'icdp_precioventamin',
                       'tipic_nombre', 'icdp_proveedor', 'proveedor')
 
