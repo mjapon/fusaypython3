@@ -60,7 +60,7 @@ class TFuserRolDao(BaseDao):
 
         contabilidad_list = [
             {'label': 'Ingresos y Gastos', 'icon': 'pi pi-fw pi-sort-alt', 'routerLink': ['/vtickets']},
-            {'label': 'Cuentas', 'icon': '', 'routerLink': ['/rubros']},
+            # {'label': 'Cuentas', 'icon': '', 'routerLink': ['/rubros']},
             {'label': 'Plan de cuentas', 'icon': '', 'routerLink': ['/plancuentas']},
             {'label': 'Libro Diario', 'icon': '', 'routerLink': ['/librodiario']},
             {'label': 'Libro Mayor', 'icon': '', 'routerLink': ['/libromayor']},
@@ -97,9 +97,22 @@ class TFuserRolDao(BaseDao):
 
         ventas_list = [
             {'label': 'Movimientos', 'icon': 'pi pi-fw pi-briefcase',
-             'routerLink': ['/trndocs']},
-            {'label': 'Facturar', 'icon': 'pi pi-fw pi-money-bill',
-             'routerLink': ['/trndocform']}
+             'routerLink': ['/trndocs/1']},
+            {'label': 'Emitir Factura', 'icon': 'pi pi-fw pi-money-bill',
+             'routerLink': ['/trndocform/1']},
+            {'label': 'Emitir nota de venta', 'icon': 'pi pi-fw pi-money-bill',
+             'routerLink': ['/trndocform/2']},
+            {'label': 'Cuentas por cobrar', 'icon': 'pi pi-fw pi-money-bill',
+             'routerLink': ['/cuentasxcp/1']}
+        ]
+
+        compras_list = [
+            {'label': 'Movimientos', 'icon': 'pi pi-fw pi-briefcase', 'cicon': 'fas fa-shopping-basket',
+             'routerLink': ['/trndocs/2']},
+            {'label': 'Registrar factura', 'icon': 'pi pi-fw pi-money-bill',
+             'routerLink': ['/trndocform/7']},
+            {'label': 'Cuentas por pagar', 'icon': 'pi pi-fw pi-money-bill',
+             'routerLink': ['/cuentasxcp/2']}
         ]
 
         refs_list = [
@@ -129,6 +142,8 @@ class TFuserRolDao(BaseDao):
                           'items': users_list},
             'VN_LISTAR': {'label': 'Ventas', 'icon': 'pi pi-fw pi-wallet', 'cicon': 'fas fa-shopping-cart',
                           'items': ventas_list},
+            'CM_LISTAR': {'label': 'Compras', 'icon': 'pi pi-fw pi-wallet', 'cicon': 'fas fa-shopping-bag',
+                          'items': compras_list},
             'REF_LISTAR': {'label': 'Referentes', 'icon': 'pi pi-fw pi-wallet', 'cicon': 'fas fa-user-friends',
                            'items': refs_list},
             'AGN_LISTAR': {'label': 'Agenda', 'icon': 'pi pi-fw pi-calendar', 'cicon': 'far fa-calendar-plus',

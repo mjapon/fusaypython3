@@ -25,3 +25,4 @@ class TAsicredito(Declarative, JsonAlchemy):
     cre_compro = Column(String(15), nullable=False)
     cre_codban = Column(Integer)
     cre_saldopen = Column(Numeric(15, 4), default=0.0)
+    cre_tipo = Column(Integer, default=1, nullable=False)

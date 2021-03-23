@@ -1,4 +1,26 @@
-select det.cta_codigo, ic.ic_nombre, sum(det.dt_debito*det.dt_valor) from tasidetalle det
-join tasiento t on det.trn_codigo = t.trn_codigo and t.tra_codigo =13
-join titemconfig ic on det.cta_codigo = ic.ic_id
-group by det.cta_codigo, ic.ic_nombre
+select mov.bmo_fechacrea, mov.bmo_fechatransacc, mov.bmo_id, mov.bmo_numero, mov.bmo_monto, mov.bmo_clase,
+       mov.trn_codigo, asi.trn_observ, mov.bmo_estado, mov.bmo_codadj,
+       case
+           when bmo_estado =0 then 'Pendiente'
+           when bmo_estado =1 then 'Confirmado'
+           when bmo_estado =2 then 'Anulado'
+           else 'Estado desconocido' end as estado,
+       case
+           when bmo_clase = 1 then 'Ingreso'
+            when bmo_clase = 2 then 'Gasto'
+            when bmo_clase = 3 then 'Transferencia'
+        else 'Tipo Desconocido' end as clase,
+       det.dt_valor,
+       det.dt_debito,
+       case
+            when mov.bmo_clase = 2 and coalesce(ic.ic_clasecc,'') = 'E'  then
+               det.dt_valor*-1
+        else det.dt_valor end as dt_valor_proc,
+       det.cta_codigo,
+       ic.ic_nombre, ic.ic_code
+from tbilleteramov mov
+join tasidetalle det on mov.trn_codigo = det.trn_codigo
+join titemconfig ic on ic.ic_id = det.cta_codigo
+join tasiento asi on det.trn_codigo = asi.trn_codigo
+where mov.bmo_estado in (0,1) {swhere}
+order by mov.bmo_fechatransacc desc,  mov.bmo_numero desc, det.trn_codigo, det.dt_debito desc, ic.ic_nombre limit 100

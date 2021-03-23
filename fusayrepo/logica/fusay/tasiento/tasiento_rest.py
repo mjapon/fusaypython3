@@ -34,8 +34,9 @@ class TAsientoRest(TokenView):
             ttpdvdao = TtpdvDao(self.dbsession)
             alm_codigo = ttpdvdao.get_alm_codigo_from_tdv_codigo(tdv_codigo)
             secid = self.get_sec_id()
-            form_cab = tasientodao.get_form_cabecera(tra_codigo, alm_codigo, secid, tdv_codigo)
             ttransacc = ttransaccdao.get_ttransacc(tra_codigo=tra_codigo)
+            form_cab = tasientodao.get_form_cabecera(tra_codigo, alm_codigo, secid, tdv_codigo,
+                                                     tra_tipdoc=ttransacc['tra_tipdoc'])
             formaspago = transaccpago.get_formas_pago(tra_codigo=tra_codigo)
             form_det = tasientodao.get_form_detalle(sec_codigo=secid)
 
@@ -69,7 +70,8 @@ class TAsientoRest(TokenView):
             hasta = self.get_request_param('hasta')
             filtro = self.get_request_param('filtro')
             tracod = self.get_request_param('tracod')
-            grid, totales = tasientodao.listar_grid_ventas(desde, hasta, filtro, tracod)
+            tipo = self.get_request_param('tipo')
+            grid, totales = tasientodao.listar_grid_ventas(desde, hasta, filtro, tracod, tipo)
             return self.res200({'grid': grid, 'totales': totales})
         elif accion == 'formasiento':
             form = tasientodao.get_form_asiento()
@@ -104,6 +106,13 @@ class TAsientoRest(TokenView):
                                                                                         wherecodparents="ic_code like '4%' or ic_code like '5%'",
                                                                                         isestadores=True)
             return self.res200({'balance': balancegen, 'parents': parents, 'balancetree': restulttree})
+        elif accion == 'gettransaccs':
+            tipo = self.get_request_param('tipo')
+            items = tasientodao.listar_transacc_min(tipo)
+            transaccsret = [{'tra_codigo': 0, 'tra_nombre': 'Todos'}]
+            for cuenta in items:
+                transaccsret.append(cuenta)
+            return self.res200({'items': transaccsret})
 
     def collection_post(self):
         accion = self.get_request_param('accion')

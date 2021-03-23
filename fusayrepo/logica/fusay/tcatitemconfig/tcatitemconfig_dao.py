@@ -17,19 +17,19 @@ class TCatItemConfigDao(BaseDao):
 
     def listar(self):
         sql = """
-        select c.catic_id, c.catic_nombre, coalesce(ic.ic_nombre,'') caja, coalesce(c.catic_caja, 0) catic_caja
+        select c.catic_id, c.catic_nombre, coalesce(mc.mc_nombre,'') caja, coalesce(c.catic_mc, 0) catic_mc
         from tcatitemconfig c
-        left join titemconfig ic on c.catic_caja = ic.ic_id 
+        left join tmodelocontab mc on c.catic_mc = mc.mc_id 
         where catic_estado = 1 order by catic_id
         """
-        tupla = ('catic_id', 'catic_nombre', 'caja', 'catic_caja')
+        tupla = ('catic_id', 'catic_nombre', 'caja', 'catic_mc')
         return self.all(sql, tupla)
 
     def get_form_crea(self):
         return {
             'catic_id': 0,
             'catic_nombre': '',
-            'catic_caja': 0
+            'catic_mc': 0
         }
 
     def existe(self, nombre_cat):
@@ -48,7 +48,7 @@ class TCatItemConfigDao(BaseDao):
         tcategoria = TCatItemConfig()
         tcategoria.catic_nombre = cadenas.strip_upper(nombre)
         tcategoria.catic_estado = 1
-        tcategoria.catic_caja = caja
+        tcategoria.catic_mc = caja
 
         self.dbsession.add(tcategoria)
 
@@ -62,7 +62,7 @@ class TCatItemConfigDao(BaseDao):
                     raise ErrorValidacionExc(u'Ya existe una categoría con el nombre {0}, ingrese otra'.format(nombre))
                 else:
                     tcatitem.catic_nombre = nombre_upper
-            tcatitem.catic_caja = caja
+            tcatitem.catic_mc = caja
             self.dbsession.add(tcatitem)
 
     def anular(self, catic_id):

@@ -84,19 +84,22 @@ class TItemConfigDao(BaseDao):
                        case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
                        case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventa),2) else td.icdp_precioventa end as icdp_precioventa_iva,
                        case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventamin),2) else td.icdp_precioventamin end as icdp_precioventamin_iva,
-                       coalesce(ick.ice_stock, 0) ice_stock
+                       coalesce(ick.ice_stock, 0) ice_stock,
+                       coalesce(mcd.cta_codigo, 0) cta_codigo,
+                       coalesce(mcd.mcd_signo, 0) mcd_signo
                 from titemconfig a
-                join titemconfig_datosprod td on a.ic_id = td.ic_id
+                join titemconfig_datosprod td on a.ic_id = td.ic_id                
                 join titemconfig_sec ics on ics.ic_id = a.ic_id and ics.sec_id = {sec_id}
                 left join titemconfig_stock ick on ick.ic_id = a.ic_id and ick.sec_id = {sec_id}
+                left join tmodelocontab mc on td.icdp_modcontab = mc.mc_id
+                left join tmodelocontabdet mcd on mcd.mc_id = mc.mc_id and mcd.tra_codigo ={tracod} 
                 where a.ic_estado = 1 and (a.ic_code like '{filtro}%' or a.ic_nombre like '{filtro}%') order by a.ic_nombre limit {limit}
-                """.format(filtro=cadenas.strip_upper(filtro), limit=limit, sec_id=sec_id)
+                """.format(filtro=cadenas.strip_upper(filtro), limit=limit, sec_id=sec_id, tracod=tracod)
 
         tupla_desc = (
             'ic_id', 'ic_nombre', 'ic_code', 'tipic_id', 'icdp_grabaiva', 'icdp_preciocompra',
             'icdp_precioventa', 'icdp_precioventamin', 'icdp_modcontab', 'icdp_preciocompra_iva',
-            'icdp_precioventa_iva',
-            'icdp_precioventamin_iva', 'ice_stock'
+            'icdp_precioventa_iva', 'icdp_precioventamin_iva', 'ice_stock', 'cta_codigo', 'mcd_signo'
         )
 
         return self.all(sql, tupla_desc)
@@ -204,7 +207,7 @@ class TItemConfigDao(BaseDao):
             'icdp_precioventa': 0.0,
             'icdp_precioventamin': 0.0,
             'icdp_proveedor': -2,
-            'icdp_modcontab': 0,
+            'icdp_modcontab': 1,
             'icdp_fechacaducidad': '',
             'ic_dental': False,
             'aplicadental': aplicadental,
@@ -524,7 +527,8 @@ class TItemConfigDao(BaseDao):
         select a.ic_id, a.ic_nombre, a.ic_code, a.tipic_id,
                a.ic_fechacrea, a.ic_nota, a.catic_id,
                t.catic_nombre,
-               td.icdp_modcontab,
+               coalesce(td.icdp_modcontab,0) as icdp_modcontab,
+               coalesce(mc.mc_nombre, 'Ninguno') as mc_nombre, 
                td.icdp_fechacaducidad,
                td.icdp_grabaiva,               
                td.icdp_preciocompra,
@@ -538,12 +542,14 @@ class TItemConfigDao(BaseDao):
         from titemconfig a join tcatitemconfig t on a.catic_id = t.catic_id
         join titemconfig_datosprod td on a.ic_id = td.ic_id
         join ttipoitemconfig tipo on a.tipic_id = tipo.tipic_id
+        left join tmodelocontab mc on td.icdp_modcontab = mc.mc_id
         left join tpersona per on td.icdp_proveedor = per.per_id
         where a.ic_id = {0}
         """.format(ic_id)
 
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'tipic_id', 'ic_fechacrea', 'ic_nota', 'catic_id',
-                      'catic_nombre', 'icdp_modcontab', 'icdp_fechacaducidad', 'icdp_grabaiva', 'icdp_preciocompra',
+                      'catic_nombre', 'icdp_modcontab', 'mc_nombre', 'icdp_fechacaducidad', 'icdp_grabaiva',
+                      'icdp_preciocompra',
                       'icdp_precioventasiniva', 'icdp_preciocompra_iva', 'icdp_precioventa', 'icdp_precioventamin',
                       'tipic_nombre', 'icdp_proveedor', 'proveedor')
 
@@ -636,6 +642,19 @@ class TItemConfigDao(BaseDao):
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
 
+    def crea_ctacontable_billetera(self, bill_nombre, bill_obs, ic_padre, user_crea):
+        titemconfig_dao = TItemConfigDao(self.dbsession)
+        form = titemconfig_dao.get_form_plan_cuentas(padre=ic_padre)
+        aux_bill_nombre = cadenas.strip_upper(bill_nombre)
+        form['ic_nombre'] = aux_bill_nombre
+        form['ic_clasecc'] = 'E'
+        form['ic_alias'] = aux_bill_nombre
+        form['ic_nota'] = cadenas.strip(bill_obs)
+        form['ic_padre'] = ic_padre
+
+        ic_id = self.crea_ctacontable(form, user_crea)
+        return ic_id
+
     def crea_ctacontable(self, form, usercrea):
         if not cadenas.es_nonulo_novacio(form['sec']):
             raise ErrorValidacionExc('Debe ingresar la secuencia')
@@ -671,6 +690,8 @@ class TItemConfigDao(BaseDao):
             icpadre.ic_haschild = True
 
         self.dbsession.add(titemconfig)
+        self.dbsession.flush()
+        return titemconfig.ic_id
 
     def get_detalles_ctacontable(self, ic_id):
         sql = """

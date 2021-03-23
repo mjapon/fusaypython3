@@ -34,7 +34,7 @@ class TasientoDao(BaseDao):
 
     def get_form_asiento(self):
         formasiento = self.get_form_cabecera(tra_codigo=ctes.TRA_CODIGO_ASIENTO_CONTABLE,
-                                             alm_codigo=0, sec_codigo=0, tdv_codigo=0)
+                                             alm_codigo=0, sec_codigo=0, tdv_codigo=0, tra_tipdoc=1)
         formdet = self.get_form_detalle_asiento()
         persondao = TPersonaDao(self.dbsession)
         formref = persondao.getform()
@@ -82,22 +82,74 @@ class TasientoDao(BaseDao):
             'totales': totales
         }
 
-    def listar_asientos(self):
+    def aux_get_asientos_facturas(self):
         sql = """
-        select a.trn_codigo, a.dia_codigo, a.trn_fecreg, extract(day from a.trn_fecreg) ||'-'|| m.mes_corto as fecdesc,  a.trn_compro::int, a.trn_fecha, a.trn_valido, a.trn_docpen,
-               a.per_codigo, a.us_id, a.trn_observ,
-               b.dt_debito, b.dt_codigo, b.cta_codigo, c.ic_code, c.ic_nombre, b.dt_valor
+        select a.trn_codigo, a.trn_fecreg, extract(day from a.trn_fecreg) ||'-'|| m.mes_corto as fecdesc,  
+                a.trn_compro::int as trn_compro, a.trn_fecha, a.trn_valido, a.trn_docpen,
+                a.per_codigo, a.us_id, a.trn_observ,
+                a.dt_debito, a.cta_codigo, a.ic_code, a.ic_nombre, a.dt_valor
+               from vasientosgen a
+                join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
+        where trn_valido = 0 
+        order by a.trn_fecreg desc, a.trn_compro::int desc, a.dt_debito desc, a.dt_codigo
+        """.format(ctes.TRA_CODIGO_ASIENTO_CONTABLE)
+        tupla_desc = (
+            'trn_codigo', 'trn_fecreg', 'fecdesc', 'trn_compro', 'trn_fecha', 'trn_valido', 'trn_docpen',
+            'per_codigo', 'us_id', 'trn_observ', 'dt_debito', 'cta_codigo', 'ic_code', 'ic_nombre', 'dt_valor')
+        items = self.all(sql, tupla_desc)
+        return items
+
+    def aux_get_asientos(self):
+        sql = """
+        select a.trn_codigo, a.trn_fecreg, extract(day from a.trn_fecreg) ||'-'|| m.mes_corto as fecdesc,  
+                a.trn_compro::int, a.trn_fecha, a.trn_valido, a.trn_docpen,
+                a.per_codigo, a.us_id, a.trn_observ,
+                b.dt_debito, b.cta_codigo, c.ic_code, c.ic_nombre, b.dt_valor
                from tasiento a
                 join tasidetalle b on b.trn_codigo = a.trn_codigo
                 join titemconfig c on b.cta_codigo = c.ic_id
                 join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
-        where tra_codigo = {0} and trn_valido = 0 order by a.trn_fecreg desc, a.trn_compro::int desc, b.dt_debito desc, b.dt_codigo
+        where tra_codigo = {0} and trn_valido = 0 
+        order by a.trn_fecreg desc, a.trn_compro::int desc, b.dt_debito desc, b.dt_codigo
         """.format(ctes.TRA_CODIGO_ASIENTO_CONTABLE)
         tupla_desc = (
-            'trn_codigo', 'dia_codigo', 'trn_fecreg', 'fecdesc', 'trn_compro', 'trn_fecha', 'trn_valido', 'trn_docpen',
-            'per_codigo', 'us_id', 'trn_observ', 'dt_debito',
-            'dt_codigo', 'cta_codigo', 'ic_code', 'ic_nombre', 'dt_valor')
+            'trn_codigo', 'trn_fecreg', 'fecdesc', 'trn_compro', 'trn_fecha', 'trn_valido', 'trn_docpen',
+            'per_codigo', 'us_id', 'trn_observ', 'dt_debito', 'cta_codigo', 'ic_code', 'ic_nombre', 'dt_valor')
         items = self.all(sql, tupla_desc)
+        return items
+
+    def aux_get_all_asientos(self):
+        sql = """
+        with asientos as (
+        select a.trn_codigo, a.tra_codigo, a.trn_fecreg, extract(day from a.trn_fecreg) ||'-'|| m.mes_corto as fecdesc,
+               a.trn_compro::int, a.trn_fecha, a.trn_valido, a.trn_docpen,
+               a.per_codigo, a.us_id, a.trn_observ,
+               a.dt_debito, a.cta_codigo, a.ic_code, a.ic_nombre, a.dt_valor
+        from vasientosgen a
+                 join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
+        where trn_valido = 0
+        union
+        select a.trn_codigo, a.tra_codigo, a.trn_fecreg, extract(day from a.trn_fecreg) ||'-'|| m.mes_corto as fecdesc,
+               a.trn_compro::int, a.trn_fecha, a.trn_valido, a.trn_docpen,
+               a.per_codigo, a.us_id, a.trn_observ,
+               b.dt_debito, b.cta_codigo, c.ic_code, c.ic_nombre, b.dt_valor
+        from tasiento a
+                 join tasidetalle b on b.trn_codigo = a.trn_codigo
+                 join titemconfig c on b.cta_codigo = c.ic_id
+                 join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
+        where tra_codigo = 13 and trn_valido = 0)
+        select trn_codigo,tra_codigo,trn_fecreg, fecdesc, trn_compro, trn_fecha, trn_valido, trn_docpen,
+               per_codigo, us_id, trn_observ, dt_debito, cta_codigo, ic_code, ic_nombre, dt_valor from asientos
+        order by trn_fecreg desc, trn_compro desc, dt_debito desc
+        """
+
+        tupla_desc = (
+            'trn_codigo', 'tra_codigo', 'trn_fecreg', 'fecdesc', 'trn_compro', 'trn_fecha', 'trn_valido', 'trn_docpen',
+            'per_codigo', 'us_id', 'trn_observ', 'dt_debito', 'cta_codigo', 'ic_code', 'ic_nombre', 'dt_valor')
+        return self.all(sql, tupla_desc)
+
+    def listar_asientos(self):
+        items = self.aux_get_all_asientos()
         resultlist = []
         lasttrncod = 0
         asiprevius = None
@@ -113,7 +165,7 @@ class TasientoDao(BaseDao):
                 if lasttrncod != 0:
                     resultlist.append({
                         'trn_codigo': asiprevius['trn_codigo'],
-                        'dt_codigo': '',
+                        'tra_codigo': asiprevius['tra_codigo'],
                         'cta_codigo': '',
                         'ic_code': '',
                         'trn_fecreg': '',
@@ -128,7 +180,7 @@ class TasientoDao(BaseDao):
             if cab:
                 resultlist.append({
                     'trn_codigo': item['trn_codigo'],
-                    'dt_codigo': '',
+                    'tra_codigo': item['tra_codigo'],
                     'cta_codigo': '',
                     'ic_code': '',
                     'trn_fecreg': item['fecdesc'],
@@ -143,7 +195,7 @@ class TasientoDao(BaseDao):
                 totales['debe'] += item['dt_valor']
                 resultlist.append({
                     'trn_codigo': item['trn_codigo'],
-                    'dt_codigo': item['dt_codigo'],
+                    'tra_codigo': item['tra_codigo'],
                     'cta_codigo': item['cta_codigo'],
                     'ic_code': item['ic_code'],
                     'trn_fecreg': '',
@@ -157,7 +209,7 @@ class TasientoDao(BaseDao):
                 totales['haber'] += item['dt_valor']
                 resultlist.append({
                     'trn_codigo': item['trn_codigo'],
-                    'dt_codigo': item['dt_codigo'],
+                    'tra_codigo': item['tra_codigo'],
                     'cta_codigo': item['cta_codigo'],
                     'ic_code': item['ic_code'],
                     'trn_fecreg': '',
@@ -171,7 +223,7 @@ class TasientoDao(BaseDao):
             if item == items[len(items) - 1]:
                 resultlist.append({
                     'trn_codigo': asiprevius['trn_codigo'],
-                    'dt_codigo': '',
+                    'tra_codigo': asiprevius['tra_codigo'],
                     'cta_codigo': '',
                     'ic_code': '',
                     'trn_fecreg': '',
@@ -189,11 +241,12 @@ class TasientoDao(BaseDao):
 
         return resultlist, totales
 
-    def get_form_cabecera(self, tra_codigo, alm_codigo, sec_codigo, tdv_codigo):
+    def get_form_cabecera(self, tra_codigo, alm_codigo, sec_codigo, tdv_codigo, tra_tipdoc):
         ttransacc_pdv = TTransaccPdvDao(self.dbsession)
-        resestabsec = ttransacc_pdv.get_estabptoemi_secuencia(alm_codigo=alm_codigo, tra_codigo=tra_codigo,
-                                                              tdv_codigo=tdv_codigo, sec_codigo=sec_codigo)
-
+        resestabsec = {'tps_codigo': 0, 'estabptoemi': '', 'secuencia': ''}
+        if tra_tipdoc == 1:  # Solo para documentos emitidos se debe generar la secuencia
+            resestabsec = ttransacc_pdv.get_estabptoemi_secuencia(alm_codigo=alm_codigo, tra_codigo=tra_codigo,
+                                                                  tdv_codigo=tdv_codigo, sec_codigo=sec_codigo)
         timpuestodao = TImpuestoDao(self.dbsession)
         impuestos = timpuestodao.get_impuestos()
         trn_compro = ''
@@ -220,7 +273,7 @@ class TasientoDao(BaseDao):
 
         return form_asiento
 
-    def listar_grid_ventas(self, desde, hasta, filtro, tracod):
+    def listar_grid_ventas(self, desde, hasta, filtro, tracod, tipo):
         tgrid_dao = TGridDao(self.dbsession)
         sqladc = ''
         if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
@@ -235,7 +288,18 @@ class TasientoDao(BaseDao):
             filtronrocompro = " (a.trn_compro like '%{0}%') ".format(auxfiltroupper)
             sqladc += " and ({0} or {1})".format(filtrocedula, filtronrocompro)
 
-        data = tgrid_dao.run_grid(grid_nombre='ventas', tracod=tracod, swhere=sqladc)
+        sqltra = ''
+        if int(tracod) == 0:
+            if int(tipo) == 1:
+                sqltra = "and a.tra_codigo in (1,2)"
+            elif int(tipo) == 1:
+                sqltra = "and a.tra_codigo in (7)"
+        else:
+            sqltra = "and a.tra_codigo in ({0})".format(tracod)
+
+        swhere = ' {0} {1} '.format(sqltra, sqladc)
+
+        data = tgrid_dao.run_grid(grid_nombre='ventas', swhere=swhere)
 
         # Totalizar
         totales = {'efectivo': 0.0, 'credito': 0.0, 'saldopend': 0.0, 'total': 0.0}
@@ -355,7 +419,7 @@ class TasientoDao(BaseDao):
                det.dt_codsec
             from tasidetalle det
             join titemconfig ic on det.cta_codigo = ic.ic_id
-            where det.trn_codigo = {0} order by det.dt_codigo        
+            where det.trn_codigo = {0} order by det.dt_debito, ic.ic_nombre
         """.format(trn_codigo)
 
         tupla_desc = ('dt_codigo', 'cta_codigo', 'dt_cant', 'dt_debito', 'dt_tipoitem', 'dt_valor',
@@ -576,7 +640,7 @@ class TasientoDao(BaseDao):
         pagosobj = {'efectivo': 0.0, 'credito': 0.0, 'total': 0.0}
         for pago in pagos:
             totalpagos += pago['dt_valor']
-            if pago['ic_clasecc'] == 'C':
+            if pago['ic_clasecc'] == 'XC' or pago['ic_clasecc'] == 'XP':
                 pagosobj['credito'] = numeros.roundm2(pago['dt_valor'])
             else:
                 pagosobj['efectivo'] = numeros.roundm2(pago['dt_valor'])
@@ -823,7 +887,12 @@ class TasientoDao(BaseDao):
                 self.dbsession.add(detasiento)
                 self.dbsession.flush()
                 dt_codigo = detasiento.dt_codigo
-                if ic_clasecc == 'C':
+                if ic_clasecc == 'XC' or ic_clasecc == 'XP':
+                    cre_tipo = 0
+                    if ic_clasecc == 'XC':
+                        cre_tipo = 1
+                    if ic_clasecc == 'XP':
+                        cre_tipo = 2
                     tra_codigo_int = int(tra_codigo)
                     if (tra_codigo_int == ctes.TRA_CODIGO_ABONO_COMPRA) or (
                             tra_codigo_int == ctes.TRA_CODIGO_ABONO_VENTA):
@@ -842,9 +911,22 @@ class TasientoDao(BaseDao):
                             'cre_intere': 0.0,
                             'cre_intmor': 0.0,
                             'cre_codban': None,
-                            'cre_saldopen': detasiento.dt_valor
+                            'cre_saldopen': detasiento.dt_valor,
+                            'cre_tipo': cre_tipo
                         }
                         creditodao.crear(form=formcre, tra_codigo_cred=tra_codigo_cred)
+
+        resestabsec = transaccpdv_dao.get_estabptoemi_secuencia(alm_codigo=0,
+                                                                tra_codigo=ctes.TRA_CODIGO_ASIENTO_CONTABLE,
+                                                                tdv_codigo=0, sec_codigo=0)
+        if resestabsec is None:
+            raise ErrorValidacionExc(
+                'Error al tratar de generar secuencia para el registro contable asociado')
+
+        trn_compro_rel = "{0}{1}".format('000000', str(resestabsec['secuencia']).zfill(ctes.LEN_DOC_SECUENCIA))
+
+        transaccpdv_dao.gen_secuencia(tps_codigo=resestabsec['tps_codigo'], secuencia=resestabsec['secuencia'])
+        tasiento.trn_compro_rel = trn_compro_rel
 
         return trn_codigo
 
@@ -861,6 +943,20 @@ class TasientoDao(BaseDao):
 
     def marcar_errado(self, trn_codigo, user_do):
         self.aux_cambia_estado(trn_codigo, user_do=user_do, obs='', new_state=2)
+
+    def update_trn_docpen(self, trn_codigo, trn_docpen_value):
+        tasiento = self.find_entity_byid(trn_codigo)
+        if tasiento is not None:
+            tasiento.trn_docpen = trn_docpen_value
+            self.dbsession.add(tasiento)
+
+    def listar_transacc_min(self, tipo):
+        sql = "select tra_codigo, tra_nombre from ttransacc where tra_codigo in(7) "
+        if int(tipo) == 1:
+            sql = "select tra_codigo, tra_nombre from ttransacc where tra_codigo in(1,2) "
+
+        tupla_desc = ('tra_codigo', 'tra_nombre')
+        return self.all(sql, tupla_desc)
 
     def duplicar_comprobante(self, trn_codigo, user_crea, tra_codigo):
         tasiento = self.dbsession.query(TAsiento).filter(TAsiento.trn_codigo == trn_codigo).first()
@@ -890,15 +986,22 @@ class TasientoDao(BaseDao):
 
     def crear(self, form, form_persona, user_crea, detalles, pagos, totales, creaupdpac=True):
         dia_codigo = form['dia_codigo']
-        trn_fecreg = fechas.parse_cadena(form['trn_fecreg'])
-        len_compro = ctes.LEN_DOC_SECUENCIA
-        secuencia = form['secuencia']
-        trn_compro = "{0}{1}".format(form['estabptoemi'], str(secuencia).zfill(len_compro))
-
-        # Verificar que el comprobante no este siendo utilizado
         ttransaccdao = TTransaccDao(self.dbsession)
         tra_codigo = form['tra_codigo']
         ttransacc = ttransaccdao.get_ttransacc(tra_codigo)
+
+        trn_fecreg = fechas.parse_cadena(form['trn_fecreg'])
+        len_compro = ctes.LEN_DOC_SECUENCIA
+        secuencia = form['secuencia']
+        is_gensecuencia = False
+
+        if ttransacc['tra_tipdoc'] == 1:
+            trn_compro = "{0}{1}".format(form['estabptoemi'], str(secuencia).zfill(len_compro))
+            is_gensecuencia = True
+        elif ttransacc['tra_tipdoc'] == 2:
+            trn_compro = secuencia
+
+        iscontab = ttransacc['tra_contab'] == 1
 
         if form['trn_docpen'] == 'F':
             if self.existe_doc_valido(trn_compro, tra_codigo=tra_codigo):
@@ -965,8 +1068,9 @@ class TasientoDao(BaseDao):
         tasiento.trn_impref = form['trn_impref']
 
         tps_codigo = form['tps_codigo']
-        if tps_codigo is not None:
-            transaccpdv_dao = TTransaccPdvDao(self.dbsession)
+        valoresdebehaber = []
+        transaccpdv_dao = TTransaccPdvDao(self.dbsession)
+        if tps_codigo is not None and is_gensecuencia:
             transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
 
         self.dbsession.add(tasiento)
@@ -976,9 +1080,6 @@ class TasientoDao(BaseDao):
 
         for detalle in detalles:
             tasidetalle = TAsidetalle()
-
-            # TODO: Buscar el modelo contable para esta cuenta
-            detalle['icdp_modcontab']
 
             per_cod_det = int(detalle['per_codigo'])
             if per_cod_det == 0:
@@ -1002,6 +1103,8 @@ class TasientoDao(BaseDao):
             tasidetalle.dt_valdtogen = detalle['dt_valdtogen']
             tasidetalle.dt_codsec = detalle['dt_codsec']
 
+            valoresdebehaber.append({'dt_debito': tasidetalle.dt_debito, 'dt_valor': tasidetalle.dt_valor})
+
             self.dbsession.add(tasidetalle)
             self.dbsession.flush()
             dt_codigo = tasidetalle.dt_codigo
@@ -1024,6 +1127,7 @@ class TasientoDao(BaseDao):
             detimpuesto.art_codigo = 0
             detimpuesto.dt_debito = impuesto['dt_debito']
             detimpuesto.dt_valor = impuesto['dt_valor']
+            valoresdebehaber.append({'dt_debito': detimpuesto.dt_debito, 'dt_valor': detimpuesto.dt_valor})
             detimpuesto.dt_tipoitem = ctes.DT_TIPO_ITEM_IMPUESTO
             detimpuesto.dt_codsec = sec_codigo
             self.dbsession.add(detimpuesto)
@@ -1042,27 +1146,37 @@ class TasientoDao(BaseDao):
                 detpago.dt_codsec = pago['dt_codsec']
                 sumapagos += detpago.dt_valor
 
+                valoresdebehaber.append({'dt_debito': detpago.dt_debito, 'dt_valor': detpago.dt_valor})
+
                 ic_clasecc = pago['ic_clasecc']
 
                 self.dbsession.add(detpago)
                 self.dbsession.flush()
                 dt_codigo = detpago.dt_codigo
-                if ic_clasecc == 'C' and float(pago['dt_valor']) > 0.0:
-                    creditodao = TAsicreditoDao(self.dbsession)
-                    tra_codigo_cred = ctes.TRA_CODIGO_CREDITO_VENTA
-                    if int(tra_codigo) == ctes.TRA_CODIGO_FACTURA_COMPRA:
-                        tra_codigo_cred = ctes.TRA_CODIGO_CREDITO_COMPRA
+                if float(pago['dt_valor']) > 0.0:
+                    if ic_clasecc == 'XC' or ic_clasecc == 'XP':
+                        cre_tipo = 0
+                        if ic_clasecc == 'XC':
+                            cre_tipo = 1
+                        if ic_clasecc == 'XP':
+                            cre_tipo = 2
 
-                    formcre = {
-                        'dt_codigo': dt_codigo,
-                        'cre_fecini': form['trn_fecreg'],
-                        'cre_fecven': None,
-                        'cre_intere': 0.0,
-                        'cre_intmor': 0.0,
-                        'cre_codban': None,
-                        'cre_saldopen': detpago.dt_valor
-                    }
-                    creditodao.crear(form=formcre, tra_codigo_cred=tra_codigo_cred)
+                        creditodao = TAsicreditoDao(self.dbsession)
+                        tra_codigo_cred = ctes.TRA_CODIGO_CREDITO_VENTA
+                        if int(tra_codigo) == ctes.TRA_CODIGO_FACTURA_COMPRA:
+                            tra_codigo_cred = ctes.TRA_CODIGO_CREDITO_COMPRA
+
+                        formcre = {
+                            'dt_codigo': dt_codigo,
+                            'cre_fecini': form['trn_fecreg'],
+                            'cre_fecven': None,
+                            'cre_intere': 0.0,
+                            'cre_intmor': 0.0,
+                            'cre_codban': None,
+                            'cre_saldopen': detpago.dt_valor,
+                            'cre_tipo': cre_tipo
+                        }
+                        creditodao.crear(form=formcre, tra_codigo_cred=tra_codigo_cred)
 
         totalform = numeros.roundm(float(totales['total']), 2)
         totalsuma = numeros.roundm(sumapagos, 2)
@@ -1071,4 +1185,29 @@ class TasientoDao(BaseDao):
             raise ErrorValidacionExc(
                 'El total de la factura ({0}) no coincide con la suma de los pagos ({1})'.format(totalform, totalsuma))
 
+        if iscontab:
+            # Vericar que sumen debe y haber correctamente
+            itemsdebe = map(lambda x: x['dt_valor'], filter(lambda item: item['dt_debito'] == 1, valoresdebehaber))
+            itemshaber = map(lambda x: x['dt_valor'], filter(lambda item: item['dt_debito'] == -1, valoresdebehaber))
+
+            sumadebe = reduce(lambda a, b: a + b, itemsdebe, 0.0)
+            sumahaber = reduce(lambda a, b: a + b, itemshaber, 0.0)
+
+            sumadeberound = numeros.roundm2(sumadebe)
+            sumahaberound = numeros.roundm2(sumahaber)
+            if sumadeberound != sumahaberound:
+                raise ErrorValidacionExc(
+                    'La suma del debe ({0}) y el haber({1}) no coinciden, favor verificar'.format(sumadeberound,
+                                                                                                  sumahaberound))
+            resestabsec = transaccpdv_dao.get_estabptoemi_secuencia(alm_codigo=0,
+                                                                    tra_codigo=ctes.TRA_CODIGO_ASIENTO_CONTABLE,
+                                                                    tdv_codigo=0, sec_codigo=0)
+            if resestabsec is None:
+                raise ErrorValidacionExc(
+                    'Error al tratar de generar secuencia para el registro contable asociado')
+
+            trn_compro_rel = "{0}{1}".format('000000', str(resestabsec['secuencia']).zfill(ctes.LEN_DOC_SECUENCIA))
+
+            transaccpdv_dao.gen_secuencia(tps_codigo=resestabsec['tps_codigo'], secuencia=resestabsec['secuencia'])
+            tasiento.trn_compro_rel = trn_compro_rel
         return trn_codigo

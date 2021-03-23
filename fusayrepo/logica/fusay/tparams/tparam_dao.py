@@ -26,13 +26,39 @@ class TParamsDao(BaseDao):
         if tparam is not None:
             tparam.tprm_val = cadenas.strip(newvalue)
 
+    def update_sequence_billetera(self):
+        abr_sequence = 'billSeqCode'
+        self.aux_update_sequence(abr_sequence)
+
+    def aux_update_sequence(self, seqname):
+        tparam = self.dbsession.query(TParams).filter(TParams.tprm_abrev == seqname).first()
+        if tparam is not None:
+            current_val = int(tparam.tprm_val)
+            newvalue = current_val + 1
+            tparam.tprm_val = str(newvalue)
+
     def update_sequence_codbar(self):
         abr_sequence = 'artsSeqCodBar'
+        self.aux_update_sequence(abr_sequence)
+        """
         tparam = self.dbsession.query(TParams).filter(TParams.tprm_abrev == abr_sequence).first()
         if tparam is not None:
             current_val = int(tparam.tprm_val)
             newvalue = current_val + 1
             tparam.tprm_val = str(newvalue)
+        """
+
+    def get_next_sequence_billmov(self):
+        next_sequence = self.get_param_value('billMovSeq')
+        return int(next_sequence)
+
+    def update_sequence_billmov(self):
+        abr_sequence = 'billMovSeq'
+        self.aux_update_sequence(abr_sequence)
+
+    def get_next_sequence_bill(self):
+        next_sequence = self.get_param_value('billSeqCode')
+        return int(next_sequence)
 
     def get_next_sequence_codbar(self):
         next_sequence = self.get_param_value('artsSeqCodBar')

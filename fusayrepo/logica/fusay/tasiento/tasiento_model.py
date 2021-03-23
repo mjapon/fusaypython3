@@ -34,6 +34,7 @@ class TAsiento(Declarative, JsonAlchemy):
     trn_suscom = Column(String(2))
     per_codres = Column(Integer)
     trn_impref = Column(Numeric(4, 2))
+    trn_compro_rel = Column(String(15), nullable=False)
 
 
 class TAsientoAud(Declarative, JsonAlchemy):

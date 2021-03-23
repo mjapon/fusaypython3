@@ -29,3 +29,10 @@ class TAsiCreditoRest(TokenView):
             cre_codigo = self.get_request_param('codcred')
             datoscredito = tasicredao.get_datos_credito(cre_codigo)
             return self.res200({'datoscred': datoscredito})
+        elif accion == 'listargrid':
+            tipo = self.get_request_param('tipo')
+            desde = self.get_request_param('desde')
+            hasta = self.get_request_param('hasta')
+            filtro = self.get_request_param('filtro')
+            data, totales = tasicredao.listar(tipo, desde, hasta, filtro)
+            return self.res200({'grid': data, 'totales': totales})

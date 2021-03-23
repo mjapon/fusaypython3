@@ -17,7 +17,6 @@ log = logging.getLogger(__name__)
 class TCatItemConfigRest(TokenView):
 
     def collection_get(self):
-
         accion = self.get_rqpa()
         catdao = TCatItemConfigDao(self.dbsession)
         if accion == 'listar':
@@ -32,13 +31,13 @@ class TCatItemConfigRest(TokenView):
         if accion == 'crear':
             catdao = TCatItemConfigDao(self.dbsession)
             jsonbody = self.get_request_json_body()
-            catdao.crear(nombre=jsonbody['catic_nombre'], caja=jsonbody['catic_caja'])
+            catdao.crear(nombre=jsonbody['catic_nombre'], caja=jsonbody['catic_mc'])
             return {'status': 200, 'msg': u'Registro exitoso'}
         elif accion == 'actualizar':
             cat_id = self.get_request_matchdict('catic_id')
             jsonbody = self.get_request_json_body()
             catdao = TCatItemConfigDao(self.dbsession)
-            catdao.actualizar(cat_id, jsonbody['catic_nombre'], jsonbody['catic_caja'])
+            catdao.actualizar(cat_id, jsonbody['catic_nombre'], jsonbody['catic_mc'])
             return {'status': 200, 'msg': u'Actualización exitosa'}
         elif accion == 'anular':
             cat_id = self.get_request_matchdict('catic_id')

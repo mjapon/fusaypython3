@@ -9,8 +9,9 @@ import logging
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tasicredito.tasicredito_model import TAsicredito
+from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.ttransaccpdv.ttransaccpdv_dao import TTransaccPdvDao
-from fusayrepo.utils import ctes, fechas, numeros
+from fusayrepo.utils import ctes, fechas, numeros, cadenas
 
 log = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ class TAsicreditoDao(BaseDao):
         tasicredito.cre_compro = cre_compro
         tasicredito.cre_codban = form['cre_codban']
         tasicredito.cre_saldopen = form['cre_saldopen']
+        tasicredito.cre_tipo = form['cre_tipo']
 
         self.dbsession.add(tasicredito)
         ttransacc_pdv.gen_secuencia(tps_codigo=resestabsec['tps_codigo'], secuencia=secuencia)
@@ -92,7 +94,8 @@ class TAsicreditoDao(BaseDao):
             cred.cre_saldopen,
             detcred.dt_valor,
             detcred.cta_codigo,
-            detcred.trn_codigo,                        
+            detcred.trn_codigo,
+            cred.cre_tipo,                        
             ic.ic_clasecc,
                tasi.trn_compro,
                tasi.trn_fecha,
@@ -111,8 +114,8 @@ class TAsicreditoDao(BaseDao):
 
         tupla_desc = (
             'cre_codigo', 'dt_codigo', 'cre_fecini', 'cre_fecven', 'cre_intere', 'cre_intmor', 'cre_compro',
-            'cre_codban', 'cre_saldopen', 'dt_valor', 'cta_codigo', 'trn_codigo', 'ic_clasecc', 'trn_compro',
-            'trn_fecha', 'trn_fecreg', 'trn_observ', 'per_id', 'referente', 'per_ciruc')
+            'cre_codban', 'cre_saldopen', 'dt_valor', 'cta_codigo', 'trn_codigo', 'cre_tipo', 'ic_clasecc',
+            'trn_compro', 'trn_fecha', 'trn_fecreg', 'trn_observ', 'per_id', 'referente', 'per_ciruc')
 
         return self.first(sql, tupla_desc)
 
@@ -127,6 +130,33 @@ class TAsicreditoDao(BaseDao):
                 """.format(tra_codigo=tra_codigo, per_codigo=per_codigo)
         totaldeuda = self.first_col(sql, 'totaldeuda')
         return self.type_json(totaldeuda)
+
+    def listar(self, tipo, desde, hasta, filtro):
+        sqlfechas = ""
+        if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
+            sqlfechas = " and (tasi.trn_fecreg between '{0}' and '{1}' )".format(fechas.format_cadena_db(desde),
+                                                                                 fechas.format_cadena_db(hasta))
+        sqlfiltro = ''
+        if cadenas.es_nonulo_novacio(filtro):
+            filtroupper = cadenas.strip_upper(filtro)
+            auxfiltroupper = '%'.join(filtroupper.split(' '))
+            filtrocedula = " ( ( (per.per_nombres || ' ' || coalesce(per.per_apellidos, '')) like '%{0}%' ) or (per.per_ciruc like '%{0}%') ) ".format(
+                auxfiltroupper)
+            sqlfiltro = " and {0} ".format(filtrocedula)
+
+        tgrid_dao = TGridDao(self.dbsession)
+        data = tgrid_dao.run_grid(grid_nombre='cxcp', tipo=tipo, sqlfiltro=sqlfiltro, sqlfechas=sqlfechas)
+
+        # Totalizar
+        totales = {'credito': 0.0, 'saldopend': 0.0}
+        for item in data['data']:
+            totales['credito'] += item['dt_valor']
+            totales['saldopend'] += item['cre_saldopen']
+
+        totales['credito'] = numeros.roundm2(totales['credito'])
+        totales['saldopend'] = numeros.roundm2(totales['saldopend'])
+
+        return data, totales
 
     def listar_creditos(self, per_codigo, tra_codigo, solo_pendientes=True):
         """

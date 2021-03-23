@@ -62,7 +62,7 @@ class TItemConfigRest(TokenView):
             filtro = self.get_request_param('filtro')
             secid = self.get_request_param('sec')
             tracod = self.get_request_param('tracod')
-            items = titemconfig_dao.buscar_articulos(filtro=filtro, sec_id=secid)
+            items = titemconfig_dao.buscar_articulos(filtro=filtro, sec_id=secid, tracod=tracod)
             return self.res200({'items': items})
         elif 'gctascontables' == accion:
             filtro = self.get_request_param('filtro')
@@ -150,7 +150,7 @@ class TItemConfigRest(TokenView):
         else:
             if ic_id == 0:
                 msg = u'Registrado exitósamente'
-                result_ic_id = titemconfig_dao.crear(form, self.get_user_id(),sec_id=self.get_sec_id())
+                result_ic_id = titemconfig_dao.crear(form, self.get_user_id(), sec_id=self.get_sec_id())
             else:
                 msg = u'Actualizado exitósamente'
                 titemconfig_dao.actualizar(form, self.get_user_id())

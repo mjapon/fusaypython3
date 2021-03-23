@@ -35,7 +35,7 @@ class TodPlanTrantamientoRest(TokenView):
             tdv_codigo = self.get_request_param('tdv_codigo')
             ttpdvdao = TtpdvDao(self.dbsession)
             alm_codigo = ttpdvdao.get_alm_codigo_from_tdv_codigo(tdv_codigo)
-            form_cab = tasientodao.get_form_cabecera(tra_codigo, alm_codigo, 0, tdv_codigo)
+            form_cab = tasientodao.get_form_cabecera(tra_codigo, alm_codigo, 0, tdv_codigo, tra_tipdoc=1)
             ttransacc = ttransaccdao.get_ttransacc(tra_codigo=tra_codigo)
             formaspago = ttransaccpagodao.get_formas_pago(tra_codigo=tra_codigo)
             form_det = tasientodao.get_form_detalle(sec_codigo=self.get_sec_id())
