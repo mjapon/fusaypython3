@@ -292,7 +292,7 @@ class TasientoDao(BaseDao):
         if int(tracod) == 0:
             if int(tipo) == 1:
                 sqltra = "and a.tra_codigo in (1,2)"
-            elif int(tipo) == 1:
+            elif int(tipo) == 2:
                 sqltra = "and a.tra_codigo in (7)"
         else:
             sqltra = "and a.tra_codigo in ({0})".format(tracod)
@@ -498,21 +498,30 @@ class TasientoDao(BaseDao):
         tupla_desc = ('dt_codigo', 'cta_codigo', 'ic_nombre', 'ic_clasecc', 'dt_valor')
         return self.all(sql, tupla_desc)
 
-    def listar_documentos(self, per_codigo, tra_codigo, find_pagos=False):
+    def listar_documentos(self, per_codigo, tra_codigo, find_pagos=False, clase=1):
         """
         Listar facturas validas de un referente especificaco
         :param per_codigo:
         :return: [trn_codigo, trn_fecreg, trn_fecha, trn_compro, trn_observ, pagos:{'dt_codigo', 'cta_codigo', 'ic_nombre', 'ic_clasecc', 'dt_valor'}]
         """
+
+        tracodin = "1,2"
+        if int(clase) == 2:
+            tracodin = "7"
+
         sql = """
         select a.trn_codigo, a.trn_fecreg, a.trn_fecha, a.trn_compro, a.trn_observ,
         pagos.efectivo, pagos.credito, pagos.saldopend, pagos.total
          from tasiento a
          join get_pagos_factura(a.trn_codigo) as pagos(efectivo numeric, credito numeric, total numeric, saldopend numeric, trncodigo integer)
          on a.trn_codigo = pagos.trncodigo 
-         where per_codigo = {0}
-        and tra_codigo = {1} and trn_valido = 0 and trn_docpen = 'F' order by trn_fecha desc 
-        """.format(per_codigo, tra_codigo)
+         where per_codigo = {percodigo}
+        and tra_codigo in ({tracodin}) and trn_valido = 0 and trn_docpen = 'F' order by trn_fecha desc 
+        """.format(percodigo=per_codigo, tracodin=tracodin)
+
+        print('sql que se ejecuta es:')
+        print(sql)
+
         tupla_desc = (
             'trn_codigo', 'trn_fecreg', 'trn_fecha', 'trn_compro', 'trn_observ', 'efectivo', 'credito', 'saldopend',
             'total')
@@ -573,7 +582,8 @@ class TasientoDao(BaseDao):
         trn_pagpen,
         sec_codigo,
         a.per_codigo,
-        tra_codigo,
+        a.tra_codigo,
+        tra.tra_nombre,
         a.us_id,
         us.us_cuenta,
         trn_observ,
@@ -589,6 +599,7 @@ class TasientoDao(BaseDao):
         per.per_direccion
          from tasiento a 
          join tpersona per on a.per_codigo = per.per_id
+         join ttransacc tra on a.tra_codigo = tra.tra_codigo 
          join tfuser us on a.us_id = us.us_id  
          where trn_codigo = {0}
         """.format(trn_codigo)
@@ -604,6 +615,7 @@ class TasientoDao(BaseDao):
                       'sec_codigo',
                       'per_codigo',
                       'tra_codigo',
+                      'tra_nombre',
                       'us_id',
                       'us_cuenta',
                       'trn_observ',

@@ -9,7 +9,6 @@ from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
-from fusayrepo.utils import ctes
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -94,9 +93,9 @@ class TPersonaRest(TokenView):
         elif 'gtotaldeudas' == accion:
             tasicreditodao = TAsicreditoDao(self.dbsession)
             percodigo = self.get_request_param('codper')
-            totaldeudas = tasicreditodao.get_total_deudas(per_codigo=percodigo,
-                                                          tra_codigo=ctes.TRA_CODIGO_FACTURA_VENTA)
-            return self.res200({'deudas': totaldeudas})
+            totaldeudas = tasicreditodao.get_total_deudas(per_codigo=percodigo, clase=1)
+            totalcxp = tasicreditodao.get_total_deudas(per_codigo=percodigo, clase=2)
+            return self.res200({'deudas': totaldeudas, 'totalcxp': totalcxp})
 
     def post(self):
         tpersonadao = TPersonaDao(self.dbsession)

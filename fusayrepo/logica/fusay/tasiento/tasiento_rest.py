@@ -12,7 +12,7 @@ from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
 from fusayrepo.logica.fusay.ttransaccpago.ttransaccpago_dao import TTransaccPagoDao
-from fusayrepo.utils import ctes
+from fusayrepo.utils import ctes, cadenas
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -58,12 +58,23 @@ class TAsientoRest(TokenView):
         elif accion == 'gfact':
             tra_codigo = 1
             per_codigo = self.get_request_param('per')
-            docs = tasientodao.listar_documentos(per_codigo=per_codigo, tra_codigo=tra_codigo, find_pagos=True)
+            clase = self.get_request_param('clase')
+            if not cadenas.es_nonulo_novacio(clase):
+                clase = 1
+
+            docs = tasientodao.listar_documentos(per_codigo=per_codigo, tra_codigo=tra_codigo,
+                                                 find_pagos=True,
+                                                 clase=clase)
             return self.res200({'docs': docs})
         elif accion == 'gcred':
             tra_codigo = 1
             per_codigo = self.get_request_param('per')
-            creds = tasicredao.listar_creditos(per_codigo=per_codigo, tra_codigo=tra_codigo, solo_pendientes=False)
+            clase = self.get_request_param('clase')
+            if not cadenas.es_nonulo_novacio(clase):
+                clase = 1
+
+            creds = tasicredao.listar_creditos(per_codigo=per_codigo, tra_codigo=tra_codigo,
+                                               solo_pendientes=False, clase=clase)
             return self.res200({'creds': creds})
         elif accion == 'gridventas':
             desde = self.get_request_param('desde')

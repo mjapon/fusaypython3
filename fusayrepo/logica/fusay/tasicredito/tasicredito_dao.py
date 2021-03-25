@@ -119,15 +119,21 @@ class TAsicreditoDao(BaseDao):
 
         return self.first(sql, tupla_desc)
 
-    def get_total_deudas(self, per_codigo, tra_codigo):
+    def get_total_deudas(self, per_codigo, clase):
+
+        tracodin = "1,2"
+        if int(clase) == 2:
+            tracodin = "7"
+
         sql = """
                 select 
                     sum(cred.cre_saldopen) as totaldeuda
                        from tasicredito cred
                 join tasidetalle detcred on cred.dt_codigo = detcred.dt_codigo
-                join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo and tasi.tra_codigo = {tra_codigo} and tasi.trn_docpen = 'F' and tasi.trn_valido = 0
+                join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo and tasi.tra_codigo in ({tracodin}) 
+                and tasi.trn_docpen = 'F' and tasi.trn_valido = 0
                 join tpersona per on tasi.per_codigo = per.per_id and per.per_id = {per_codigo}
-                """.format(tra_codigo=tra_codigo, per_codigo=per_codigo)
+                """.format(tracodin=tracodin, per_codigo=per_codigo)
         totaldeuda = self.first_col(sql, 'totaldeuda')
         return self.type_json(totaldeuda)
 
@@ -158,7 +164,7 @@ class TAsicreditoDao(BaseDao):
 
         return data, totales
 
-    def listar_creditos(self, per_codigo, tra_codigo, solo_pendientes=True):
+    def listar_creditos(self, per_codigo, tra_codigo, solo_pendientes=True, clase=1):
         """
         Retorna listado de creditos de un referente y de una transaccion especificada
         :param per_codigo:
@@ -168,6 +174,10 @@ class TAsicreditoDao(BaseDao):
             'cre_codban',
             'cre_saldopen', 'trn_compro', 'trn_fecha', 'trn_fecreg', 'per_id', 'referente', 'per_ciruc']
         """
+
+        tracodin = "1,2"
+        if int(clase) == 2:
+            tracodin = "7"
 
         sqlpendientes = " "
         if solo_pendientes:
@@ -194,11 +204,11 @@ class TAsicreditoDao(BaseDao):
                per.per_ciruc
                from tasicredito cred
         join tasidetalle detcred on cred.dt_codigo = detcred.dt_codigo
-        join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo and tasi.tra_codigo = {tra_codigo} and tasi.trn_docpen = 'F' and tasi.trn_valido = 0
+        join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo and tasi.tra_codigo in ({tracodin}) and tasi.trn_docpen = 'F' and tasi.trn_valido = 0
         join tpersona per on tasi.per_codigo = per.per_id and per.per_id = {per_codigo}
         {sqlpend}
         order by tasi.trn_fecreg desc      
-        """.format(tra_codigo=tra_codigo, per_codigo=per_codigo, sqlpend=sqlpendientes)
+        """.format(tracodin=tracodin, per_codigo=per_codigo, sqlpend=sqlpendientes)
 
         tupla_desc = (
             'cre_codigo', 'dt_codigo', 'cre_fecini', 'cre_fecven', 'cre_intere', 'cre_intmor', 'cre_compro',

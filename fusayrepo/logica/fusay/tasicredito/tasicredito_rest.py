@@ -8,6 +8,7 @@ import logging
 from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
+from fusayrepo.utils import cadenas
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -22,8 +23,12 @@ class TAsiCreditoRest(TokenView):
         if accion == 'listarcreds':
             tra_codigo = self.get_request_param('tracod')
             per_codigo = self.get_request_param('per')
+            clase = self.get_request_param('clase')
+            if not cadenas.es_nonulo_novacio(clase):
+                clase = 1
+
             creds, sumas = tasicredao.listar_creditos(per_codigo=per_codigo, tra_codigo=tra_codigo,
-                                                      solo_pendientes=False)
+                                                      solo_pendientes=False, clase=clase)
             return self.res200({'creds': creds, 'totales': sumas})
         elif accion == 'gdet':
             cre_codigo = self.get_request_param('codcred')

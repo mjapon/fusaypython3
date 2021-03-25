@@ -31,3 +31,8 @@ ORDER BY a.trn_fecreg DESC, a.trn_compro_rel DESC, b.dt_debito DESC;
 alter table vasientosgen
     owner to postgres;
 
+
+
+
+this.isDisabledFormRef = false;
+        this.isConsumidorFinal = false;

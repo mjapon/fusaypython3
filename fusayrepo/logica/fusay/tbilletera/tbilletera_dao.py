@@ -95,6 +95,15 @@ class TBilleteraDao(BaseDao):
     def anular(self, bil_id, user_anula):
         tbilletera = self.find_by_id(bil_id)
         if tbilletera is not None:
+            # Se debe veerificar si esta billetera esta en un modelo contable asociado
+            sql = """
+            select count(*) as cuenta from ttransaccpago where cta_codigo = {0}
+            """.format(tbilletera.ic_id)
+            cuenta = self.first_col(sql, 'cuenta')
+            if cuenta > 0:
+                raise ErrorValidacionExc(
+                    'No se puede anular esta billetera, esta siendo usada como forma de pago en transacciones de compra o venta')
+
             tbilletera.bil_estado = 2
             titemconfigdao = TItemConfigDao(self.dbsession)
             titemconfigdao.anular(tbilletera.ic_id, user_anula)

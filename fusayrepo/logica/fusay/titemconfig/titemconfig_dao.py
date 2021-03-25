@@ -13,6 +13,7 @@ from fusayrepo.logica.fusay.titemconfig.titemconfig_model import TItemConfig
 from fusayrepo.logica.fusay.titemconfig_autdit.titemconfigaudit_dao import TItemConfigAuditDao
 from fusayrepo.logica.fusay.titemconfig_datosprod.titemconfigdatosprod_model import TItemConfigDatosProd
 from fusayrepo.logica.fusay.titemconfig_sec.titemconfigsec_dao import TItemConfigSecDao
+from fusayrepo.logica.fusay.titemconfig_stock.titemconfigstock_dao import TItemConfigStockDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.utils import cadenas, ivautil, fechas, ctes, numeros
@@ -401,6 +402,12 @@ class TItemConfigDao(BaseDao):
         self.save_secciones(secciones=form['seccionesf'], ic_id=ic_id)
         titemconfigautditdao = TItemConfigAuditDao(self.dbsession)
         titemconfigautditdao.crear_audit_alta(ic_id=ic_id, user_crea=user_crea, sec_id=sec_id)
+
+        if int(form['tipic_id']) == 1:
+            # Crear por defecto los inventarios en cero para un tipo producto
+            itemconfstockdao = TItemConfigStockDao(self.dbsession)
+            form_secs = itemconfstockdao.get_stock(ic_id=ic_id)
+            itemconfstockdao.crear_actualizar(form_secs=form_secs, user_do=user_crea, sec_id=sec_id)
 
         return ic_id
 
