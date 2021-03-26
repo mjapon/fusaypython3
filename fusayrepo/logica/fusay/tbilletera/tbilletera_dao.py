@@ -23,8 +23,8 @@ class TBilleteraDao(BaseDao):
         seq = tparamdao.get_next_sequence_bill()
 
         sqlcajasdisp = """
-        select ic_id, ic_nombre, ic_code from titemconfig a where tipic_id = 3 and ic_estado =1 and ic_clasecc = 'E'
-        and ic_id not in (select ic_id from tbilletera where bil_estado = 1)
+        select ic_id, ic_nombre, ic_code from titemconfig a where tipic_id = 3 and ic_estado =1 and ic_clasecc in ('B','E')
+        and ic_haschild = false and ic_id not in (select ic_id from tbilletera where bil_estado = 1)
          order by a.ic_nombre
         """
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code')
