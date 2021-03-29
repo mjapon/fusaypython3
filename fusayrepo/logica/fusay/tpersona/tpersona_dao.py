@@ -201,12 +201,12 @@ class TPersonaDao(BaseDao):
                         coalesce(tiporefval.lval_nombre, '') as tiporef,
                         coalesce(lugar.lug_nombre,'') as residencia
                         from tpersona paciente
-                            left join tlistavalores genlval on paciente.per_genero = genlval.lval_id and genlval.lval_cat=1
-                            left join tlistavalores estclval on paciente.per_estadocivil = estclval.lval_id and estclval.lval_cat=2
-                            left join tlistavalores profval on paciente.per_ocupacion = profval.lval_id and profval.lval_cat=3
-                            left join tlistavalores tipsanval on paciente.per_tiposangre = tipsanval.lval_id and tipsanval.lval_cat=4
-                            left join tlistavalores tiporefval on paciente.per_tipo = coalesce(tiporefval.lval_valor,'1')::int and tiporefval.lval_cat=5
-                            left join tlugar lugar on paciente.per_lugresidencia = lugar.lug_id
+                            left join public.tlistavalores genlval on paciente.per_genero = genlval.lval_id and genlval.lval_cat=1
+                            left join public.tlistavalores estclval on paciente.per_estadocivil = estclval.lval_id and estclval.lval_cat=2
+                            left join public.tlistavalores profval on paciente.per_ocupacion = profval.lval_id and profval.lval_cat=3
+                            left join public.tlistavalores tipsanval on paciente.per_tiposangre = tipsanval.lval_id and tipsanval.lval_cat=4
+                            left join public.tlistavalores tiporefval on paciente.per_tipo = coalesce(tiporefval.lval_valor,'1')::int and tiporefval.lval_cat=5
+                            left join public.tlugar lugar on paciente.per_lugresidencia = lugar.lug_id
                         where {0} = {1}""".format(cadenas.strip(propname), cadenas.strip(propvalue))
         result = self.first(sql, tupla_desc)
         try:
@@ -246,7 +246,7 @@ class TPersonaDao(BaseDao):
                         per_lugresidencia,
                         coalesce(tlugar.lug_nombre,'') as lugresidencia
                         from tpersona
-                        left join tlugar on tpersona.per_lugresidencia = tlugar.lug_id
+                        left join public.tlugar on tpersona.per_lugresidencia = tlugar.lug_id
         """
         concedula = u" coalesce(per_ciruc,'')!='' and per_id>0" if solo_cedulas else ''
 

@@ -10,7 +10,7 @@ class TListaValoresDao(BaseDao):
 
     def listar(self, codcat):
         sql = """
-        select lval_id, lval_cat, lval_abrev, lval_nombre, lval_valor from tlistavalores
+        select lval_id, lval_cat, lval_abrev, lval_nombre, lval_valor from public.tlistavalores
          where lval_cat={0} order by lval_nombre asc 
         """.format(codcat)
         tupla_desc = ('lval_id', 'lval_cat', 'lval_abrev', 'lval_nombre', 'lval_valor')

@@ -52,6 +52,8 @@ class TBilleteraMovDao(BaseDao):
         tparamdao = TParamsDao(self.dbsession)
         cod_cta_ing = tparamdao.get_param_value('codRootCtaContabIng')
         cod_cta_gast = tparamdao.get_param_value('codRootCtaContabGast')
+        cod_cta_caja = tparamdao.get_param_value('codCtaContabCaj')
+        cod_cta_ban = tparamdao.get_param_value('codCtaContabBan')
 
         if cod_cta_ing is None:
             raise ErrorValidacionExc(
@@ -60,16 +62,22 @@ class TBilleteraMovDao(BaseDao):
             raise ErrorValidacionExc(
                 'El código raiz de la cuenta contable gastos (codRootCtaContabGast) no ha sido definido ')
 
-        codeparent = '{0}.'.format(cod_cta_ing)
+        codeparent = '{0}'.format(cod_cta_ing)
         if int(tipo) == 2:
-            codeparent = '{0}.'.format(cod_cta_gast)
+            codeparent = '{0}'.format(cod_cta_gast)
+
+        cajabancos = "({0}%|{1}%)".format(cod_cta_caja, cod_cta_ban)
 
         sql = """
-        select ic_id, ic_code, ic_nombre, ic_clasecc from titemconfig where
-        tipic_id = 3 and ic_estado = 1 and ic_haschild = false and  ic_code like '{0}%' order by ic_nombre asc 
-        """.format(codeparent)
+        select ic_id, ic_code, ic_nombre, ic_code ||' '||ic_nombre as codnombre, ic_clasecc from titemconfig where
+        tipic_id = 3 and ic_estado = 1 and ic_haschild = false and  ic_code similar to '{0}' 
+        and ic_code not similar to '{1}'  order by ic_code desc, ic_nombre asc 
+        """.format(codeparent, cajabancos)
 
-        tupla_desc = ('ic_id', 'ic_code', 'ic_nombre', 'ic_clasecc')
+        print('sql que se ejecuta es')
+        print(sql)
+
+        tupla_desc = ('ic_id', 'ic_code', 'ic_nombre', 'codnombre', 'ic_clasecc')
         cuentasformov = self.all(sql, tupla_desc)
 
         return cuentasformov

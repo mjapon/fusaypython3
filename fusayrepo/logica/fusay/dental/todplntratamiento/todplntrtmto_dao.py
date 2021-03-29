@@ -9,6 +9,7 @@ import logging
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.fusay.dental.todplntratamiento.todplntrtmto_model import TOdPlnTrtmto
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
+from fusayrepo.logica.fusay.tmodelocontab.tmodelocontab_dao import TModelocontabDao
 from fusayrepo.utils import cadenas
 
 log = logging.getLogger(__name__)
@@ -42,6 +43,15 @@ class TOdPlanTratamientoDao(BaseDao):
         tplantratamiento.med_id = formplan['med_id']
         tplantratamiento.pac_id = formplan['pac_id']
         tplantratamiento.pnt_estado = 1
+
+        # Los detalles se les debe agregar el model contable en caso de que tenga
+        tra_codigo = formcab['tra_codigo']
+        tmodcontabdao = TModelocontabDao(self.dbsession)
+        for det in detalles:
+            datosmc = tmodcontabdao.get_itemconfig_with_mc(ic_id=det['art_codigo'], tra_codigo=tra_codigo)
+            if datosmc is not None:
+                det['cta_codigo'] = datosmc['cta_codigo']
+                det['dt_debito'] = datosmc['mcd_signo']
 
         # Registro de factura
         tsientodao = TasientoDao(self.dbsession)

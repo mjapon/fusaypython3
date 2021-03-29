@@ -519,9 +519,6 @@ class TasientoDao(BaseDao):
         and tra_codigo in ({tracodin}) and trn_valido = 0 and trn_docpen = 'F' order by trn_fecha desc 
         """.format(percodigo=per_codigo, tracodin=tracodin)
 
-        print('sql que se ejecuta es:')
-        print(sql)
-
         tupla_desc = (
             'trn_codigo', 'trn_fecreg', 'trn_fecha', 'trn_compro', 'trn_observ', 'efectivo', 'credito', 'saldopend',
             'total')

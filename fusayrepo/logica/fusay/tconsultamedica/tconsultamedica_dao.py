@@ -278,7 +278,7 @@ class TConsultaMedicaDao(BaseDao):
                     from todatenciones aten
                             join tpersona paciente on aten.pac_id = paciente.per_id
                             join public.tmes mes on mes.mes_id = extract(month from aten.ate_fechacrea) 
-                            left join tlugar on paciente.per_lugresidencia = tlugar.lug_id"""
+                            left join public.tlugar on paciente.per_lugresidencia = tlugar.lug_id"""
 
         solo_cedulas = True
         concedula = u" aten.ate_estado = 1 and coalesce(per_ciruc,'')!='' and per_id>0 " if solo_cedulas else ''
@@ -376,7 +376,7 @@ class TConsultaMedicaDao(BaseDao):
                 from tconsultamedica historia
                         join tpersona paciente on historia.pac_id = paciente.per_id
                         join public.tmes mes on mes.mes_id = extract(month from historia.cosm_fechacrea) 
-                        left join tlugar on paciente.per_lugresidencia = tlugar.lug_id
+                        left join public.tlugar on paciente.per_lugresidencia = tlugar.lug_id
                 """
 
         solo_cedulas = True
@@ -494,8 +494,8 @@ class TConsultaMedicaDao(BaseDao):
                     historia.cosm_useredita
                       from tconsultamedica historia
         join tpersona paciente on historia.pac_id = paciente.per_id
-        left join tcie10 cie on  historia.cosm_diagnostico = cie.cie_id
-        left join tlistavalores lv on paciente.per_ocupacion = lv.lval_id
+        left join public.tcie10 cie on  historia.cosm_diagnostico = cie.cie_id
+        left join public.tlistavalores lv on paciente.per_ocupacion = lv.lval_id
         where historia.cosm_id = {0}
         """.format(cosm_id)
 
@@ -628,7 +628,7 @@ class TConsultaMedicaDao(BaseDao):
         return self.all(sql, tupla_desc)
 
     def get_cie10data(self):
-        sql = u"select cie_id, cie_key, cie_valor, cie_key||'-'||cie_valor as ciekeyval  from tcie10 order by cie_key"
+        sql = u"select cie_id, cie_key, cie_valor, cie_key||'-'||cie_valor as ciekeyval  from public.tcie10 order by cie_key"
         tupla_desc = ('cie_id', 'cie_key', 'cie_valor', 'ciekeyval')
 
         return self.all(sql, tupla_desc)

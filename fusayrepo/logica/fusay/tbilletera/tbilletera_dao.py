@@ -70,9 +70,11 @@ class TBilleteraDao(BaseDao):
 
     def listar_min(self):
         sql = """
-        select bil_id, bil_code, bil_nombre, ic_id from tbilletera where bil_estado = 1 order by bil_nombre asc
+        select bil.bil_id, bil.bil_code, bil.bil_nombre, bil.ic_id, 
+        bil.bil_nombre||' - '||bil.bil_code||' - '||round(bil.bil_saldo,2) as bilnomcodsald 
+        from tbilletera bil where bil_estado = 1 order by bil_nombre asc
         """
-        tupla_desc = ('bil_id', 'bil_code', 'bil_nombre', 'ic_id')
+        tupla_desc = ('bil_id', 'bil_code', 'bil_nombre', 'ic_id', 'bilnomcodsald')
         return self.all(sql, tupla_desc)
 
     def bill_has_moves(self, bil_id):

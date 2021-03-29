@@ -17,14 +17,14 @@ class TLugarDao(BaseDao):
 
     def listar(self):
         sql = u"""
-        select lug_id, lug_nombre, lug_parent from tlugar order by lug_nombre asc
+        select lug_id, lug_nombre, lug_parent from public.tlugar order by lug_nombre asc
         """
         tupla_desc = ('lug_id', 'lug_nombre', 'lug_parent')
         return self.all(sql, tupla_desc)
 
     def existe_lug_nombre(self, lug_nombre):
         lug_nombre_upper = cadenas.strip_upper(lug_nombre)
-        sql = u"select count(*) as cuenta from tlugar where lug_nombre =='{0}'".format(lug_nombre_upper)
+        sql = u"select count(*) as cuenta from public.tlugar where lug_nombre =='{0}'".format(lug_nombre_upper)
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
 
@@ -63,13 +63,13 @@ class TLugarDao(BaseDao):
 
     def listar_activos(self):
         sql = """
-                select lug_id, lug_nombre from tlugar where lug_status = 1 order by lug_nombre asc
+                select lug_id, lug_nombre from public.tlugar where lug_status = 1 order by lug_nombre asc
                 """
         tupla_desc = ('lug_id', 'lug_nombre')
         return self.all(sql, tupla_desc)
 
     def existe(self, lug_nombre):
-        sql = "select count(*) as cuenta from tlugar where lug_nombre = '{0}'".format(cadenas.strip_upper(lug_nombre))
+        sql = "select count(*) as cuenta from public.tlugar where lug_nombre = '{0}'".format(cadenas.strip_upper(lug_nombre))
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
 
