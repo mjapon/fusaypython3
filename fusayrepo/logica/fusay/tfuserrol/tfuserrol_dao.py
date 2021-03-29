@@ -100,10 +100,12 @@ class TFuserRolDao(BaseDao):
              'routerLink': ['/trndocs/1']},
             {'label': 'Emitir Factura', 'icon': 'pi pi-fw pi-money-bill',
              'routerLink': ['/trndocform/1']},
-            {'label': 'Emitir nota de venta', 'icon': 'pi pi-fw pi-money-bill',
+            {'label': 'Emitir nota de venta', 'icon': '',
              'routerLink': ['/trndocform/2']},
-            {'label': 'Cuentas por cobrar', 'icon': 'pi pi-fw pi-money-bill',
-             'routerLink': ['/cuentasxcp/1']}
+            {'label': 'Cuentas por cobrar', 'icon': '',
+             'routerLink': ['/cuentasxcp/1']},
+            {'label': 'Utilidades', 'icon': '',
+             'routerLink': ['/utilventas']}
         ]
 
         compras_list = [

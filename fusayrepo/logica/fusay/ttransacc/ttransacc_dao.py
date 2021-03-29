@@ -48,3 +48,11 @@ class TTransaccDao(BaseDao):
                       'tra_seccion')
 
         return self.first(sql, tupla_desc)
+
+    def listar_min(self, tra_codigos_in):
+        sql = """
+        select tra_codigo, tra_nombre from ttransacc where tra_codigo in ({0})
+        """.format(tra_codigos_in)
+
+        tupla_desc = ('tra_codigo', 'tra_nombre')
+        return self.all(sql, tupla_desc)

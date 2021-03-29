@@ -5,6 +5,7 @@ Created on '04/03/2015'
 """
 import json
 import logging
+
 from pyramid.response import Response
 from pyramid.view import view_config
 
@@ -59,9 +60,16 @@ def add_status_to_response(response, exc_res):
     response.status_code = exc_res.get("status_code", 400)
     return response
 
+
 @view_config(context=Exception, renderer='excepcion/general.html')
 def exc_general(exc, request):
     res = procesar_excepcion(exc, request)
     response = Response(json.dumps(res, cls=SEJsonEncoder))
+    response.headers.update({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST,GET,DELETE,PUT,OPTIONS',
+        'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept, Authorization',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Max-Age': '1728000',
+    })
     return add_status_to_response(response, res)
-
