@@ -35,7 +35,8 @@ class TBilleteraMovDao(BaseDao):
             'desde': '',
             'hasta': '',
             'tipo': 0,
-            'cuenta': 0
+            'cuenta': 0,
+            'cuentabill': 0
         }
 
         return formfiltros
@@ -73,9 +74,6 @@ class TBilleteraMovDao(BaseDao):
         tipic_id = 3 and ic_estado = 1 and ic_haschild = false and  ic_code similar to '{0}' 
         and ic_code not similar to '{1}'  order by ic_code desc, ic_nombre asc 
         """.format(codeparent, cajabancos)
-
-        print('sql que se ejecuta es')
-        print(sql)
 
         tupla_desc = ('ic_id', 'ic_code', 'ic_nombre', 'codnombre', 'ic_clasecc')
         cuentasformov = self.all(sql, tupla_desc)
@@ -270,23 +268,29 @@ class TBilleteraMovDao(BaseDao):
         else:
             raise ErrorValidacionExc('No se pudo obtener los detalles del movimiento de ingreso/gasto registrado')
 
-    def listar_grid(self, desde, hasta, tipo, cuenta):
+    def listar_grid(self, desde, hasta, tipo, cuenta, cuentabill):
 
         tgrid_dao = TGridDao(self.dbsession)
-        andwhere = " and coalesce(ic.ic_clasecc,'') = 'E'"
+
+        joinbillmov = 'left join'
+        joinbill = 'join'
+        andwhere = " and det.cta_codigo in (select ic_id from tbilletera where bil_estado = 1) "
 
         sfechas = ' '
         if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
-            sfechas = " and (mov.bmo_fechatransacc between '{0}' and '{1}')".format(fechas.format_cadena_db(desde),
-                                                                                    fechas.format_cadena_db(hasta))
-
+            sfechas = " and (asi.trn_fecreg between '{0}' and '{1}')".format(fechas.format_cadena_db(desde),
+                                                                             fechas.format_cadena_db(hasta))
         if tipo is not None and int(tipo) > 0:
-            andwhere = " and mov.bmo_clase = {0} and coalesce(ic.ic_clasecc,'') != 'E'".format(tipo)
+            joinbillmov = 'join'
+            joinbill = 'left join'
+            andwhere = " and mov.bmo_clase = {0} and coalesce(ic.ic_clasecc,'') not in ('E','B')".format(tipo)
             if cuenta is not None and int(cuenta) > 0:
                 andwhere = " and mov.bmo_clase = {0} and det.cta_codigo = {1}".format(tipo, cuenta)
+        elif cuentabill is not None and int(cuentabill) > 0:
+            andwhere = " and det.cta_codigo in ({0})".format(cuentabill)
 
         swhere = " {0} {1} ".format(sfechas, andwhere)
 
-        data = tgrid_dao.run_grid(grid_nombre='ingrgastos', swhere=swhere)
+        data = tgrid_dao.run_grid(grid_nombre='ingrgastos', joinbillmov=joinbillmov, joinbill=joinbill, swhere=swhere)
 
         return data

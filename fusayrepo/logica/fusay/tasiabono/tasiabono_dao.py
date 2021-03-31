@@ -118,3 +118,16 @@ class TAsiAbonoDao(BaseDao):
         from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
         tasientodao = TasientoDao(self.dbsession)
         tasientodao.anular(trn_codigo=trn_cod_abo, user_anula=user_anula, obs_anula=obs_anula)
+
+    def is_transacc_with_abonos(self, dtcodcred):
+        sql = """
+        select abo.dt_codcre, count(*) as cuenta from tasiabono abo
+        join tasidetalle det on abo.dt_codigo = det.dt_codigo
+        join tasiento asi on asi.trn_codigo = det.trn_codigo
+        where abo.dt_codcre = {0} and asi.trn_valido = 0 and asi.trn_docpen = 'F'
+        group by abo.dt_codcre
+        """.format(dtcodcred)
+
+        tupla_desc = ('dt_codcre', 'cuenta')
+        auxres = self.first(sql, tupla_desc)
+        return auxres is not None and auxres['cuenta'] > 0

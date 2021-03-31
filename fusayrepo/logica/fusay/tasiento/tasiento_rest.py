@@ -32,8 +32,8 @@ class TAsientoRest(TokenView):
             tra_codigo = self.get_request_param('tra_cod')
             tdv_codigo = self.get_request_param('tdv_codigo')
             ttpdvdao = TtpdvDao(self.dbsession)
-            alm_codigo = ttpdvdao.get_alm_codigo_from_tdv_codigo(tdv_codigo)
             secid = self.get_sec_id()
+            alm_codigo = ttpdvdao.get_alm_codigo_from_sec_codigo(secid)
             ttransacc = ttransaccdao.get_ttransacc(tra_codigo=tra_codigo)
             form_cab = tasientodao.get_form_cabecera(tra_codigo, alm_codigo, secid, tdv_codigo,
                                                      tra_tipdoc=ttransacc['tra_tipdoc'])

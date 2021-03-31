@@ -19,3 +19,7 @@ class TtpdvDao(BaseDao):
     def get_alm_codigo_from_tdv_codigo(self, tdv_codigo):
         sql = "select alm_codigo from ttpdv where tdv_codigo = {0}".format(tdv_codigo)
         return self.first_col(sql, 'alm_codigo')
+
+    def get_alm_codigo_from_sec_codigo(self, sec_codigo):
+        sql = "select alm_codigo from tseccion where sec_id = {0}".format(sec_codigo)
+        return self.first_col(sql, 'alm_codigo')

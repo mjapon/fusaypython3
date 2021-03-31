@@ -14,6 +14,7 @@ from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.tasidetalle.tasidetalle_model import TAsidetalle
 from fusayrepo.logica.fusay.tasidetimp.tasidetimp_model import TAsidetimp
 from fusayrepo.logica.fusay.tasiento.tasiento_model import TAsiento, TAsientoAud
+from fusayrepo.logica.fusay.tasiento.tasientoaud_dao import TAsientoAudDao
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.timpuesto.timpuesto_dao import TImpuestoDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
@@ -124,7 +125,7 @@ class TasientoDao(BaseDao):
         select a.trn_codigo, a.tra_codigo, a.trn_fecreg, extract(day from a.trn_fecreg) ||'-'|| m.mes_corto as fecdesc,
                a.trn_compro::int, a.trn_fecha, a.trn_valido, a.trn_docpen,
                a.per_codigo, a.us_id, a.trn_observ,
-               a.dt_debito, a.cta_codigo, a.ic_code, a.ic_nombre, a.dt_valor
+               a.dt_debito, a.cta_codigo, a.ic_code, a.ic_nombre, a.dt_valor, 0 as bmo_id
         from vasientosgen a
                  join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
         where trn_valido = 0
@@ -132,20 +133,22 @@ class TasientoDao(BaseDao):
         select a.trn_codigo, a.tra_codigo, a.trn_fecreg, extract(day from a.trn_fecreg) ||'-'|| m.mes_corto as fecdesc,
                a.trn_compro::int, a.trn_fecha, a.trn_valido, a.trn_docpen,
                a.per_codigo, a.us_id, a.trn_observ,
-               b.dt_debito, b.cta_codigo, c.ic_code, c.ic_nombre, b.dt_valor
+               b.dt_debito, b.cta_codigo, c.ic_code, c.ic_nombre, b.dt_valor, coalesce(bilmov.bmo_id, 0) as bmo_id 
         from tasiento a
                  join tasidetalle b on b.trn_codigo = a.trn_codigo
+                 left join tbilleteramov bilmov on a.trn_codigo = bilmov.trn_codigo 
                  join titemconfig c on b.cta_codigo = c.ic_id
                  join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
-        where tra_codigo = 13 and trn_valido = 0)
+        where tra_codigo = 13 and trn_valido = 0 and a.trn_docpen = 'F')
         select trn_codigo,tra_codigo,trn_fecreg, fecdesc, trn_compro, trn_fecha, trn_valido, trn_docpen,
-               per_codigo, us_id, trn_observ, dt_debito, cta_codigo, ic_code, ic_nombre, dt_valor from asientos
+               per_codigo, us_id, trn_observ, dt_debito, cta_codigo, ic_code, ic_nombre, dt_valor, bmo_id from asientos
         order by trn_fecreg desc, trn_compro desc, dt_debito desc
         """
 
         tupla_desc = (
             'trn_codigo', 'tra_codigo', 'trn_fecreg', 'fecdesc', 'trn_compro', 'trn_fecha', 'trn_valido', 'trn_docpen',
-            'per_codigo', 'us_id', 'trn_observ', 'dt_debito', 'cta_codigo', 'ic_code', 'ic_nombre', 'dt_valor')
+            'per_codigo', 'us_id', 'trn_observ', 'dt_debito', 'cta_codigo', 'ic_code', 'ic_nombre', 'dt_valor',
+            'bmo_id')
         return self.all(sql, tupla_desc)
 
     def listar_asientos(self):
@@ -173,7 +176,8 @@ class TasientoDao(BaseDao):
                         'dt_debito': 0,
                         'debe': '',
                         'haber': '',
-                        'tr': 2
+                        'tr': 2,
+                        'bmo_id': asiprevius['bmo_id']
                     })
                 lasttrncod = trn_codigo
                 asiprevius = item
@@ -189,7 +193,8 @@ class TasientoDao(BaseDao):
                     'dt_debito': 0,
                     'debe': '',
                     'haber': '',
-                    'tr': 0
+                    'tr': 0,
+                    'bmo_id': item['bmo_id']
                 })
             if item['dt_debito'] == 1:
                 totales['debe'] += item['dt_valor']
@@ -203,7 +208,8 @@ class TasientoDao(BaseDao):
                     'dt_debito': item['dt_debito'],
                     'debe': item['dt_valor'],
                     'haber': '',
-                    'tr': 1
+                    'tr': 1,
+                    'bmo_id': item['bmo_id']
                 })
             elif item['dt_debito'] == -1:
                 totales['haber'] += item['dt_valor']
@@ -217,7 +223,8 @@ class TasientoDao(BaseDao):
                     'dt_debito': item['dt_debito'],
                     'debe': '',
                     'haber': item['dt_valor'],
-                    'tr': 1
+                    'tr': 1,
+                    'bmo_id': item['bmo_id']
                 })
 
             if item == items[len(items) - 1]:
@@ -231,7 +238,8 @@ class TasientoDao(BaseDao):
                     'dt_debito': 0,
                     'debe': '',
                     'haber': '',
-                    'tr': 2
+                    'tr': 2,
+                    'bmo_id': asiprevius['bmo_id']
                 })
 
         totales = {
@@ -945,13 +953,61 @@ class TasientoDao(BaseDao):
             if tasiento.trn_valido != new_state:
                 tasiento.trn_valido = new_state
                 self.dbsession.add(tasiento)
-                # TODO: Agregar informacion de auditoria en tabla tasientoaud (usuario, motivo)
+
+                tasientoauddao = TAsientoAudDao(self.dbsession)
+                aud_accion = 0
+                if int(new_state) == 1:
+                    aud_accion = ctes.AUD_ASIENTO_ANULAR
+                elif int(new_state) == 2:
+                    aud_accion = ctes.AUD_ASIENTO_ERRAR
+
+                tasientoauddao.craer(trn_codigo=trn_codigo, aud_accion=aud_accion, aud_user=user_do, aud_obs=obs)
+
+    def is_transacc_abono(self, trn_codigo):
+        sql = "select tra_codigo from tasiento where trn_codigo = {0}".format(trn_codigo)
+        tra_codigo = self.first_col(sql, 'tra_codigo')
+        if tra_codigo is not None:
+            return tra_codigo == ctes.TRA_CODIGO_ABONO_VENTA or tra_codigo == ctes.TRA_CODIGO_ABONO_COMPRA
+        return False
+
+    def is_transacc_in_state(self, trn_codigo, state):
+        sql = "select trn_valido from tasiento where trn_codigo = {0}".format(trn_codigo)
+        trn_valido = self.first_col(sql, 'trn_valido')
+        if trn_valido is not None:
+            return int(trn_valido) == int(state)
+        return False
 
     def anular(self, trn_codigo, user_anula, obs_anula):
-        self.aux_cambia_estado(trn_codigo, user_do=user_anula, obs=obs_anula, new_state=1)
+        new_state = 1
+        if not self.is_transacc_in_state(trn_codigo=trn_codigo, state=new_state):
+            if not self.is_transacc_abono(trn_codigo):
+                tasicreddao = TAsicreditoDao(self.dbsession)
+                tasiabodao = TAsiAbonoDao(self.dbsession)
+                datoscred = tasicreddao.find_datoscred_intransacc(trn_codigo=trn_codigo)
+                if datoscred is not None and datoscred['cre_codigo'] > 0:
+                    if tasiabodao.is_transacc_with_abonos(dtcodcred=datoscred['dt_codigo']):
+                        raise ErrorValidacionExc(
+                            'No se puede anular esta transacción, existen abonos registrados, favor anular primero estos abonos')
+
+            self.aux_cambia_estado(trn_codigo, user_do=user_anula, obs=obs_anula, new_state=new_state)
+        else:
+            raise ErrorValidacionExc('Esta transacción ya ha sido anulada, favor verificar')
 
     def marcar_errado(self, trn_codigo, user_do):
-        self.aux_cambia_estado(trn_codigo, user_do=user_do, obs='', new_state=2)
+        new_state = 2
+        if not self.is_transacc_in_state(trn_codigo=trn_codigo, state=new_state):
+            if not self.is_transacc_abono(trn_codigo):
+                tasicreddao = TAsicreditoDao(self.dbsession)
+                tasiabodao = TAsiAbonoDao(self.dbsession)
+                datoscred = tasicreddao.find_datoscred_intransacc(trn_codigo=trn_codigo)
+                if datoscred is not None and datoscred['cre_codigo'] > 0:
+                    if tasiabodao.is_transacc_with_abonos(dtcodcred=datoscred['dt_codigo']):
+                        raise ErrorValidacionExc(
+                            'No se puede anular esta transacción, existen abonos registrados, favor anular primero estos abonos')
+
+            self.aux_cambia_estado(trn_codigo, user_do=user_do, obs='', new_state=new_state)
+        else:
+            raise ErrorValidacionExc('Esta transacción ya ha sido anulada, favor verificar')
 
     def update_trn_docpen(self, trn_codigo, trn_docpen_value):
         tasiento = self.find_entity_byid(trn_codigo)
@@ -977,13 +1033,12 @@ class TasientoDao(BaseDao):
                     if not cadenas.es_nonulo_novacio(detalle[key]):
                         detalle[key] = None
 
-            # impuestos = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=ctes.DT_TIPO_ITEM_IMPUESTO)
             pagos = self.get_detalles_doc(trn_codigo=trn_codigo, joinarts=False, dt_tipoitem=ctes.DT_TIPO_ITEM_PAGO)
 
             totales = self.calcular_totales(detalles)
 
             ttpdvdao = TtpdvDao(self.dbsession)
-            alm_codigo = ttpdvdao.get_alm_codigo_from_tdv_codigo(tasiento.tdv_codigo)
+            alm_codigo = ttpdvdao.get_alm_codigo_from_sec_codigo(tasiento.sec_codigo)
             formcab = self.get_form_cabecera(tra_codigo=tra_codigo, alm_codigo=alm_codigo,
                                              sec_codigo=tasiento.sec_codigo, tdv_codigo=tasiento.tdv_codigo)
             formcab['trn_docpen'] = 'F'

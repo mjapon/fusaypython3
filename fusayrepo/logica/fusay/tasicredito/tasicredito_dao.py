@@ -228,3 +228,14 @@ class TAsicreditoDao(BaseDao):
                 sumas['totalsalpend'] += item['cre_saldopen']
 
         return items, sumas
+
+    def find_datoscred_intransacc(self, trn_codigo):
+        sql = """
+        select det.dt_codigo, det.dt_valor, cred.cre_codigo from tasidetalle det
+        join tasicredito cred on det.dt_codigo = cred.dt_codigo
+        join tasiento asi on det.trn_codigo = asi.trn_codigo and asi.trn_docpen = 'F' and asi.trn_valido = 0
+        where asi.trn_codigo = {0}
+        """.format(trn_codigo)
+
+        tupla_desc = ('dt_codigo', 'dt_valor', 'cre_codigo')
+        return self.first(sql, tupla_desc)
