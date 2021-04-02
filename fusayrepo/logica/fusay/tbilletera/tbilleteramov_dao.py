@@ -88,6 +88,7 @@ class TBilleteraMovDao(BaseDao):
         form = {
             'bmo_monto': 0.0,
             'bmo_fechatransacc': fechas.get_str_fecha_actual(),
+            'bmo_fechatransaccobj': fechas.get_str_fecha_actual(),
             'bmo_numero': nextnumov,
             'bmo_codadj': 0,
             'trn_codigo': 0,
