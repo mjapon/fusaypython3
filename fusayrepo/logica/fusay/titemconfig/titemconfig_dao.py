@@ -608,10 +608,10 @@ class TItemConfigDao(BaseDao):
     def get_form_plan_cuentas(self, padre):
         sql = "select ic_code from titemconfig where ic_id = {0}".format(padre)
         ic_code_padre = self.first_col(sql, 'ic_code')
-        sql = """select max(coalesce(SUBSTRING (ic_code,'([0-9]{{1,}}$)'), '1' )::int) as maxiccode 
+        sql = """select max(coalesce(SUBSTRING (ic_code,'([0-9]{{1,}}$)'), '0' )::int) as maxiccode 
         from titemconfig where ic_padre = {0} and ic_estado = 1""".format(padre)
         maxiccode = self.first_col(sql, 'maxiccode')
-        sec = maxiccode if maxiccode is not None else '1'
+        sec = maxiccode if maxiccode is not None else '0'
 
         form = {
             'ic_id': 0,
