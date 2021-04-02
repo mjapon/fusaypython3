@@ -31,3 +31,4 @@ class TTransacc(Declarative, JsonAlchemy):
     tra_contab = Column(Integer, nullable=False, default=0)
     tra_inv = Column(Integer, nullable=False, default=0)
     tra_seccion = Column(Integer, nullable=False, default=0)
+    tra_nomcorto = Column(String(10), default='TRA')

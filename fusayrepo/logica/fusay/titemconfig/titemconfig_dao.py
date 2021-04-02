@@ -608,12 +608,10 @@ class TItemConfigDao(BaseDao):
     def get_form_plan_cuentas(self, padre):
         sql = "select ic_code from titemconfig where ic_id = {0}".format(padre)
         ic_code_padre = self.first_col(sql, 'ic_code')
-        sql = "select max(ic_code) as maxiccode from titemconfig where ic_padre = {0} and ic_estado = 1".format(padre)
+        sql = """select max(coalesce(SUBSTRING (ic_code,'([0-9]{{1,}}$)'), '1' )::int) as maxiccode 
+        from titemconfig where ic_padre = {0}""".format(padre)
         maxiccode = self.first_col(sql, 'maxiccode')
-        sec = 0
-        if maxiccode is not None:
-            splited = maxiccode.split('.')
-            sec = splited[len(splited) - 1]
+        sec = maxiccode if maxiccode is not None else '1'
 
         form = {
             'ic_id': 0,
@@ -715,7 +713,7 @@ class TItemConfigDao(BaseDao):
         sql = """
                 select ic_id, ic_nombre, ic_code, ic_padre, tipic_id, ic_fechacrea, ic_estado, clsic_id, ic_clasecc, 
                 ic_alias, ic_haschild
-                from titemconfig where tipic_id = 3 and ic_estado = 1 {0} order by ic_code
+                from titemconfig where tipic_id = 3 and ic_estado = 1 {0} order by coalesce(SUBSTRING (ic_code,'([0-9]{{1,}}$)'), '1' )::int asc
                 """.format(where)
 
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'tipic_id',
