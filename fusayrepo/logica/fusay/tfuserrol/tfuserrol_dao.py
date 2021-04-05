@@ -59,11 +59,11 @@ class TFuserRolDao(BaseDao):
             hasplanes = cadenas.strip(hasplanesvalue) == '1'
 
         contabilidad_list = [
-            {'label': 'Ingresos y Gastos', 'icon': 'pi pi-fw pi-sort-alt', 'routerLink': ['/vtickets']},
+            {'label': 'Ingresos y Gastos', 'icon': '', 'routerLink': ['/vtickets']},
+            {'label': 'Libro Diario', 'icon': 'pi pi-fw pi-book', 'routerLink': ['/librodiario']},
+            {'label': 'Libro Mayor', 'icon': '', 'routerLink': ['/libromayor']},
             # {'label': 'Cuentas', 'icon': '', 'routerLink': ['/rubros']},
             {'label': 'Plan de cuentas', 'icon': '', 'routerLink': ['/plancuentas']},
-            {'label': 'Libro Diario', 'icon': '', 'routerLink': ['/librodiario']},
-            {'label': 'Libro Mayor', 'icon': '', 'routerLink': ['/libromayor']},
             {'label': 'Balance General', 'icon': '', 'routerLink': ['/contabilidad/balancegeneral']},
             {'label': 'Estado de Resultados', 'icon': '', 'routerLink': ['/contabilidad/estadoresultados']}
         ]
@@ -96,7 +96,7 @@ class TFuserRolDao(BaseDao):
         ]
 
         ventas_list = [
-            {'label': 'Movimientos', 'icon': 'pi pi-fw pi-briefcase',
+            {'label': 'Movimientos', 'icon': '',
              'routerLink': ['/trndocs/1']},
             {'label': 'Emitir Factura', 'icon': 'pi pi-fw pi-money-bill',
              'routerLink': ['/trndocform/1']},
@@ -109,11 +109,11 @@ class TFuserRolDao(BaseDao):
         ]
 
         compras_list = [
-            {'label': 'Movimientos', 'icon': 'pi pi-fw pi-briefcase', 'cicon': 'fas fa-shopping-basket',
+            {'label': 'Movimientos', 'icon': '', 'cicon': 'fas fa-shopping-basket',
              'routerLink': ['/trndocs/2']},
-            {'label': 'Registrar factura', 'icon': 'pi pi-fw pi-money-bill',
+            {'label': 'Registrar factura', 'icon': '',
              'routerLink': ['/trndocform/7']},
-            {'label': 'Cuentas por pagar', 'icon': 'pi pi-fw pi-money-bill',
+            {'label': 'Cuentas por pagar', 'icon': '',
              'routerLink': ['/cuentasxcp/2']}
         ]
 
@@ -129,24 +129,24 @@ class TFuserRolDao(BaseDao):
 
         all_menu = {
             '*': {'label': 'Inicio', 'icon': 'pi pi-fw pi-home', 'cicon': 'fas fa-home', 'routerLink': ['/lghome']},
-            'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-sort-alt', 'cicon': 'fas fa-ticket-alt',
+            'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-ticket', 'cicon': 'fas fa-ticket-alt',
                           'items': tickets_list},
-            'IG_LISTAR': {'label': 'Contabilidad', 'icon': 'pi pi-fw pi-sort-alt', 'cicon': 'fas fa-calculator',
+            'IG_LISTAR': {'label': 'Contabilidad', 'icon': 'pi pi-fw pi-book', 'cicon': 'fas fa-calculator',
                           'items': contabilidad_list},
-            'PRODS_LISTAR': {'label': 'Productos y Servicios', 'icon': 'pi pi-fw pi-microsoft', 'cicon': 'fas fa-store',
+            'PRODS_LISTAR': {'label': 'Inventario', 'icon': 'pi pi-fw pi-microsoft', 'cicon': 'fas fa-store',
                              'items': prods_list},
-            'HIST_LISTAR': {'label': 'Historias Clínicas Médicas', 'icon': 'pi pi-fw pi-calendar',
+            'HIST_LISTAR': {'label': 'Atención Médica', 'icon': 'pi pi-fw pi-calendar',
                             'cicon': 'fas fa-stethoscope', 'items': hist_list},
-            'HISTO_LISTAR': {'label': 'Historias Clínicas Odontológicas', 'icon': 'pi pi-fw pi-bell',
+            'HISTO_LISTAR': {'label': 'Atención Odontológica', 'icon': 'pi pi-fw pi-bell',
                              'cicon': 'fas fa-tooth',
                              'items': histo_list},
             'US_LISTAR': {'label': 'Usuarios', 'icon': 'pi pi-fw pi-users', 'cicon': 'fas fa-users',
                           'items': users_list},
-            'VN_LISTAR': {'label': 'Ventas', 'icon': 'pi pi-fw pi-wallet', 'cicon': 'fas fa-shopping-cart',
+            'VN_LISTAR': {'label': 'Ventas', 'icon': 'pi pi-fw pi-money-bill', 'cicon': 'fas fa-shopping-cart',
                           'items': ventas_list},
             'CM_LISTAR': {'label': 'Compras', 'icon': 'pi pi-fw pi-wallet', 'cicon': 'fas fa-shopping-bag',
                           'items': compras_list},
-            'REF_LISTAR': {'label': 'Referentes', 'icon': 'pi pi-fw pi-wallet', 'cicon': 'fas fa-user-friends',
+            'REF_LISTAR': {'label': 'Referentes', 'icon': 'pi pi-fw pi-users', 'cicon': 'fas fa-user-friends',
                            'items': refs_list},
             'AGN_LISTAR': {'label': 'Agenda', 'icon': 'pi pi-fw pi-calendar', 'cicon': 'far fa-calendar-plus',
                            'items': agn_list}

@@ -20,8 +20,16 @@ class TEmpresaDao(BaseDao):
                                                'emp_razonsocial', 'emp_nombrecomercial',
                                                'emp_nroautorizacion', 'emp_fechaautorizacion'))
 
-    def buscar_por_codigo(self, emp_codigo):
+    def get_datos_emp_public(self, emp_codigo):
+        sql = """
+        select emp_ruc, emp_razonsocial, emp_nombrecomercial, 
+        emp_nroautorizacion, emp_fechaautorizacion from public.tempresa where emp_codigo = '{0}' 
+        """.format(emp_codigo)
+        tupla_desc = ('emp_ruc', 'emp_razonsocial', 'emp_nombrecomercial',
+                      'emp_nroautorizacion', 'emp_fechaautorizacion')
+        return self.first(sql, tupla_desc)
 
+    def buscar_por_codigo(self, emp_codigo):
         sql = """select emp_id,          
                 emp_ruc,
                 emp_razonsocial,
