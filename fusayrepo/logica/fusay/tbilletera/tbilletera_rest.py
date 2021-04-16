@@ -8,6 +8,7 @@ import logging
 from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tbilletera.tbilletera_dao import TBilleteraDao
+from fusayrepo.utils import numeros
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -24,7 +25,12 @@ class TBilleteraRest(TokenView):
             return self.res200({'form': form})
         elif accion == 'listar':
             billeteras = billeteradao.listar()
-            return self.res200({'billeteras': billeteras})
+            totalsaldobill = 0.0
+            if billeteras is not None:
+                for bil in billeteras:
+                    totalsaldobill += bil['bil_saldo']
+
+            return self.res200({'billeteras': billeteras, 'saldotot': numeros.roundm2(totalsaldobill)})
         elif accion == 'listarmin':
             billeteras = billeteradao.listar_min()
             return self.res200({'billeteras': billeteras})

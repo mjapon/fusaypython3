@@ -38,7 +38,7 @@ class TItemConfigRest(TokenView):
         elif 'seccodbarra' == accion:
             tparamsdao = TParamsDao(self.dbsession)
             nexcodbar = tparamsdao.get_next_sequence_codbar()
-            return {'status': 200, 'codbar': nexcodbar}
+            return {'status': 200, 'codbar': 'PRODSERV_{0}'.format(nexcodbar)}
         elif 'verifcodbar' == accion:
             codbar = self.get_request_param('codbar')
             datosart = titemconfig_dao.get_codbarnombre_articulo(codbar)

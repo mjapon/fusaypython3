@@ -21,7 +21,7 @@ class TBilleteraMovRest(TokenView):
         billeteramovdao = TBilleteraMovDao(self.dbsession)
         if accion == 'form':
             clase = self.get_request_param('clase')
-            form = billeteramovdao.get_form_mov(clase_mov=clase)
+            form = billeteramovdao.get_form_mov(clase_mov=clase, sec_codigo=self.get_sec_id())
             return self.res200({'form': form})
         elif accion == 'listargrid':
             desde = self.get_request_param('desde')

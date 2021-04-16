@@ -9,12 +9,16 @@ from datetime import datetime
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.fusay.tfuserrol.tfuserrol_dao import TFuserRolDao
 from fusayrepo.logica.tempresa.empresa_dao import TEmpresaDao
-from fusayrepo.utils import fechas
+from fusayrepo.utils import fechas, ctes
 
 log = logging.getLogger(__name__)
 
 
 class DataLoggedDao(BaseDao):
+
+    def check_permiso(self, user_id, permiso):
+        fuserroldao = TFuserRolDao(self.dbsession)
+        return fuserroldao.user_has_permiso(user_id=user_id, prm_abreviacion=permiso)
 
     def get_datos_logged(self, user_id, emp_codigo):
         fechaactual = fechas.get_fecha_letras_largo(fecha=datetime.now())
@@ -30,17 +34,17 @@ class DataLoggedDao(BaseDao):
                 'route': 'vtickets',
                 'css': 'btn-outline-secondary'
             },
-            'US_LISTAR': {
-                'label': 'Usuarios',
-                'title': 'Adminsitrar de usuarios del sistema',
-                'icon': 'fas fa-users',
-                'route': 'usuarios',
-                'css': 'btn-outline-secondary'
-            },
-            'VN_VENTAS': {
+            # 'US_LISTAR': {
+            #     'label': 'Usuarios',
+            #     'title': 'Adminsitrar de usuarios del sistema',
+            #     'icon': 'fas fa-users',
+            #     'route': 'usuarios',
+            #     'css': 'btn-outline-secondary'
+            # },
+            'VN_LISTAR': {
                 'label': 'Ventas',
                 'title': 'Listado de ventas',
-                'icon': 'fas fa-shoping-bag',
+                'icon': 'fas fa-store-alt',
                 'route': 'trndocs/1',
                 'css': 'btn-outline-secondary'
             },
@@ -83,7 +87,14 @@ class DataLoggedDao(BaseDao):
                 'label': 'Atención Odontológica',
                 'title': 'Registrar atención odontológica',
                 'icon': 'fas fa-tooth',
-                'route': 'historiaclinica/2',
+                'route': 'odonto',
+                'css': 'btn-outline-secondary'
+            },
+            'REF_LISTAR': {
+                'label': 'Referentes',
+                'title': 'Administración de referentes',
+                'icon': 'fas fa-address-book',
+                'route': 'referentes',
                 'css': 'btn-outline-secondary'
             }
         }
@@ -93,6 +104,8 @@ class DataLoggedDao(BaseDao):
         menu = fuserroldao.build_menu(permisos)
         tempresadao = TEmpresaDao(self.dbsession)
         datosemp = tempresadao.get_datos_emp_public(emp_codigo=emp_codigo)
+
+        version = ctes.VERSION_APP
 
         for permiso in permisos:
             permabr = permiso['prm_abreviacion']
@@ -104,5 +117,6 @@ class DataLoggedDao(BaseDao):
             'fecha': fechaactual,
             'accesosdir': accesosdir,
             'menu': menu,
-            'datosemp': datosemp
+            'datosemp': datosemp,
+            'vapp': version
         }

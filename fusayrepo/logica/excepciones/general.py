@@ -26,6 +26,10 @@ def procesar_excepcion(exc, request):
     log.error(' Empresa donde se genera el error es: {0} '.format(emp_codigo))
 
     msg = str(exc)
+    msg = procesar_msg_postgres(msg)
+    log.error('Valor de mensaje enviado es:')
+    log.error(msg)
+
     inputid = ""
     if 'inputid' in dir(exc):
         inputid = exc.inputid
@@ -73,3 +77,17 @@ def exc_general(exc, request):
         'Access-Control-Max-Age': '1728000',
     })
     return add_status_to_response(response, res)
+
+
+def procesar_msg_postgres(msg):
+    msgdb = msg
+    pgflag = '(psycopg2.DatabaseError)'
+    pgctxflag = 'CONTEXT:'
+
+    idf = msg.find(pgflag)
+    idc = msg.find(pgctxflag)
+
+    if idf >= 0 and idc > 0:
+        msgdb = 'DB:{0}'.format(msg[idf + len(pgflag):idc])
+
+    return msgdb

@@ -33,7 +33,7 @@ class TasientoDao(BaseDao):
     def find_entity_byid(self, trn_codigo):
         return self.dbsession.query(TAsiento).filter(TAsiento.trn_codigo == trn_codigo).first()
 
-    def get_form_asiento(self):
+    def get_form_asiento(self, sec_codigo):
         formasiento = self.get_form_cabecera(tra_codigo=ctes.TRA_CODIGO_ASIENTO_CONTABLE,
                                              alm_codigo=0, sec_codigo=0, tdv_codigo=0, tra_tipdoc=1)
         formdet = self.get_form_detalle_asiento()
@@ -42,6 +42,9 @@ class TasientoDao(BaseDao):
 
         # Por defecto se lo pone en consumidor final
         formref['per_id'] = -1
+
+        # Por defecto se lo pone en consumidor final
+        formasiento['sec_codigo'] = sec_codigo
 
         return {
             'formasiento': formasiento,
@@ -739,7 +742,7 @@ class TasientoDao(BaseDao):
 
         return new_trn_codigo
 
-    def crear_asiento(self, formcab, formref, usercrea, detalles):
+    def crear_asiento(self, formcab, formref, usercrea, detalles, roundvalor=True):
         secuencia = formcab['secuencia']
         trn_compro = "{0}{1}".format(formcab['estabptoemi'], str(secuencia).zfill(ctes.LEN_DOC_SECUENCIA))
 
@@ -824,7 +827,10 @@ class TasientoDao(BaseDao):
                 detasiento.cta_codigo = detalle['cta_codigo']
                 detasiento.art_codigo = 0
                 detasiento.dt_debito = detalle['dt_debito']
-                detasiento.dt_valor = numeros.roundm2(float(detalle['dt_valor']))
+                if roundvalor:
+                    detasiento.dt_valor = numeros.roundm2(float(detalle['dt_valor']))
+                else:
+                    detasiento.dt_valor = float(detalle['dt_valor'])
                 detasiento.dt_tipoitem = ctes.DT_TIPO_ITEM_DETASIENTO
                 detasiento.dt_codsec = detalle['dt_codsec']
                 self.dbsession.add(detasiento)
@@ -962,6 +968,54 @@ class TasientoDao(BaseDao):
                     aud_accion = ctes.AUD_ASIENTO_ERRAR
 
                 tasientoauddao.craer(trn_codigo=trn_codigo, aud_accion=aud_accion, aud_user=user_do, aud_obs=obs)
+
+                # if aud_accion == ctes.AUD_ASIENTO_ANULAR:
+                #     # Para el caso de anulacion de una transaccion se debe registrar el reverso, esto para revertir saldos en las cuentas contables
+                #     sqldets = """
+                #     select dt_codigo, cta_codigo, dt_debito, dt_valor, dt_codsec, pry_codigo from tasidetalle where trn_codigo = {0}
+                #     and cta_codigo >0
+                #     """.format(trn_codigo)
+                #     tupla_desc = ('dt_codigo', 'cta_codigo', 'dt_debito', 'dt_valor', 'dt_codsec', 'pry_codigo')
+                #
+                #     detalles = self.all(sqldets, tupla_desc)
+                #
+                #     if len(detalles) > 0:
+                #         # Existen cuentas contables afectadas en la transaccion, se debe registrar el reverso para las mismas
+                #         formcab = self.get_form_cabecera(tra_codigo=ctes.TRA_CODIGO_ANULA_TRANSACC,
+                #                                          alm_codigo=0,
+                #                                          sec_codigo=0,
+                #                                          tdv_codigo=0,
+                #                                          tra_tipdoc=1)
+                #         if cadenas.es_nonulo_novacio(obs):
+                #             obsreverso = obs
+                #         else:
+                #             obsreverso = 'P/R Anulación de transacción'
+                #
+                #         formcab['trn_observ'] = obsreverso
+                #         formcab['sec_codigo'] = tasiento.sec_codigo
+                #
+                #         tasireverso = TAsiento()
+                #         tasireverso.trn_fecha = datetime.now()
+                #         tasireverso.trn_fecreg = datetime.now()
+                #         formref = {'per_id': -1}
+                #
+                #         detanul = []
+                #         for det in detalles:
+                #             detanul.append({'cta_codigo': det['cta_codigo'],
+                #                             'dt_valor': det['dt_valor'],
+                #                             'dt_codsec': det['dt_codsec'],
+                #                             'pry_codigo': det['pry_codigo'],
+                #                             'dt_debito': int(det['dt_debito']) * -1
+                #                             })
+                #
+                #         trn_codrever = self.crear_asiento(formcab=formcab, formref=formref, usercrea=user_do,
+                #                                           detalles=detanul, roundvalor=False)
+                #         # Se debe registrar la relacion entre estas dos transacciones
+                #         tasirel = TasientoRel()
+                #         tasirel.asr_trncodorg = trn_codigo
+                #         tasirel.asr_trncod = trn_codrever
+                #         tasirel.asr_tracod = ctes.TRA_CODIGO_ANULA_TRANSACC
+                #         self.dbsession.add(tasirel)
 
     def is_transacc_abono(self, trn_codigo):
         sql = "select tra_codigo from tasiento where trn_codigo = {0}".format(trn_codigo)

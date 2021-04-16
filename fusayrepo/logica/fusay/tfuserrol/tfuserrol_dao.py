@@ -38,6 +38,17 @@ class TFuserRolDao(BaseDao):
         tupla_desc = ('us_id', 'rl_name', 'rl_id')
         return self.all(sql, tupla_desc)
 
+    def user_has_permiso(self, user_id, prm_abreviacion):
+        sql = """
+        select count(*) as cuenta from tfuserrol fr
+        join trol rol on fr.rl_id = rol.rl_id
+        join tpermisorol perol on fr.rl_id = perol.rl_id
+        join tpermiso per on perol.prm_id = per.prm_id and per.prm_abreviacion in ({0})
+        where fr.us_id = {1} and rol.rl_estado = 0 and per.prm_estado = 0
+        """.format(prm_abreviacion, user_id)
+        cuenta = self.first_col(sql, 'cuenta')
+        return cuenta > 0
+
     def listar_permisos(self, us_id):
         sql = """
         select fr.us_id, rol.rl_name, rol.rl_id, per.prm_nombre, per.prm_abreviacion from tfuserrol fr

@@ -80,7 +80,7 @@ class TBilleteraMovDao(BaseDao):
 
         return cuentasformov
 
-    def get_form_mov(self, clase_mov):
+    def get_form_mov(self, clase_mov, sec_codigo):
 
         tparamdao = TParamsDao(self.dbsession)
         nextnumov = tparamdao.get_next_sequence_billmov()
@@ -105,7 +105,7 @@ class TBilleteraMovDao(BaseDao):
         billeterasformov = billdao.listar_min()
 
         tasientodao = TasientoDao(self.dbsession)
-        formasiento = tasientodao.get_form_asiento()
+        formasiento = tasientodao.get_form_asiento(sec_codigo=sec_codigo)
         return {
             'formbillmov': form,
             'cuentasformov': cuentasformov,
@@ -129,16 +129,17 @@ class TBilleteraMovDao(BaseDao):
             tbilleteramov.bmo_estado = 2
             self.dbsession.add(tbilleteramov)
             tasientodao.anular(trn_codigo=tbilleteramov.trn_codigo, user_anula=user_anula,
-                               obs_anula='AUT: Anulado por transaccion de ingreso/gasto')
+                               obs_anula='AUT: Anulado por transacción de ingreso/gasto')
         else:
             raise ErrorValidacionExc('No es posible anular este registro, ningún resultado')
 
     def confirmar(self, bmo_id):
         tbilleteramov = self.find_by_id(bmo_id)
         if tbilleteramov is not None:
-            tasientodao = TasientoDao(self.dbsession)
+            # Se quitó la lógica de creacionde ingreso o gasto como transaccion pendiente, ahora se crea inmediatamente como válida
+            # tasientodao = TasientoDao(self.dbsession)
             tbilleteramov.bmo_estado = 1
-            tasientodao.update_trn_docpen(trn_codigo=tbilleteramov.trn_codigo, trn_docpen_value='F')
+            # tasientodao.update_trn_docpen(trn_codigo=tbilleteramov.trn_codigo, trn_docpen_value='F')
             self.dbsession.add(tbilleteramov)
 
     def crear(self, formtosave, usercrea):
@@ -154,7 +155,7 @@ class TBilleteraMovDao(BaseDao):
         tasientodao = TasientoDao(self.dbsession)
 
         formasiento['formasiento']['trn_fecreg'] = formbillmov['bmo_fechatransacc']
-        formasiento['formasiento']['trn_docpen'] = 'T'
+        formasiento['formasiento']['trn_docpen'] = 'F'
         formasiento['formasiento']['trn_observ'] = formbillmov['bmo_obs']
         formasiento['formref']['per_id'] = -1
 
@@ -272,9 +273,7 @@ class TBilleteraMovDao(BaseDao):
     def listar_grid(self, desde, hasta, tipo, cuenta, cuentabill):
 
         tgrid_dao = TGridDao(self.dbsession)
-
         joinbillmov = 'left join'
-        joinbill = 'join'
         andwhere = " and det.cta_codigo in (select ic_id from tbilletera where bil_estado = 1) "
 
         sfechas = ' '
@@ -283,7 +282,6 @@ class TBilleteraMovDao(BaseDao):
                                                                              fechas.format_cadena_db(hasta))
         if tipo is not None and int(tipo) > 0:
             joinbillmov = 'join'
-            joinbill = 'left join'
             andwhere = " and mov.bmo_clase = {0} and coalesce(ic.ic_clasecc,'') not in ('E','B')".format(tipo)
             if cuenta is not None and int(cuenta) > 0:
                 andwhere = " and mov.bmo_clase = {0} and det.cta_codigo = {1}".format(tipo, cuenta)
@@ -292,6 +290,6 @@ class TBilleteraMovDao(BaseDao):
 
         swhere = " {0} {1} ".format(sfechas, andwhere)
 
-        data = tgrid_dao.run_grid(grid_nombre='ingrgastos', joinbillmov=joinbillmov, joinbill=joinbill, swhere=swhere)
+        data = tgrid_dao.run_grid(grid_nombre='ingrgastos', joinbillmov=joinbillmov, swhere=swhere)
 
         return data

@@ -45,3 +45,11 @@ class TAsientoAud(Declarative, JsonAlchemy):
     aud_fecha = Column(TIMESTAMP, nullable=False)
     aud_user = Column(Integer, nullable=False)
     aud_obs = Column(Text)
+
+
+class TasientoRel(Declarative, JsonAlchemy):
+    __tablename__ = 'tasientorel'
+    asr_id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
+    asr_trncodorg = Column(Integer, nullable=False)  # Transaccion origin o inicial
+    asr_trncod = Column(Integer, nullable=False)  # Transaccion con la que se relaciona la transaccion original
+    asr_tracod = Column(Integer, nullable=False)  # Codigo de la transaccion con la que se relaciona

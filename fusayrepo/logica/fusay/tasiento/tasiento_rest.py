@@ -85,7 +85,7 @@ class TAsientoRest(TokenView):
             grid, totales = tasientodao.listar_grid_ventas(desde, hasta, filtro, tracod, tipo)
             return self.res200({'grid': grid, 'totales': totales})
         elif accion == 'formasiento':
-            form = tasientodao.get_form_asiento()
+            form = tasientodao.get_form_asiento(sec_codigo=self.get_sec_id())
             return self.res200({'form': form})
         elif accion == 'getasientos':
             items, totales = tasientodao.listar_asientos()

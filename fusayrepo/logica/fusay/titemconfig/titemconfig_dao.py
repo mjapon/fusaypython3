@@ -439,7 +439,7 @@ class TItemConfigDao(BaseDao):
         titemconfig.ic_fechaactualiza = datetime.now()
         titemconfig.ic_nota = cadenas.strip(form['ic_nota'])
         titemconfig.ic_clasecc = form['ic_clasecc']
-        titemconfig.ic_alias = cadenas.strip(form['ic_alias'])
+        titemconfig.ic_alias = cadenas.strip_upper(form['ic_alias'])
         self.dbsession.add(titemconfig)
 
     def actualizar(self, form, user_actualiza):
@@ -573,6 +573,11 @@ class TItemConfigDao(BaseDao):
             self.dbsession.add(titemconfig)
 
     def anular_ctacontable(self, ic_id, useranula):
+
+        if self.ctacontable_has_child(ic_id=ic_id):
+            raise ErrorValidacionExc(
+                'No es posible anular esta cuenta contable tiene subcuentas osociadas, favor anular primero las subcuentas')
+
         self.anular(ic_id=ic_id, useranula=useranula)
         # Verificar si no tiene hijos
 
@@ -688,7 +693,7 @@ class TItemConfigDao(BaseDao):
         titemconfig.catic_id = form['catic_id']
         titemconfig.clsic_id = form['clsic_id']
         titemconfig.ic_clasecc = form['ic_clasecc']
-        titemconfig.ic_alias = cadenas.strip(form['ic_alias'])
+        titemconfig.ic_alias = cadenas.strip_upper(form['ic_alias'])
 
         icpadre = self.find_byid(ic_id=form['ic_padre'])
         if icpadre is not None:
