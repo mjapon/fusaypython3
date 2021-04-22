@@ -27,26 +27,30 @@ class TAsiAbonoDao(BaseDao):
         saldpend = tasicreditodao.abonar_credito(dt_codcred=dt_codcre, monto_abono=monto_abono)
         return saldpend
 
-    def get_modelo_contable(self, tra_codigo):
+    def get_modelo_contable(self, tra_codigo, sec_codigo):
+
+
         sql = """
-        select cta_codigo, tmc_signo from ttransaccmc where tra_codigo = {0} and tmc_valido = 0
-        """.format(tra_codigo)
+        select cta_codigo, tmc_signo from ttransaccmc where tra_codigo = {0} and sec_codigo = {1} and tmc_valido = 0
+        """.format(tra_codigo, sec_codigo)
 
         tupla_desc = ('cta_codigo', 'tmc_signo')
         return self.first(sql, tupla_desc)
 
-    def get_form_abono(self, tra_codigo):
+    def get_form_abono(self, tra_codigo, sec_codigo):
         from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
         tasientodao = TasientoDao(self.dbsession)
         ttransaccdao = TTransaccDao(self.dbsession)
         form_cab = tasientodao.get_form_cabecera(tra_codigo, alm_codigo=0, sec_codigo=0, tdv_codigo=0, tra_tipdoc=1)
+        form_cab['sec_codigo'] = sec_codigo
         ttransacc = ttransaccdao.get_ttransacc(tra_codigo=tra_codigo)
         form_det = tasientodao.get_form_detalle_asiento()
 
-        modelocont = self.get_modelo_contable(tra_codigo)
+        modelocont = self.get_modelo_contable(tra_codigo, sec_codigo)
         if modelocont is None:
             raise ErrorValidacionExc(
-                'No ha sido definido un modelo contable para la transaccion ({0})'.format(tra_codigo))
+                'No ha sido definido un modelo contable para la transaccion ({0}), seccion:{1}'.format(tra_codigo,
+                                                                                                       sec_codigo))
 
         form_det['cta_codigo'] = modelocont['cta_codigo']
         form_det['dt_debito'] = modelocont['tmc_signo']

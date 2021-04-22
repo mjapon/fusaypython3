@@ -30,14 +30,14 @@ class TAsientoRest(TokenView):
 
         if accion == 'formcab':
             tra_codigo = self.get_request_param('tra_cod')
-            tdv_codigo = self.get_request_param('tdv_codigo')
+            tdv_codigo = self.get_tdv_codigo()
             ttpdvdao = TtpdvDao(self.dbsession)
             secid = self.get_sec_id()
             alm_codigo = ttpdvdao.get_alm_codigo_from_sec_codigo(secid)
             ttransacc = ttransaccdao.get_ttransacc(tra_codigo=tra_codigo)
             form_cab = tasientodao.get_form_cabecera(tra_codigo, alm_codigo, secid, tdv_codigo,
                                                      tra_tipdoc=ttransacc['tra_tipdoc'])
-            formaspago = transaccpago.get_formas_pago(tra_codigo=tra_codigo)
+            formaspago = transaccpago.get_formas_pago(tra_codigo=tra_codigo, sec_id=self.get_sec_id())
             form_det = tasientodao.get_form_detalle(sec_codigo=secid)
 
             return self.res200(
@@ -82,7 +82,7 @@ class TAsientoRest(TokenView):
             filtro = self.get_request_param('filtro')
             tracod = self.get_request_param('tracod')
             tipo = self.get_request_param('tipo')
-            grid, totales = tasientodao.listar_grid_ventas(desde, hasta, filtro, tracod, tipo)
+            grid, totales = tasientodao.listar_grid_ventas(desde, hasta, filtro, tracod, tipo, sec_id=self.get_sec_id())
             return self.res200({'grid': grid, 'totales': totales})
         elif accion == 'formasiento':
             form = tasientodao.get_form_asiento(sec_codigo=self.get_sec_id())
@@ -106,15 +106,21 @@ class TAsientoRest(TokenView):
         elif accion == 'getbalancegeneral':
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
+            wherecodparents = "ic_code like '1%' or ic_code like '2%' or ic_code like '3%'"
             balancegen, parents, parentestres, restulttree = tasientodao.buid_rep_conta(desde, hasta,
-                                                                                        wherecodparents="ic_code like '1%' or ic_code like '2%' or ic_code like '3%'")
+                                                                                        wherecodparents,
+                                                                                        sec_id=self.get_sec_id())
             return self.res200(
-                {'balance': balancegen, 'parents': parents, 'parentres': parentestres, 'balancetree': restulttree})
+                {'balance': balancegen, 'parents': parents,
+                 'parentres': parentestres, 'balancetree': restulttree}
+            )
         elif accion == 'getestadoresultados':
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
+            wherecodparents = "ic_code like '4%' or ic_code like '5%'",
             balancegen, parents, parentestres, restulttree = tasientodao.buid_rep_conta(desde, hasta,
-                                                                                        wherecodparents="ic_code like '4%' or ic_code like '5%'",
+                                                                                        wherecodparents,
+                                                                                        sec_id=self.get_sec_id(),
                                                                                         isestadores=True)
             return self.res200({'balance': balancegen, 'parents': parents, 'balancetree': restulttree})
         elif accion == 'gettransaccs':

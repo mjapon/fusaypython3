@@ -93,7 +93,7 @@ class TItemConfigDao(BaseDao):
                 join titemconfig_sec ics on ics.ic_id = a.ic_id and ics.sec_id = {sec_id}
                 left join titemconfig_stock ick on ick.ic_id = a.ic_id and ick.sec_id = {sec_id}
                 left join tmodelocontab mc on td.icdp_modcontab = mc.mc_id
-                left join tmodelocontabdet mcd on mcd.mc_id = mc.mc_id and mcd.tra_codigo ={tracod} 
+                left join tmodelocontabdet mcd on mcd.mc_id = mc.mc_id and mcd.tra_codigo ={tracod} and mcd.sec_codigo = {sec_id} 
                 where a.ic_estado = 1 and (a.ic_code like '{filtro}%' or a.ic_nombre like '{filtro}%') order by a.ic_nombre limit {limit}
                 """.format(filtro=cadenas.strip_upper(filtro), limit=limit, sec_id=sec_id, tracod=tracod)
 
@@ -105,26 +105,30 @@ class TItemConfigDao(BaseDao):
 
         return self.all(sql, tupla_desc)
 
-    def buscar_ctascontables(self, filtro):
+    def buscar_ctascontables(self, filtro, sec_id):
         limit = 50
         sql = """        
-            select ic_id, ic_nombre, ic_code, ic_padre, clsic_id, ic_clasecc, ic_alias,
+            select ic.ic_id, ic_nombre, ic_code, ic_padre, clsic_id, ic_clasecc, ic_alias,
                 ic_code||' '||ic_nombre  as ctacontab
-                from titemconfig where tipic_id = 3 and ic_estado = 1 and ic_haschild=False  
+                from titemconfig ic
+                join titemconfig_sec ics on ics.ic_id = ic.ic_id and ics.sec_id = {sec_id} 
+                where tipic_id = 3 and ic_estado = 1 and ic_haschild=False  
                 and (ic_code like '{filtro}%' or ic_nombre like '%{filtro}%') 
                 order by ic_nombre limit {limit}                          
-        """.format(filtro=cadenas.strip_upper(filtro), limit=limit)
+        """.format(filtro=cadenas.strip_upper(filtro), limit=limit, sec_id=sec_id)
 
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'clsic_id', 'ic_clasecc', 'ic_alias', 'ctacontab')
         return self.all(sql, tupla_desc)
 
-    def get_allctascontables(self):
+    def get_allctascontables(self, sec_id):
         sql = """
-        select ic_id, ic_nombre, ic_code, ic_padre, clsic_id, ic_clasecc, ic_alias,
+        select ic.ic_id, ic_nombre, ic_code, ic_padre, clsic_id, ic_clasecc, ic_alias,
                 ic_code||' '||ic_nombre  as ctacontab
-                from titemconfig where tipic_id = 3 and ic_estado = 1
+                from titemconfig ic
+                join titemconfig_sec ics on ics.ic_id = ic.ic_id and ics.sec_id = {0} 
+                where tipic_id = 3 and ic_estado = 1
                 order by ic_code
-        """
+        """.format(sec_id)
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'clsic_id', 'ic_clasecc', 'ic_alias', 'ctacontab')
         return self.all(sql, tupla_desc)
 
@@ -186,13 +190,13 @@ class TItemConfigDao(BaseDao):
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code')
         return self.all(sql, tupla_desc)
 
-    def get_form(self):
+    def get_form(self, sec_id):
         tparamdao = TParamsDao(self.dbsession)
         aplicadental = tparamdao.aplica_dental()
         tsecciondao = TSeccionDao(self.dbsession)
         secciones = tsecciondao.listar()
         for seccion in secciones:
-            seccion['marca'] = False
+            seccion['marca'] = seccion['sec_id'] == sec_id
 
         formic = {
             'ic_id': 0,
@@ -442,6 +446,8 @@ class TItemConfigDao(BaseDao):
         titemconfig.ic_alias = cadenas.strip_upper(form['ic_alias'])
         self.dbsession.add(titemconfig)
 
+        self.save_secciones(secciones=form['secciones'], ic_id=titemconfig.ic_id)
+
     def actualizar(self, form, user_actualiza):
         # Datos para actualizar:
 
@@ -610,7 +616,7 @@ class TItemConfigDao(BaseDao):
                     titemconfig.ic_code = newbarcode_strip
                     self.dbsession.add(titemconfig)
 
-    def get_form_plan_cuentas(self, padre):
+    def get_form_plan_cuentas(self, padre, sec_id):
         sql = "select ic_code from titemconfig where ic_id = {0}".format(padre)
         ic_code_padre = self.first_col(sql, 'ic_code')
         sql = """select max(coalesce(SUBSTRING (ic_code,'([0-9]{{1,}}$)'), '0' )::int) as maxiccode 
@@ -632,6 +638,16 @@ class TItemConfigDao(BaseDao):
             'sec': int(sec) + 1,
             'ic_code_padre': '{0}.'.format(ic_code_padre)
         }
+
+        tsecciondao = TSeccionDao(self.dbsession)
+        secciones = tsecciondao.listar()
+        seccionesf = []
+        for seccion in secciones:
+            seccionesf.append({'value': seccion['sec_id'] == sec_id,
+                               'sec_id': seccion['sec_id'],
+                               'seccion': seccion})
+        form['secciones'] = seccionesf
+
         return form
 
     def existe_nombre_cta_contable(self, ic_nombre):
@@ -652,15 +668,16 @@ class TItemConfigDao(BaseDao):
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
 
-    def crea_ctacontable_billetera(self, bill_nombre, bill_obs, ic_padre, user_crea):
+    def crea_ctacontable_billetera(self, bill_nombre, bill_obs, ic_padre, user_crea, secciones):
         titemconfig_dao = TItemConfigDao(self.dbsession)
-        form = titemconfig_dao.get_form_plan_cuentas(padre=ic_padre)
+        form = titemconfig_dao.get_form_plan_cuentas(padre=ic_padre, sec_id=secciones[0]['sec_id'])
         aux_bill_nombre = cadenas.strip_upper(bill_nombre)
         form['ic_nombre'] = aux_bill_nombre
         form['ic_clasecc'] = 'E'
         form['ic_alias'] = aux_bill_nombre
         form['ic_nota'] = cadenas.strip(bill_obs)
         form['ic_padre'] = ic_padre
+        form['secciones'] = secciones
 
         ic_id = self.crea_ctacontable(form, user_crea)
         return ic_id
@@ -701,6 +718,9 @@ class TItemConfigDao(BaseDao):
 
         self.dbsession.add(titemconfig)
         self.dbsession.flush()
+
+        self.save_secciones(secciones=form['secciones'], ic_id=titemconfig.ic_id)
+
         return titemconfig.ic_id
 
     def get_detalles_ctacontable(self, ic_id):
@@ -714,38 +734,40 @@ class TItemConfigDao(BaseDao):
                       'ic_fechacrea', 'ic_estado', 'clsic_id', 'ic_clasecc', 'ic_alias', 'padre', 'ic_nota')
         return self.first(sql, tupla_desc)
 
-    def aux_listar_plan_cuentas(self, where):
+    def aux_listar_plan_cuentas(self, where, sec_id):
         sql = """
-                select ic_id, ic_nombre, ic_code, ic_padre, tipic_id, ic_fechacrea, ic_estado, clsic_id, ic_clasecc, 
+                select ic.ic_id, ic_nombre, ic_code, ic_padre, tipic_id, ic_fechacrea, ic_estado, clsic_id, ic_clasecc, 
                 ic_alias, ic_haschild
-                from titemconfig where tipic_id = 3 and ic_estado = 1 {0} order by coalesce(SUBSTRING (ic_code,'([0-9]{{1,}}$)'), '1' )::int asc
-                """.format(where)
+                from titemconfig ic
+                join titemconfig_sec ics on ics.ic_id = ic.ic_id and ics.sec_id = {sec_id}  
+                where tipic_id = 3 and ic_estado = 1 {where} order by coalesce(SUBSTRING (ic_code,'([0-9]{{1,}}$)'), '1' )::int asc
+                """.format(where=where, sec_id=sec_id)
 
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'tipic_id',
                       'ic_fechacrea', 'ic_estado', 'clsic_id', 'ic_clasecc', 'ic_alias', 'ic_haschild')
         return self.all(sql, tupla_desc)
 
-    def listar_hijos_plancuentas(self, padre):
-        return self.aux_listar_plan_cuentas(where='and ic_padre = {0}'.format(padre))
+    def listar_hijos_plancuentas(self, padre, sec_id):
+        return self.aux_listar_plan_cuentas(where='and ic_padre = {0}'.format(padre), sec_id=sec_id)
 
-    def lista_raiz_plan_cuentas(self):
-        return self.aux_listar_plan_cuentas(where='and ic_padre is null')
+    def lista_raiz_plan_cuentas(self, sec_id):
+        return self.aux_listar_plan_cuentas(where='and ic_padre is null', sec_id=sec_id)
 
-    def listar_raiz_balance_general(self):
+    def listar_raiz_balance_general(self, sec_id):
         swhere = 'and ic_padre is null and ic_code in (\'1\',\'2\',\'3\')'
-        return self.aux_listar_plan_cuentas(where=swhere)
+        return self.aux_listar_plan_cuentas(where=swhere, sec_id=sec_id)
 
-    def listar_raiz_estado_resultados(self):
+    def listar_raiz_estado_resultados(self, sec_id):
         swhere = 'and ic_padre is null and ic_code in (\'4\',\'5\')'
-        return self.aux_listar_plan_cuentas(where=swhere)
+        return self.aux_listar_plan_cuentas(where=swhere, sec_id=sec_id)
 
-    def build_tree_balance_general(self):
-        raizbalg = self.listar_raiz_balance_general()
-        return self.build_treenode(raizbalg)
+    def build_tree_balance_general(self, sec_id):
+        raizbalg = self.listar_raiz_balance_general(sec_id)
+        return self.build_treenode(raizbalg, sec_id)
 
-    def build_tree_estado_resultados(self):
-        raizbalg = self.listar_raiz_estado_resultados()
-        return self.build_treenode(raizbalg)
+    def build_tree_estado_resultados(self, sec_id):
+        raizbalg = self.listar_raiz_estado_resultados(sec_id)
+        return self.build_treenode(raizbalg, sec_id)
 
     def get_padres_recusivo(self, padre):
         sql = 'select ic_id, ic_padre from titemconfig where ic_id = {0}'.format(padre)
@@ -761,7 +783,13 @@ class TItemConfigDao(BaseDao):
 
         return reslista
 
-    def build_treenode(self, planctaslist, padre_expanded=None, ppadresdict=None):
+    def get_ctaconbtab_saldoinibill(self):
+        sql = """
+        select ic_id from titemconfig where ic_estado = 1 and ic_clasecc = '{0}'
+        """.format(ctes.CLASECC_SALDOINIBILL)
+        return self.first_col(sql, 'ic_id')
+
+    def build_treenode(self, planctaslist, sec_id, padre_expanded=None, ppadresdict=None):
         treenodes = []
         padresdict = {}
         if ppadresdict is not None:
@@ -780,10 +808,10 @@ class TItemConfigDao(BaseDao):
             data = label
             expandedicon = 'pi pi-folder-open',
             collapseicon = 'pi pi-folder',
-            hijos = self.listar_hijos_plancuentas(padre=item['ic_id'])
+            hijos = self.listar_hijos_plancuentas(padre=item['ic_id'], sec_id=sec_id)
             children = None
             if hijos is not None and len(hijos) > 0:
-                children = self.build_treenode(hijos, ppadresdict=padresdict)
+                children = self.build_treenode(hijos, ppadresdict=padresdict, sec_id=sec_id)
 
             node = {
                 'label': label,

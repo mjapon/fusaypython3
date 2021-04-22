@@ -130,6 +130,7 @@ class TasientoDao(BaseDao):
                a.per_codigo, a.us_id, a.trn_observ,
                a.dt_debito, a.cta_codigo, a.ic_code, a.ic_nombre, a.dt_valor, 0 as bmo_id
         from vasientosgen a
+            join titemconfig ic on a.cta_codigo = ic.ic_id            
                  join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
         where trn_valido = 0
         union
@@ -284,7 +285,7 @@ class TasientoDao(BaseDao):
 
         return form_asiento
 
-    def listar_grid_ventas(self, desde, hasta, filtro, tracod, tipo):
+    def listar_grid_ventas(self, desde, hasta, filtro, tracod, tipo, sec_id):
         tgrid_dao = TGridDao(self.dbsession)
         sqladc = ''
         if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
@@ -308,7 +309,7 @@ class TasientoDao(BaseDao):
         else:
             sqltra = "and a.tra_codigo in ({0})".format(tracod)
 
-        swhere = ' {0} {1} '.format(sqltra, sqladc)
+        swhere = ' {0} {1} and a.sec_codigo = {2}'.format(sqltra, sqladc, sec_id)
 
         data = tgrid_dao.run_grid(grid_nombre='ventas', swhere=swhere)
 
@@ -363,13 +364,15 @@ class TasientoDao(BaseDao):
             for hijonodo in nodo['children']:
                 self.aux_tree_to_list(hijonodo, alllist, acpasress)
 
-    def buid_rep_conta(self, desde, hasta, wherecodparents, isestadores=False):
+    def buid_rep_conta(self, desde, hasta, wherecodparents, sec_id, isestadores=False):
 
         sqlbalgen = """
-        select ic_id, ic_code, ic_nombre, ic_padre, ic_haschild, 0.0 as total from titemconfig
-        where tipic_id = 3 and ic_estado = 1 and ({0})
+        select ic.ic_id, ic_code, ic_nombre, ic_padre, ic_haschild, 0.0 as total 
+        from titemconfig ic
+        join titemconfig_sec ics on  ics.ic_id = ic.ic_id and ics.sec_id ={sec_id} 
+        where ic.tipic_id = 3 and ic.ic_estado = 1 and ({andwhere})
         order by ic_code asc
-        """.format(wherecodparents)
+        """.format(andwhere=wherecodparents, sec_id=sec_id)
 
         tdgb = ('ic_id', 'ic_code', 'ic_nombre', 'ic_padre', 'ic_haschild', 'total')
         planctabalg = self.all(sqlbalgen, tdgb)
@@ -398,9 +401,9 @@ class TasientoDao(BaseDao):
 
         itemconfigdao = TItemConfigDao(self.dbsession)
         if isestadores:
-            treebg = itemconfigdao.build_tree_estado_resultados()
+            treebg = itemconfigdao.build_tree_estado_resultados(sec_id=sec_id)
         else:
-            treebg = itemconfigdao.build_tree_balance_general()
+            treebg = itemconfigdao.build_tree_balance_general(sec_id=sec_id)
 
         for item in treebg:
             item['total'] = self.aux_totalizar_nodo(item, planctasdict)
@@ -414,8 +417,10 @@ class TasientoDao(BaseDao):
         restulttree = treebg
         if not isestadores:
             # Debe generar el resultado del ejercicio:
+            wherecodparents = "ic_code like '4%' or ic_code like '5%'"
             resultestres, parentestres, auxparentestres, auxrestree = self.buid_rep_conta(desde, hasta,
-                                                                                          wherecodparents="ic_code like '4%' or ic_code like '5%'",
+                                                                                          wherecodparents,
+                                                                                          sec_id=sec_id,
                                                                                           isestadores=True)
         return resultlist, parentsdict, parentestres, restulttree
 
@@ -1142,7 +1147,7 @@ class TasientoDao(BaseDao):
         personadao = TPersonaDao(self.dbsession)
         ttransaccimpdao = TTransaccImpDao(self.dbsession)
 
-        configtransaccimp = ttransaccimpdao.get_config(tra_codigo=tra_codigo)
+        configtransaccimp = ttransaccimpdao.get_config(tra_codigo=tra_codigo, sec_codigo=form['sec_codigo'])
         impuestos = []
         if configtransaccimp is not None and totales is not None:
             ivaval = totales['iva']

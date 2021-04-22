@@ -137,18 +137,21 @@ class TAsicreditoDao(BaseDao):
         totaldeuda = self.first_col(sql, 'totaldeuda')
         return self.type_json(totaldeuda)
 
-    def listar(self, tipo, desde, hasta, filtro):
+    def listar(self, tipo, desde, hasta, filtro, sec_id):
         sqlfechas = ""
         if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
             sqlfechas = " and (tasi.trn_fecreg between '{0}' and '{1}' )".format(fechas.format_cadena_db(desde),
                                                                                  fechas.format_cadena_db(hasta))
-        sqlfiltro = ''
+        sqlfiltro = ' '
+        if sec_id > 0:
+            sqlfiltro = ' and tasi.sec_codigo = {0}'.format(sec_id)
+
         if cadenas.es_nonulo_novacio(filtro):
             filtroupper = cadenas.strip_upper(filtro)
             auxfiltroupper = '%'.join(filtroupper.split(' '))
             filtrocedula = " ( ( (per.per_nombres || ' ' || coalesce(per.per_apellidos, '')) like '%{0}%' ) or (per.per_ciruc like '%{0}%') ) ".format(
                 auxfiltroupper)
-            sqlfiltro = " and {0} ".format(filtrocedula)
+            sqlfiltro += " and {0} ".format(filtrocedula)
 
         tgrid_dao = TGridDao(self.dbsession)
         data = tgrid_dao.run_grid(grid_nombre='cxcp', tipo=tipo, sqlfiltro=sqlfiltro, sqlfechas=sqlfechas)

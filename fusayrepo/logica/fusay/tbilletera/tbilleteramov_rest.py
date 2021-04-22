@@ -29,7 +29,7 @@ class TBilleteraMovRest(TokenView):
             tipo = self.get_request_param('tipo')
             cuenta = self.get_request_param('cuenta')
             cuentabill = self.get_request_param('cuentabill')
-            grid = billeteramovdao.listar_grid(desde, hasta, tipo, cuenta, cuentabill)
+            grid = billeteramovdao.listar_grid(desde, hasta, tipo, cuenta, cuentabill, sec_id=self.get_sec_id())
             return self.res200({'grid': grid})
         elif accion == 'formfiltros':
             formfiltro = billeteramovdao.get_form_filtros()
@@ -37,7 +37,7 @@ class TBilleteraMovRest(TokenView):
             return self.res200({'formfiltro': formfiltro, 'tiposmovs': tiposmovs})
         elif accion == 'getcuentasbytipo':
             tipo = self.get_request_param('tipo')
-            cuentas = billeteramovdao.get_cuentas_bytipo_add_todos(tipo=tipo)
+            cuentas = billeteramovdao.get_cuentas_bytipo_add_todos(tipo=tipo, sec_id=self.get_sec_id())
             return self.res200({'cuentas': cuentas})
         elif accion == 'getdatosmov':
             movid = self.get_request_param('movid')

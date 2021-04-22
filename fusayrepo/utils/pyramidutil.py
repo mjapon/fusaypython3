@@ -179,6 +179,10 @@ class TokenView(PyramidView):
         self.user_id = datostoken['us_id']
         self.sec_id = datostoken['sec_id']
         self.request.headers['emp_codigo'] = self.emp_codigo
+        if 'tdv_codigo' in datostoken:
+            self.tdv_codigo = datostoken['tdv_codigo']
+        else:
+            self.tdv_codigo = 1  # TODO: Este caso no deberia darse
 
         self.change_dbschema(self.emp_esquema)
 
@@ -210,6 +214,9 @@ class TokenView(PyramidView):
 
     def get_sec_id(self):
         return self.sec_id
+
+    def get_tdv_codigo(self):
+        return self.tdv_codigo
 
     def res200(self, res):
         return {'status': 200, **res}

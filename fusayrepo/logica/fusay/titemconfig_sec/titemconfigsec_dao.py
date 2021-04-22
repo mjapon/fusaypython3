@@ -52,6 +52,14 @@ class TItemConfigSecDao(BaseDao):
 
         return secsforedit
 
+    def procesa_list_for_edit(self, secsforedit):
+        secciones = []
+        for seccion in secsforedit:
+            secciones.append({'value': seccion['marca'],
+                              'sec_id': seccion['sec_id'],
+                              'seccion': seccion})
+        return secciones
+
     def create_from_list(self, ic_id, secs_list):
         self.clear_all(ic_id=ic_id)
         for item in secs_list:

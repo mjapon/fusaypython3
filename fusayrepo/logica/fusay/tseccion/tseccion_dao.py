@@ -23,3 +23,8 @@ class TSeccionDao(BaseDao):
             sec_id)
         tupla_desc = ('sec_id', 'sec_nombre')
         return self.first(sql, tupla_desc)
+
+    def get_alm_codigo_from_sec_codigo(self, sec_codigo):
+        sql = "select alm_codigo from tseccion where sec_id = {0}".format(sec_codigo)
+        alm_codigo = self.first_col(sql, 'alm_codigo')
+        return alm_codigo

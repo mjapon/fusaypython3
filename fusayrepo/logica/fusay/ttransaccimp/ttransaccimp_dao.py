@@ -12,9 +12,10 @@ log = logging.getLogger(__name__)
 
 class TTransaccImpDao(BaseDao):
 
-    def get_config(self, tra_codigo):
+    def get_config(self, tra_codigo, sec_codigo):
         sql = """select tra_codigo, tra_impg, tra_imp0, tra_iserv, tra_ice, 
-        tra_ivagasto, tra_signo from ttransaccimp where tra_codigo = {0} """.format(tra_codigo)
+        tra_ivagasto, tra_signo from ttransaccimp where tra_codigo = {0} and sec_codigo = {1} """.format(tra_codigo,
+                                                                                                         sec_codigo)
 
         tupla_desc = ('tra_codigo', 'tra_impg', 'tra_imp0', 'tra_iserv', 'tra_ice',
                       'tra_ivagasto', 'tra_signo')

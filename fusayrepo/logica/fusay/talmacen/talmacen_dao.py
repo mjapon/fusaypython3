@@ -15,3 +15,5 @@ class TAlmacenDao(BaseDao):
     def get_alm_numest(self, alm_codigo):
         sql = "select alm_numest from talmacen where alm_codigo={0}".format(alm_codigo)
         return self.first_col(sql, 'alm_numest')
+
+

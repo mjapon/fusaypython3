@@ -10,9 +10,9 @@ from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.dental.todrxdocs.todrxdocs_dao import TOdRxDocsDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
-from fusayrepo.logica.fusay.tbilletera.tbilletera_dao import TBilleteraDao
 from fusayrepo.logica.fusay.tbilletera.tbilletera_model import TBilleteraMov
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
+from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.utils import fechas, cadenas
 
@@ -41,15 +41,15 @@ class TBilleteraMovDao(BaseDao):
 
         return formfiltros
 
-    def get_cuentas_bytipo_add_todos(self, tipo):
-        cuentas = self.get_cuentas_bytipo(tipo=tipo)
+    def get_cuentas_bytipo_add_todos(self, tipo, sec_id):
+        cuentas = self.get_cuentas_bytipo(tipo=tipo, sec_id=sec_id)
         cuentasret = [{'ic_id': 0, 'ic_nombre': 'Todos'}]
         for cuenta in cuentas:
             cuentasret.append(cuenta)
 
         return cuentasret
 
-    def get_cuentas_bytipo(self, tipo):
+    def get_cuentas_bytipo(self, tipo, sec_id):
         tparamdao = TParamsDao(self.dbsession)
         cod_cta_ing = tparamdao.get_param_value('codRootCtaContabIng')
         cod_cta_gast = tparamdao.get_param_value('codRootCtaContabGast')
@@ -70,10 +70,13 @@ class TBilleteraMovDao(BaseDao):
         cajabancos = "({0}%|{1}%)".format(cod_cta_caja, cod_cta_ban)
 
         sql = """
-        select ic_id, ic_code, ic_nombre, ic_code ||' '||ic_nombre as codnombre, ic_clasecc from titemconfig where
-        tipic_id = 3 and ic_estado = 1 and ic_haschild = false and  ic_code similar to '{0}' 
-        and ic_code not similar to '{1}'  order by ic_code desc, ic_nombre asc 
-        """.format(codeparent, cajabancos)
+        select ic.ic_id, ic_code, ic_nombre, ic_code ||' '||ic_nombre as codnombre, ic_clasecc 
+        from titemconfig ic
+        join titemconfig_sec ics on ics.ic_id = ic.ic_id and ics.sec_id = {sec_id}  
+        where
+        tipic_id = 3 and ic_estado = 1 and ic_haschild = false and  ic_code similar to '{parent}' 
+        and ic_code not similar to '{cajabancos}'  order by ic_code desc, ic_nombre asc 
+        """.format(parent=codeparent, cajabancos=cajabancos, sec_id=sec_id)
 
         tupla_desc = ('ic_id', 'ic_code', 'ic_nombre', 'codnombre', 'ic_clasecc')
         cuentasformov = self.all(sql, tupla_desc)
@@ -99,10 +102,11 @@ class TBilleteraMovDao(BaseDao):
             'billeteras': [{'cta_codigo': 0, 'dt_valor': 0.0}]
         }
 
-        cuentasformov = self.get_cuentas_bytipo(tipo=clase_mov)
+        cuentasformov = self.get_cuentas_bytipo(tipo=clase_mov, sec_id=sec_codigo)
 
+        from fusayrepo.logica.fusay.tbilletera.tbilletera_dao import TBilleteraDao
         billdao = TBilleteraDao(self.dbsession)
-        billeterasformov = billdao.listar_min()
+        billeterasformov = billdao.listar_min(sec_id=sec_codigo)
 
         tasientodao = TasientoDao(self.dbsession)
         formasiento = tasientodao.get_form_asiento(sec_codigo=sec_codigo)
@@ -141,6 +145,43 @@ class TBilleteraMovDao(BaseDao):
             tbilleteramov.bmo_estado = 1
             # tasientodao.update_trn_docpen(trn_codigo=tbilleteramov.trn_codigo, trn_docpen_value='F')
             self.dbsession.add(tbilleteramov)
+
+    def crea_saldo_inicial(self, cta_codigo, saldoinicial, sec_codigo, usercrea):
+        tasientodao = TasientoDao(self.dbsession)
+        formasiento = tasientodao.get_form_asiento(sec_codigo=sec_codigo)
+
+        formasiento['formasiento']['trn_docpen'] = 'F'
+        formasiento['formasiento']['trn_observ'] = 'P/R Saldo inicial en billetera'
+        formasiento['formref']['per_id'] = -1
+
+        formdet = formasiento['formdet']
+
+        detalles = []
+        newformdet = self.clone_formdet(formdet)
+        newformdet['dt_debito'] = 1
+        newformdet['dt_valor'] = saldoinicial
+        newformdet['cta_codigo'] = cta_codigo
+        detalles.append(newformdet)
+
+        itemconfigdao = TItemConfigDao(self.dbsession)
+        ctasaldini = itemconfigdao.get_ctaconbtab_saldoinibill()
+
+        if ctasaldini is None:
+            raise ErrorValidacionExc(
+                'No es posible registrar saldo inicial, no está configurado la cuenta contable saldo inicial en billetera')
+
+        newformdet = self.clone_formdet(formdet)
+        newformdet['dt_debito'] = -1
+        newformdet['dt_valor'] = saldoinicial
+        newformdet['cta_codigo'] = ctasaldini
+        detalles.append(newformdet)
+        formasiento['detalles'] = detalles
+
+        trn_codigo_gen = tasientodao.crear_asiento(formcab=formasiento['formasiento'],
+                                                   formref=formasiento['formref'],
+                                                   usercrea=usercrea,
+                                                   detalles=detalles)
+        return trn_codigo_gen
 
     def crear(self, formtosave, usercrea):
         formbillmov = formtosave['form']
@@ -270,7 +311,7 @@ class TBilleteraMovDao(BaseDao):
         else:
             raise ErrorValidacionExc('No se pudo obtener los detalles del movimiento de ingreso/gasto registrado')
 
-    def listar_grid(self, desde, hasta, tipo, cuenta, cuentabill):
+    def listar_grid(self, desde, hasta, tipo, cuenta, cuentabill, sec_id):
 
         tgrid_dao = TGridDao(self.dbsession)
         joinbillmov = 'left join'
@@ -290,6 +331,6 @@ class TBilleteraMovDao(BaseDao):
 
         swhere = " {0} {1} ".format(sfechas, andwhere)
 
-        data = tgrid_dao.run_grid(grid_nombre='ingrgastos', joinbillmov=joinbillmov, swhere=swhere)
+        data = tgrid_dao.run_grid(grid_nombre='ingrgastos', joinbillmov=joinbillmov, swhere=swhere, sec_id=sec_id)
 
         return data

@@ -9,8 +9,10 @@ import logging
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tbilletera.tbilletera_model import TBilletera
+from fusayrepo.logica.fusay.tbilletera.tbilleteramov_dao import TBilleteraMovDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
+from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.utils import cadenas
 
 log = logging.getLogger(__name__)
@@ -18,18 +20,27 @@ log = logging.getLogger(__name__)
 
 class TBilleteraDao(BaseDao):
 
-    def get_form(self):
+    def get_form(self, sec_id):
         tparamdao = TParamsDao(self.dbsession)
         seq = tparamdao.get_next_sequence_bill()
 
         sqlcajasdisp = """
-        select ic_id, ic_nombre, ic_code from titemconfig a where tipic_id = 3 and ic_estado =1 and ic_clasecc in ('B','E')
-        and ic_haschild = false and ic_id not in (select ic_id from tbilletera where bil_estado = 1)
+        select a.ic_id, ic_nombre, ic_code from titemconfig a
+        join titemconfig_sec ics on a.ic_id = ics.ic_id and ics.sec_id = {0} 
+        where tipic_id = 3 and ic_estado =1 and ic_clasecc in ('B','E')
+        and ic_haschild = false and a.ic_id not in (select ic_id from tbilletera where bil_estado = 1)
          order by a.ic_nombre
-        """
+        """.format(sec_id)
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code')
         cajasdisp = self.all(sqlcajasdisp, tupla_desc)
 
+        tsecciondao = TSeccionDao(self.dbsession)
+        secciones = tsecciondao.listar()
+        seccionesf = []
+        for seccion in secciones:
+            seccionesf.append({'value': seccion['sec_id'] == sec_id,
+                               'sec_id': seccion['sec_id'],
+                               'seccion': seccion})
         return {
             'bil_id': 0,
             'bil_code': {'required': True, 'value': 'BILL_0000{0}'.format(seq)},
@@ -40,7 +51,8 @@ class TBilleteraDao(BaseDao):
             'bil_autogencode': 1,
             'ic_id': {'required': True, 'value': 0},
             'cajas': cajasdisp,
-            'haycajasdisp': 1 if len(cajasdisp) > 0 else 0
+            'haycajasdisp': 1 if len(cajasdisp) > 0 else 0,
+            'secciones': seccionesf
         }
 
     def existe_nombre(self, bill_nombre):
@@ -55,25 +67,28 @@ class TBilleteraDao(BaseDao):
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
 
-    def listar(self):
+    def listar(self, sec_id):
         sql = """
         select bil.bil_id, bil.bil_code, bil.bil_nombre, bil.bil_fechacrea, bil.bil_usercrea, bil.bil_saldo, 
         bil.bil_saldoini, bil.bil_obs, bil.ic_id, ic.ic_nombre
         from tbilletera bil 
         join titemconfig ic on ic.ic_id = bil.ic_id
-        where bil_estado = 1 order by bil_nombre asc 
-        
-        """
+        join titemconfig_sec ics on ics.ic_id = ic.ic_id and ics.sec_id = {0}
+        where bil_estado = 1 order by bil_nombre asc
+        """.format(sec_id)
         tupla_desc = ('bil_id', 'bil_code', 'bil_nombre', 'bil_fechacrea',
                       'bil_usercrea', 'bil_saldo', 'bil_saldoini', 'bil_obs', 'ic_id', 'ic_nombre')
         return self.all(sql, tupla_desc)
 
-    def listar_min(self):
+    def listar_min(self, sec_id):
         sql = """
         select bil.bil_id, bil.bil_code, bil.bil_nombre, bil.ic_id, 
         bil.bil_nombre||' - '||bil.bil_code||' - '||round(bil.bil_saldo,2) as bilnomcodsald 
-        from tbilletera bil where bil_estado = 1 order by bil_nombre asc
-        """
+        from tbilletera bil
+        join titemconfig ic on bil.ic_id = ic.ic_id
+        join titemconfig_sec ics on ic.ic_id = ics.ic_id and ics.sec_id = {0}
+        where bil_estado = 1 order by bil_nombre asc
+        """.format(sec_id)
         tupla_desc = ('bil_id', 'bil_code', 'bil_nombre', 'ic_id', 'bilnomcodsald')
         return self.all(sql, tupla_desc)
 
@@ -146,8 +161,10 @@ class TBilleteraDao(BaseDao):
                 tbilletera.bil_saldo = tbilletera.bil_saldoini
 
             self.dbsession.add(tbilletera)
+            icdao = TItemConfigDao(self.dbsession)
+            icdao.save_secciones(secciones=form['secciones'], ic_id=tbilletera.ic_id)
 
-    def crear(self, form, user_crea):
+    def crear(self, form, user_crea, sec_id):
         formsave = {}
         for key in form.keys():
             if type(form[key]) is dict and 'value' in form[key].keys():
@@ -171,10 +188,15 @@ class TBilleteraDao(BaseDao):
         if int(formsave['haycajasdisp']) == 1:
             if ic_id == 0:
                 raise ErrorValidacionExc('Debe seleccionar la cuenta contable')
+
+            icdao = TItemConfigDao(self.dbsession)
+            icdao.save_secciones(secciones=form['secciones'], ic_id=ic_id)
         else:
             # se procede a crear una cuenta contable
-            sqlparent = """select ic_padre from titemconfig 
-            where tipic_id = 3 and ic_estado =1 and ic_clasecc = 'E' order by ic_code asc limit 1"""
+            sqlparent = """select ic_padre from titemconfig ic 
+            join titemconfig_sec ics on ic.ic_id = ics.ic_id and ics.sec_id = {0} 
+            where tipic_id = 3 and ic_estado =1 and ic_clasecc = 'E' order by ic_code asc limit 1""".format(sec_id)
+
             ic_padre = self.first_col(sqlparent, 'ic_padre')
             if ic_padre is None:
                 raise ErrorValidacionExc('No se ha configurado el plan de cuentas para CAJA, verificar')
@@ -183,12 +205,12 @@ class TBilleteraDao(BaseDao):
             ic_id = itemconfigdao.crea_ctacontable_billetera(bill_nombre=formsave['bil_nombre'],
                                                              bill_obs=formsave['bil_obs'],
                                                              ic_padre=ic_padre,
-                                                             user_crea=user_crea)
+                                                             user_crea=user_crea, secciones=form['secciones'])
         tbilletera = TBilletera()
         tbilletera.bil_code = cadenas.strip_upper(formsave['bil_code'])
         tbilletera.bil_nombre = cadenas.strip_upper(formsave['bil_nombre'])
         tbilletera.bil_saldoini = float(formsave['bil_saldoini'])
-        tbilletera.bil_saldo = tbilletera.bil_saldoini
+        tbilletera.bil_saldo = 0.0
         tbilletera.bil_obs = cadenas.strip(formsave['bil_obs'])
         tbilletera.bil_fechacrea = datetime.datetime.now()
         tbilletera.bil_usercrea = user_crea
@@ -197,5 +219,12 @@ class TBilleteraDao(BaseDao):
         if int(formsave['bil_autogencode']) == 1:
             tparamsdao = TParamsDao(self.dbsession)
             tparamsdao.update_sequence_billetera()
+
+        if tbilletera.bil_saldoini > 0:
+            # Registrar un asiento contable para registrar el asiento inicial
+            billmovdao = TBilleteraMovDao(self.dbsession)
+            billmovdao.crea_saldo_inicial(cta_codigo=ic_id, saldoinicial=tbilletera.bil_saldoini,
+                                          sec_codigo=sec_id,
+                                          usercrea=user_crea)
 
         self.dbsession.add(tbilletera)

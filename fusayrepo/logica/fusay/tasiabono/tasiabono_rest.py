@@ -23,7 +23,7 @@ class TAsiAbonoRest(TokenView):
         tasiabondao = TAsiAbonoDao(self.dbsession)
         if accion == 'form':
             tra_codigo = self.get_request_param('tracod')
-            form = tasiabondao.get_form_abono(tra_codigo=tra_codigo)
+            form = tasiabondao.get_form_abono(tra_codigo=tra_codigo, sec_codigo=self.get_sec_id())
             return self.res200({'form': form})
         elif accion == 'abosfact':
             trncod = self.get_request_param('trncod')

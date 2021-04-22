@@ -7,9 +7,11 @@ import logging
 
 from cornice.resource import resource
 
+from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tfuser.tfuser_dao import TFuserDao
 from fusayrepo.logica.fusay.tfuserrol.tfuserrol_dao import TFuserRolDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
+from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
 from fusayrepo.logica.tempresa.empresa_dao import TEmpresaDao
 from fusayrepo.utils import cadenas
 from fusayrepo.utils.generatokenutil import GeneraTokenUtil
@@ -30,6 +32,8 @@ class TFuserRest(DbComunView):
             empresaDao = TEmpresaDao(self.dbsession)
 
             self.change_dbschema('public')
+            secciondao = TSeccionDao(self.dbsession)
+            ttpdvdao = TtpdvDao(self.dbsession)
             empresa = empresaDao.buscar_por_codigo(emp_codigo=emp_codigo)
             if empresa is None:
                 return {'status': 404,
@@ -39,18 +43,28 @@ class TFuserRest(DbComunView):
                 self.change_dbschema(emp_esquema)
                 autenticado = fuserdao.autenticar(us_cuenta=cadenas.strip(form['username']),
                                                   us_clave=cadenas.strip(form['password']))
-                secciones = TSeccionDao(self.dbsession).listar()
+                secciones = secciondao.listar()
                 sec_id = secciones[0]['sec_id']
 
             if autenticado:
                 user = fuserdao.get_user(us_cuenta=cadenas.strip(form['username']))
                 genera_token_util = GeneraTokenUtil()
+                alm_codigo = secciondao.get_alm_codigo_from_sec_codigo(sec_codigo=sec_id)
+                ttpdvs = ttpdvdao.listar_min(alm_codigo=alm_codigo)
+
+                # Se loguea por defecto en el primer punto de emision
+                if len(ttpdvs) == 0:
+                    raise ErrorValidacionExc(
+                        'No hay registrados puntos de emisió para el establecimiento (cod:{0})'.format(alm_codigo))
+                tdv_codigo = ttpdvs[0]['tdv_codigo']
                 token = genera_token_util.gen_token(us_id=user['us_id'], emp_codigo=empresa['emp_codigo'],
-                                                    emp_esquema=empresa['emp_esquema'], sec_id=sec_id)
+                                                    emp_esquema=empresa['emp_esquema'], sec_id=sec_id,
+                                                    tdv_codigo=tdv_codigo)
                 return {'autenticado': autenticado,
                         'userinfo': user,
                         'seccion': secciones[0],
                         'token': token,
+                        'tdv_codigo': tdv_codigo,
                         'menu': empresa['emp_menu'],
                         'sqm': empresa['emp_esquema'],
                         'empNombreComercial': empresa['emp_nombrecomercial']}

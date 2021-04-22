@@ -39,5 +39,5 @@ class TAsiCreditoRest(TokenView):
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
             filtro = self.get_request_param('filtro')
-            data, totales = tasicredao.listar(tipo, desde, hasta, filtro)
+            data, totales = tasicredao.listar(tipo, desde, hasta, filtro, sec_id=self.get_sec_id())
             return self.res200({'grid': data, 'totales': totales})
