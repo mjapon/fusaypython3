@@ -315,7 +315,10 @@ class TBilleteraMovDao(BaseDao):
 
         tgrid_dao = TGridDao(self.dbsession)
         joinbillmov = 'left join'
-        andwhere = " and det.cta_codigo in (select ic_id from tbilletera where bil_estado = 1) "
+        andwhere = """ 
+        and det.cta_codigo in (select bil.ic_id from tbilletera bil join titemconfig_sec ics on bil.ic_id = ics.ic_id
+        and ics.sec_id = {0} where bil_estado = 1)
+        """.format(sec_id)
 
         sfechas = ' '
         if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
@@ -323,7 +326,9 @@ class TBilleteraMovDao(BaseDao):
                                                                              fechas.format_cadena_db(hasta))
         if tipo is not None and int(tipo) > 0:
             joinbillmov = 'join'
-            andwhere = " and mov.bmo_clase = {0} and coalesce(ic.ic_clasecc,'') not in ('E','B')".format(tipo)
+            andwhere = """ and mov.bmo_clase = {0} and coalesce(ic.ic_clasecc,'') not in ('E','B') 
+                            and ic.ic_id in (select ic_id from titemconfig_sec ics where 
+                            ics.ic_id = ic.ic_id and ics.sec_id = {1} )""".format(tipo, sec_id)
             if cuenta is not None and int(cuenta) > 0:
                 andwhere = " and mov.bmo_clase = {0} and det.cta_codigo = {1}".format(tipo, cuenta)
         elif cuentabill is not None and int(cuentabill) > 0:
