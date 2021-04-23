@@ -51,14 +51,18 @@ class TFuserRolDao(BaseDao):
 
     def listar_permisos(self, us_id):
         sql = """
-        select fr.us_id, rol.rl_name, rol.rl_id, per.prm_nombre, per.prm_abreviacion from tfuserrol fr
-        join trol rol on fr.rl_id = rol.rl_id
-        join tpermisorol perol on fr.rl_id = perol.rl_id
-        join tpermiso per on perol.prm_id = per.prm_id
-        where fr.us_id = {0} and rol.rl_estado = 0 and per.prm_estado = 0
+        
+        select per.prm_id, per.prm_abreviacion, per.prm_nombre from tpermiso per
+        where per.prm_id in (
+           select permrol.prm_id from tfuserrol fr
+           join trol rol on fr.rl_id = rol.rl_id
+           join tpermisorol permrol on permrol.rl_id = rol.rl_id where fr.us_id = {0}) order by per.prm_nombre
         """.format(us_id)
 
-        tupla_desc = ('us_id', 'rl_name', 'rl_id', 'prm_nombre', 'prm_abreviacion')
+        print('sql es:')
+        print(sql)
+
+        tupla_desc = ('prm_id', 'prm_abreviacion', 'prm_nombre')
         return self.all(sql, tupla_desc)
 
     def build_menu(self, permisos):

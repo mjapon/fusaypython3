@@ -27,76 +27,85 @@ class DataLoggedDao(BaseDao):
         permisos = fuserroldao.listar_permisos(user_id)
 
         allaccesosdirmap = {
-            'IG_LISTAR': {
+            'IG_LISTAR': [{
                 'label': 'Ingresos y Gastos',
                 'title': 'Adminsitrar ingresos y gastos',
-                'icon': 'fas fa-retweet',
+                'icon': 'fa fa-comments-dollar',
                 'route': 'vtickets',
                 'css': 'btn-outline-secondary'
-            },
-            # 'US_LISTAR': {
-            #     'label': 'Usuarios',
-            #     'title': 'Adminsitrar de usuarios del sistema',
-            #     'icon': 'fas fa-users',
-            #     'route': 'usuarios',
-            #     'css': 'btn-outline-secondary'
-            # },
-            'VN_LISTAR': {
-                'label': 'Ventas',
-                'title': 'Listado de ventas',
-                'icon': 'fas fa-store-alt',
-                'route': 'trndocs/1',
-                'css': 'btn-outline-secondary'
-            },
-            'PRODS_LISTAR': {
+            }],
+            'VN_LISTAR': [
+                {
+                    'label': 'Ventas',
+                    'title': 'Listado de ventas',
+                    'icon': 'fas fa-store-alt',
+                    'route': 'trndocs/1',
+                    'css': 'btn-outline-secondary'
+                },
+                {
+                    'label': 'Cuentas por cobrar',
+                    'title': 'Listado de cuentas por cobrar',
+                    'icon': 'fas fa-hand-holding-usd',
+                    'route': 'cuentasxcp/1',
+                    'css': 'btn-outline-secondary'
+                }
+            ],
+            'PRODS_LISTAR': [{
                 'label': 'Inventarios',
                 'title': 'Administración de productos y servicios',
                 'icon': 'fas fa-cubes',
                 'route': 'mercaderia',
                 'css': 'btn-outline-secondary'
-            },
-            'TK_LISTAR': {
+            }],
+            'TK_LISTAR': [{
                 'label': 'Tickets',
                 'title': 'Ventas de tickets',
                 'icon': 'fas fa-ticket-alt',
                 'route': 'ticket/form',
                 'css': 'btn-outline-secondary'
-            },
-            'AGN_LISTAR': {
+            }],
+            'AGN_LISTAR': [{
                 'label': 'Agenda',
                 'title': 'Administrar su agenda',
                 'icon': 'fas fa-calendar-check',
                 'route': 'agenda/1',
                 'css': 'btn-outline-secondary'
-            },
-            'CM_LISTAR': {
+            }],
+            'CM_LISTAR': [{
                 'label': 'Compras',
                 'title': 'Listado de compras',
                 'icon': 'fas fa-shopping-cart',
                 'route': 'trndocs/2',
-                'css': 'btn-outline-secondary'
-            },
-            'HIST_LISTAR': {
+                'css': 'btn-outline-secondary'},
+                {
+                    'label': 'Cuentas por pagar',
+                    'title': 'Listado de cuentas por pagar',
+                    'icon': 'fas fa-hand-holding-usd fa-flip-horizontal',
+                    'route': 'cuentasxcp/2',
+                    'css': 'btn-outline-secondary'
+                }
+            ],
+            'HIST_LISTAR': [{
                 'label': 'Atención Médica',
                 'title': 'Registrar atención médica',
                 'icon': 'fas fa-stethoscope',
                 'route': 'historiaclinica/1',
                 'css': 'btn-outline-secondary'
-            },
-            'HISTO_LISTAR': {
+            }],
+            'HISTO_LISTAR': [{
                 'label': 'Atención Odontológica',
                 'title': 'Registrar atención odontológica',
                 'icon': 'fas fa-tooth',
                 'route': 'odonto',
                 'css': 'btn-outline-secondary'
-            },
-            'REF_LISTAR': {
+            }],
+            'REF_LISTAR': [{
                 'label': 'Referentes',
                 'title': 'Administración de referentes',
                 'icon': 'fas fa-address-book',
                 'route': 'referentes',
                 'css': 'btn-outline-secondary'
-            }
+            }]
         }
 
         accesosdir = []
@@ -111,7 +120,9 @@ class DataLoggedDao(BaseDao):
             permabr = permiso['prm_abreviacion']
             if permabr in allaccesosdirmap.keys():
                 if allaccesosdirmap[permabr] not in accesosdir:
-                    accesosdir.append(allaccesosdirmap[permabr])
+                    accesosdir.extend(allaccesosdirmap[permabr])
+
+        accesosdir.sort(key=lambda x: x['label'])
 
         return {
             'fecha': fechaactual,
