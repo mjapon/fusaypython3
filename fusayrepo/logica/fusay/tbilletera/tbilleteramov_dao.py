@@ -164,7 +164,7 @@ class TBilleteraMovDao(BaseDao):
         detalles.append(newformdet)
 
         itemconfigdao = TItemConfigDao(self.dbsession)
-        ctasaldini = itemconfigdao.get_ctaconbtab_saldoinibill()
+        ctasaldini = itemconfigdao.get_ctaconbtab_saldoinibill(sec_codigo=sec_codigo)
 
         if ctasaldini is None:
             raise ErrorValidacionExc(
