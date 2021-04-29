@@ -737,8 +737,6 @@ class TConsultaMedicaDao(BaseDao):
             self.dbsession.add(new_consultamedica)
             self.dbsession.flush()
             cosm_id = new_consultamedica.cosm_id
-            print('Valor del nuevo id generado es:')
-            print(cosm_id)
 
             # 3 Registro de antecendentes:
             # Esto se registra como lista de valores

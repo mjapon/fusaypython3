@@ -61,7 +61,7 @@ class MiPixelDao(BaseDao):
         mipixel.px_url = pxurl
         mipixel.px_numpx = pxnumpx
         mipixel.px_texto = cadenas.strip(detalle)
-        mipixel.px_fechacadu = fechas.sumar_meses(hoy, 12)
+        # mipixel.px_fechacadu = fechas.sumar_meses(hoy, 12)
 
         if self.chk_pixel_usado(col=col, col_end=col_end, row=row, row_end=row_end):
             raise PixelUsadoExc('Algun pixel seleccionado ya fue comprado, favor seleccionar otra area')

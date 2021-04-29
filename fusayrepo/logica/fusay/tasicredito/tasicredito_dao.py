@@ -10,6 +10,8 @@ from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tasicredito.tasicredito_model import TAsicredito
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
+from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
+from fusayrepo.logica.fusay.ttransaccpago.ttransaccpago_dao import TTransaccPagoDao
 from fusayrepo.logica.fusay.ttransaccpdv.ttransaccpdv_dao import TTransaccPdvDao
 from fusayrepo.utils import ctes, fechas, numeros, cadenas
 
@@ -42,6 +44,115 @@ class TAsicreditoDao(BaseDao):
 
         self.dbsession.add(tasicredito)
         ttransacc_pdv.gen_secuencia(tps_codigo=resestabsec['tps_codigo'], secuencia=secuencia)
+
+    def clone_formdet(self, formdet):
+        newformdet = {}
+        for key in formdet.keys():
+            newformdet[key] = formdet[key]
+        return newformdet
+
+    def get_form(self, clase, per_codigo, sec_codigo):
+        from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
+        tasientodao = TasientoDao(self.dbsession)
+        formasiento = tasientodao.get_form_asiento(sec_codigo=sec_codigo)
+
+        tparamdao = TParamsDao(self.dbsession)
+        cod_cta_ing = "5.%"
+        cod_cta_gast = "4.%"
+
+        cod_cta_caja = tparamdao.get_param_value('codCtaContabCaj')
+        cod_cta_ban = tparamdao.get_param_value('codCtaContabBan')
+
+        cajabancos = "({0}%|{1}%)".format(cod_cta_caja, cod_cta_ban)
+
+        tra_codigo = ctes.TRA_COD_FACT_VENTA
+        codeparent = '{0}'.format(cod_cta_ing)
+        if int(clase) == 2:
+            tra_codigo = ctes.TRA_COD_FACT_COMPRA
+            codeparent = '{0}'.format(cod_cta_gast)
+
+        ttransapgadodao = TTransaccPagoDao(self.dbsession)
+        datoscuentacred = ttransapgadodao.get_datos_cuenta_credito(tra_codigo=tra_codigo, sec_id=sec_codigo)
+
+        tupla_desc = ('ic_id', 'ic_code', 'ic_nombre', 'codnombre', 'ic_clasecc')
+        filacodmerc = None
+        if tra_codigo == ctes.TRA_COD_FACT_COMPRA:
+            # En las cuentas disponibles agregar la cuenta en el modelo contable para esta transaccion
+            sql = """
+            select ic.ic_id, ic.ic_code, ic.ic_nombre, ic.ic_code ||' '||ic_nombre as codnombre, ic.ic_clasecc from tmodelocontabdet a
+            join titemconfig ic on ic.ic_id = a.cta_codigo
+            where mc_id = 1 and tra_codigo = {0} and sec_codigo = {1}
+            """.format(tra_codigo, sec_codigo)
+            filacodmerc = self.first(sql, tupla_desc)
+
+        sql = """
+                select ic.ic_id, ic_code, ic_nombre, ic_code ||' '||ic_nombre as codnombre, ic_clasecc 
+                from titemconfig ic
+                join titemconfig_sec ics on ics.ic_id = ic.ic_id and ics.sec_id = {sec_id}  
+                where
+                tipic_id = 3 and ic_estado = 1 and ic_haschild = false and  ic_code similar to '{parent}' 
+                and ic_code not similar to '{cajabancos}'  order by ic_code desc, ic_nombre asc 
+                """.format(parent=codeparent, cajabancos=cajabancos, sec_id=sec_codigo)
+
+        cuentasformov = self.all(sql, tupla_desc)
+        if filacodmerc is not None:
+            cuentasformov.append(filacodmerc)
+
+        titulo = "cuenta por cobrar"
+        if int(clase) == 2:
+            titulo = "cuenta por pagar"
+
+        form = {
+            'clase': clase,
+            'monto': 0.0,
+            'cta_codigo_main': datoscuentacred['cta_codigo'],
+            'dt_debito_main': datoscuentacred['dt_debito'],
+            'ic_clasecc': datoscuentacred['ic_clasecc'],
+            'cta_codigo_aux': 0,
+            'motivos': [{'cta_codigo': 0, 'dt_valor': 0.0}]
+        }
+
+        formasiento['formref']['per_id'] = per_codigo
+
+        return {
+            'titulo': titulo,
+            'formtopost': {'form': form, 'formasiento': formasiento},
+            'cuentasforcred': cuentasformov
+        }
+
+    def create_from_referente(self, formtosave, usercrea):
+        form = formtosave['form']
+        formasiento = formtosave['formasiento']
+
+        from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
+        tasientodao = TasientoDao(self.dbsession)
+
+        formasiento['formasiento']['trn_docpen'] = 'F'
+        formdet = formasiento['formdet']
+        detalles = []
+        motivos = form['motivos']
+
+        maindet = self.clone_formdet(formdet)
+        maindet['dt_debito'] = form['dt_debito_main']
+        maindet['dt_valor'] = form['monto']
+        maindet['cta_codigo'] = form['cta_codigo_main']
+        maindet['ic_clasecc'] = form['ic_clasecc']
+        detalles.append(maindet)
+
+        for motivo in motivos:
+            auxdet = self.clone_formdet(formdet)
+            auxdet['dt_debito'] = int(form['dt_debito_main']) * -1
+            auxdet['dt_valor'] = motivo['dt_valor']
+            auxdet['cta_codigo'] = motivo['cta_codigo']
+            detalles.append(auxdet)
+
+        formasiento['detalles'] = detalles
+
+        trn_codigo_gen = tasientodao.crear_asiento_cxcp_fromref(formcab=formasiento['formasiento'],
+                                                                formref=formasiento['formref'],
+                                                                usercrea=usercrea,
+                                                                detalles=formasiento['detalles'])
+        return trn_codigo_gen
 
     def abonar_credito(self, dt_codcred, monto_abono):
         montoabodec = decimal.Decimal(monto_abono)
@@ -167,7 +278,7 @@ class TAsicreditoDao(BaseDao):
 
         return data, totales
 
-    def listar_creditos(self, per_codigo, tra_codigo, solo_pendientes=True, clase=1):
+    def listar_creditos(self, per_codigo, solo_pendientes=True, clase=1):
         """
         Retorna listado de creditos de un referente y de una transaccion especificada
         :param per_codigo:
@@ -184,7 +295,7 @@ class TAsicreditoDao(BaseDao):
 
         sqlpendientes = " "
         if solo_pendientes:
-            sqlpendientes = "where cred.cre_saldopen>0"
+            sqlpendientes = " and cred.cre_saldopen>0"
 
         sql = """
         select cred.cre_codigo,
@@ -207,11 +318,12 @@ class TAsicreditoDao(BaseDao):
                per.per_ciruc
                from tasicredito cred
         join tasidetalle detcred on cred.dt_codigo = detcred.dt_codigo
-        join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo and tasi.tra_codigo in ({tracodin}) and tasi.trn_docpen = 'F' and tasi.trn_valido = 0
+        join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo and tasi.trn_pagpen = 'F' 
+             and tasi.trn_docpen = 'F' and tasi.trn_valido = 0
         join tpersona per on tasi.per_codigo = per.per_id and per.per_id = {per_codigo}
-        {sqlpend}
-        order by tasi.trn_fecreg desc      
-        """.format(tracodin=tracodin, per_codigo=per_codigo, sqlpend=sqlpendientes)
+        where cred.cre_tipo = {cre_tipo} {sqlpend}
+        order by tasi.trn_fecreg desc
+        """.format(tracodin=tracodin, per_codigo=per_codigo, cre_tipo=clase, sqlpend=sqlpendientes)
 
         tupla_desc = (
             'cre_codigo', 'dt_codigo', 'cre_fecini', 'cre_fecven', 'cre_intere', 'cre_intmor', 'cre_compro',

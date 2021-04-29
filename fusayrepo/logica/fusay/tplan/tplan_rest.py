@@ -27,7 +27,7 @@ class TPlanRest(TokenView):
         elif accion == 'listarg':
             grid = tpladao.listar_grid()
             ttransaccdao = TTransaccDao(self.dbsession)
-            ttransacc = ttransaccdao.get_ttransacc(tra_codigo=ctes.TRA_CODIGO_PLAN)
+            ttransacc = ttransaccdao.get_ttransacc(tra_codigo=ctes.TRA_COD_PLAN)
             return self.res200({'grid': grid, 'ttransacc': ttransacc})
         elif accion == 'listaplanes':
             planes = tpladao.listar()

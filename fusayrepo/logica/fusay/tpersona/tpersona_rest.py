@@ -96,6 +96,11 @@ class TPersonaRest(TokenView):
             totaldeudas = tasicreditodao.get_total_deudas(per_codigo=percodigo, clase=1)
             totalcxp = tasicreditodao.get_total_deudas(per_codigo=percodigo, clase=2)
             return self.res200({'deudas': totaldeudas, 'totalcxp': totalcxp})
+        elif 'gcuentafacts' == accion:
+            tpersonadao = TPersonaDao(self.dbsession)
+            perid = self.get_request_param('codper')
+            totales = tpersonadao.contar_transaccs(per_codigo=perid)
+            return self.res200({'totales': totales})
 
     def post(self):
         tpersonadao = TPersonaDao(self.dbsession)

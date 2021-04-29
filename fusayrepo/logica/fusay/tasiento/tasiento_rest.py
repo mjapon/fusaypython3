@@ -8,6 +8,7 @@ import logging
 from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
+from fusayrepo.logica.fusay.tasiento.librodiario_dao import LibroDiarioDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
@@ -56,16 +57,13 @@ class TAsientoRest(TokenView):
             doc = tasientodao.get_documento(trn_codigo=trn_codigo)
             return self.res200({'doc': doc})
         elif accion == 'gfact':
-            tra_codigo = 1
             per_codigo = self.get_request_param('per')
             clase = self.get_request_param('clase')
             if not cadenas.es_nonulo_novacio(clase):
                 clase = 1
 
-            docs = tasientodao.listar_documentos(per_codigo=per_codigo, tra_codigo=tra_codigo,
-                                                 find_pagos=True,
-                                                 clase=clase)
-            return self.res200({'docs': docs})
+            docs, totales = tasientodao.listar_documentos(per_codigo=per_codigo, clase=clase)
+            return self.res200({'docs': docs, 'totales': totales})
         elif accion == 'gcred':
             tra_codigo = 1
             per_codigo = self.get_request_param('per')
@@ -88,7 +86,10 @@ class TAsientoRest(TokenView):
             form = tasientodao.get_form_asiento(sec_codigo=self.get_sec_id())
             return self.res200({'form': form})
         elif accion == 'getasientos':
-            items, totales = tasientodao.listar_asientos()
+            desde = self.get_request_param('desde')
+            hasta = self.get_request_param('hasta')
+            librodiariodao = LibroDiarioDao(self.dbsession)
+            items, totales = librodiariodao.listar_asientos(desde, hasta)
             return self.res200({'items': items, 'totales': totales})
         elif accion == 'getmovscta':
             cta_codigo = self.get_request_param('cta')
@@ -130,6 +131,10 @@ class TAsientoRest(TokenView):
             for cuenta in items:
                 transaccsret.append(cuenta)
             return self.res200({'items': transaccsret})
+        elif accion == 'formfiltrolibd':
+            librodiariodao = LibroDiarioDao(self.dbsession)
+            form = librodiariodao.get_form_filtro()
+            return self.res200({'form': form})
 
     def collection_post(self):
         accion = self.get_request_param('accion')
@@ -156,7 +161,7 @@ class TAsientoRest(TokenView):
             body = self.get_json_body()
             trn_codigo = tasientodao.duplicar_comprobante(trn_codigo=body['trn_codigo'],
                                                           user_crea=self.get_user_id(),
-                                                          tra_codigo=ctes.TRA_CODIGO_FACTURA_VENTA)
+                                                          tra_codigo=ctes.TRA_COD_FACT_VENTA)
             return self.res200({'trn_codig': trn_codigo, 'msg': 'Duplicado exitoso'})
         elif accion == 'creasiento':
             body = self.get_json_body()

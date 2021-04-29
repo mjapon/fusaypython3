@@ -65,7 +65,7 @@ def get_str_fecha_actual(formato=ctes.APP_FMT_FECHA):
     return parse_fecha(datetime.datetime.now(), formato)
 
 
-def get_str_fecha(fecha, formato):
+def get_str_fecha(fecha, formato=ctes.APP_FMT_FECHA):
     return parse_fecha(fecha, formato)
 
 

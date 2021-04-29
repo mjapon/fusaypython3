@@ -59,9 +59,6 @@ class TFuserRolDao(BaseDao):
            join tpermisorol permrol on permrol.rl_id = rol.rl_id where fr.us_id = {0}) order by per.prm_nombre
         """.format(us_id)
 
-        print('sql es:')
-        print(sql)
-
         tupla_desc = ('prm_id', 'prm_abreviacion', 'prm_nombre')
         return self.all(sql, tupla_desc)
 

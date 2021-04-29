@@ -9,7 +9,7 @@ from datetime import datetime
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tpersona.tpersona_model import TPersona
-from fusayrepo.utils import cadenas, fechas
+from fusayrepo.utils import cadenas, fechas, ctes
 
 log = logging.getLogger(__name__)
 
@@ -542,3 +542,49 @@ class TPersonaDao(BaseDao):
         self.dbsession.flush()
 
         return tpersona.per_id
+
+    def contar_transaccs(self, per_codigo):
+        """
+        Retorna el total de transaccion de facturas, compras, cuentas por cobrar y pagar que tiene un referente
+        :param per_codigo:
+        :return: {compras,ventas,cxcobrar,cxpagar}
+        """
+        sql = """
+        select count(*) as cuenta, tra_codigo from tasiento where per_codigo = {0}
+        and trn_valido = 0 and trn_docpen = 'F' and trn_pagpen = 'F'
+        group by tra_codigo
+        """.format(per_codigo)
+
+        tupla_desc = ('cuenta', 'tra_codigo')
+        alltransacss = self.all(sql, tupla_desc)
+
+        sql = """
+        select count(*) as cuenta, cred.cre_tipo from tasicredito cred
+            join tasidetalle det on cred.dt_codigo = det.dt_codigo
+            join tasiento asi on det.trn_codigo = asi.trn_codigo and asi.trn_valido = 0 and asi.trn_docpen = 'F' and asi.trn_pagpen = 'F'
+            where asi.per_codigo = {0}
+            group by cred.cre_tipo
+        """.format(per_codigo)
+        tupla_desc = ('cuenta', 'cre_tipo')
+        allcreds = self.all(sql, tupla_desc)
+
+        totales = {
+            'compras': 0,
+            'ventas': 0,
+            'cxcobrar': 0,
+            'cxpagar': 0
+        }
+
+        for item in alltransacss:
+            if item['tra_codigo'] == ctes.TRA_COD_FACT_VENTA or item['tra_codigo'] == ctes.TRA_COD_NOTAVENTA:
+                totales['ventas'] += item['cuenta']
+            elif item['tra_codigo'] == ctes.TRA_COD_FACT_COMPRA:
+                totales['compras'] += item['cuenta']
+
+        for item in allcreds:
+            if item['cre_tipo'] == 1:
+                totales['cxcobrar'] += item['cuenta']
+            elif item['cre_tipo'] == 2:
+                totales['cxpagar'] += item['cuenta']
+
+        return totales
