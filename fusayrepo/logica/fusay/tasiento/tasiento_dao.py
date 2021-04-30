@@ -150,7 +150,8 @@ class TasientoDao(BaseDao):
             'estabptoemi': resestabsec['estabptoemi'],
             'secuencia': resestabsec['secuencia'],
             'trn_impref': impuestos['iva'],
-            'impuestos': impuestos
+            'impuestos': impuestos,
+            'trn_codigo': 0
         }
 
         return form_asiento
@@ -453,6 +454,51 @@ class TasientoDao(BaseDao):
 
         return facturas, totales
 
+    def get_detdoc_foredit(self, trn_codigo, dt_tipoitem, joinarts=True):
+        joinartsql = 'a.art_codigo'
+        if not joinarts:
+            joinartsql = 'a.cta_codigo'
+
+        sqlic_nombre = 'b.ic_nombre'
+        if dt_tipoitem == ctes.DT_TIPO_ITEM_PAGO:
+            sqlic_nombre = 'b.ic_alias as ic_nombre'
+
+        sql = """
+            select a.dt_codigo, a.trn_codigo, a.cta_codigo, a.art_codigo, a.per_codigo, a.pry_codigo, a.dt_cant, a.dt_precio, a.dt_debito,
+            a.dt_preref, a.dt_decto, a.dt_valor, a.dt_dectogen, a.dt_tipoitem, a.dt_valdto, a.dt_valdtogen, a.dt_codsec, {icnombre},
+            b.ic_clasecc, b.ic_code, dimp.dai_imp0, dimp.dai_impg, dimp.dai_ise, dimp.dai_ice, 
+            der.dtpreiva as dt_precioiva, der.icdpgrabaiva as icdp_grabaiva, der.subt as subtotal, der.total, der.dtdecto as dt_dectoin
+            from tasidetalle a
+            left join tasidetimp dimp on a.dt_codigo = dimp.dt_codigo
+            join get_dataforedit_rowfact(a.dt_codigo) as der(dtcod integer, 
+            dtcant numeric, 
+            dtprecio numeric,
+            dtpreref numeric,
+            dtdecto numeric,
+            dtdectogen numeric,
+            daiimpg numeric,
+             dtpreiva numeric,
+             icdpgrabaiva boolean,
+             subt numeric,
+             ivaval numeric,
+             total numeric) on der.dtcod = a.dt_codigo
+            join titemconfig b on {joinart} = b.ic_id where dt_tipoitem = {dttipo} and trn_codigo = {trncod}
+            order by a.dt_codigo
+            """.format(joinart=joinartsql,
+                       icnombre=sqlic_nombre,
+                       dttipo=dt_tipoitem,
+                       trncod=trn_codigo)
+
+        tupla_desc = ('dt_codigo', 'trn_codigo', 'cta_codigo', 'art_codigo', 'per_codigo', 'pry_codigo', 'dt_cant',
+                      'dt_precio', 'dt_debito', 'dt_preref', 'dt_decto', 'dt_valor', 'dt_dectogen', 'dt_tipoitem',
+                      'dt_valdto', 'dt_valdtogen', 'dt_codsec', 'ic_nombre', 'ic_clasecc', 'ic_code', 'dai_imp0',
+                      'dai_impg', 'dai_ise', 'dai_ice', 'dt_precioiva', 'icdp_grabaiva', 'subtotal', 'total',
+                      'dt_dectoin')
+
+        detalles = self.all(sql, tupla_desc)
+
+        return detalles
+
     def get_detalles_doc(self, trn_codigo, dt_tipoitem, joinarts=True):
 
         joinartsql = 'a.art_codigo'
@@ -491,6 +537,7 @@ class TasientoDao(BaseDao):
         dia_codigo,
         trn_fecreg,
         trn_compro,
+        get_small_trncompro(trn_compro) as secuencia,
         trn_fecha,
         trn_valido,
         case 
@@ -529,6 +576,7 @@ class TasientoDao(BaseDao):
                       'dia_codigo',
                       'trn_fecreg',
                       'trn_compro',
+                      'secuencia',
                       'trn_fecha',
                       'trn_valido',
                       'estado',
@@ -556,9 +604,12 @@ class TasientoDao(BaseDao):
         tasiento = self.first(sql, tupla_desc)
         return tasiento
 
-    def get_documento(self, trn_codigo):
+    def get_documento(self, trn_codigo, foredit=False):
         tasiento = self.get_cabecera_asiento(trn_codigo=trn_codigo)
-        detalles = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=1)
+        if foredit:
+            detalles = self.get_detdoc_foredit(trn_codigo=trn_codigo, dt_tipoitem=1)
+        else:
+            detalles = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=1)
         pagos = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=2, joinarts=False)
         impuestos = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=3, joinarts=False)
         totales = self.calcular_totales(detalles)
@@ -606,11 +657,11 @@ class TasientoDao(BaseDao):
             dt_precio = det['dt_precio']
             subtotal = dt_cant * dt_precio
             subtforiva = (dt_cant * dt_precio) - dt_decto
-            det['icdp_grabaiva'] = 'N'
+            # det['icdp_grabaiva'] = 'N'
             ivaval = 0.0
             if dai_impg > 0:
                 ivaval = numeros.get_valor_iva(subtforiva, dai_impg)
-                det['icdp_grabaiva'] = 'S'
+                # det['icdp_grabaiva'] = 'S'
                 gsubtotal12 += subtforiva
             else:
                 gsubtotal0 += subtotal
@@ -1147,6 +1198,26 @@ class TasientoDao(BaseDao):
             formpersona = {'per_id': tasiento.per_codigo}
             return self.crear(form=formcab, form_persona=formpersona, user_crea=user_crea, detalles=detalles,
                               pagos=pagos, totales=totales)
+
+    def editar(self, form, form_persona, user_edita, detalles, pagos, totales, creaupdpac=True):
+
+        trn_codigo = form['trn_codigo']
+        tasiento = self.find_entity_byid(trn_codigo=trn_codigo)
+        tasiento.trn_valido = 1
+        self.dbsession.add(tasiento)
+
+        tasientoaud = TAsientoAud()
+        tasientoaud.trn_codigo = trn_codigo
+        tasientoaud.aud_accion = ctes.AUD_ASIENTO_ANULAR
+        tasientoaud.aud_obs = ''
+        tasientoaud.aud_user = user_edita
+        self.dbsession.add(tasientoaud)
+
+        new_trn_codigo = self.crear(form=form, form_persona=form_persona, usercrea=user_edita, pagos=pagos,
+                                    totales=totales, detalles=detalles,
+                                    creaupdpac=creaupdpac)
+
+        return new_trn_codigo
 
     def crear(self, form, form_persona, user_crea, detalles, pagos, totales, creaupdpac=True):
         dia_codigo = form['dia_codigo']

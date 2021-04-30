@@ -32,7 +32,7 @@ class TodPlanTrantamientoRest(TokenView):
             formplan = plantrata_dao.get_form(pac_id=self.get_request_param('pac'))
 
             tra_codigo = self.get_request_param('tra_cod')
-            tdv_codigo = self.get_request_param('tdv_codigo')
+            tdv_codigo = self.get_tdv_codigo()
             ttpdvdao = TtpdvDao(self.dbsession)
             sec_id = self.get_sec_id()
             alm_codigo = ttpdvdao.get_alm_codigo_from_sec_codigo(sec_id)
@@ -58,7 +58,7 @@ class TodPlanTrantamientoRest(TokenView):
             plan = plantrata_dao.get_detalles(pnt_id=planid)
             if plan is not None:
                 tasientodao = TasientoDao(self.dbsession)
-                doc = tasientodao.get_documento(trn_codigo=plan['trn_codigo'])
+                doc = tasientodao.get_documento(trn_codigo=plan['trn_codigo'], foredit=True)
                 return self.res200({'plan': plan, 'doc': doc})
             else:
                 return {'status': 404, 'msg': 'No se puedo encontrar el plan de tratamient para codigo especificado'}
@@ -69,7 +69,7 @@ class TodPlanTrantamientoRest(TokenView):
 
         if accion == 'crea':
             jbody = self.get_json_body()
-            res = plantratadao.crear(form=jbody, user_crea=self.get_user_id())
+            res = plantratadao.crear(form=jbody, user_crea=self.get_user_id(), sec_codigo=self.get_sec_id())
 
             return self.res200({'msg': 'Registrado exitosamente', 'res': res})
 
