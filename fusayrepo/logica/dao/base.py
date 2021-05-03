@@ -22,9 +22,9 @@ class BaseDao(SimpleJsonUtil):
         self.dbsession.execute("SET search_path TO {0}".format(esquema))
 
     def get_dbsession_by_esquema(self, esquema=None):
-        sess =self.dbsession
+        sess = self.dbsession
         if esquema is not None:
-           sess.execute("SET search_path TO {0}".format(esquema))
+            sess.execute("SET search_path TO {0}".format(esquema))
         return sess
 
     def set_esquema_acad(self):
@@ -51,3 +51,6 @@ class BaseDao(SimpleJsonUtil):
     def first_col(self, sql, col):
         tupla_res = self.dbsession.query(col).from_statement(text(sql)).first()
         return tupla_res[0] if tupla_res is not None and tupla_res[0] is not None else None
+
+    def flush(self):
+        self.dbsession.flush()

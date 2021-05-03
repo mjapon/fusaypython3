@@ -30,7 +30,6 @@ class TodPlanTrantamientoRest(TokenView):
 
         if accion == 'form':
             formplan = plantrata_dao.get_form(pac_id=self.get_request_param('pac'))
-
             tra_codigo = self.get_request_param('tra_cod')
             tdv_codigo = self.get_tdv_codigo()
             ttpdvdao = TtpdvDao(self.dbsession)

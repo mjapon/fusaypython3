@@ -800,34 +800,16 @@ class TasientoDao(BaseDao):
                 detasiento.dt_valor = numeros.roundm2(float(detalle['dt_valor']))
                 detasiento.dt_tipoitem = ctes.DT_TIPO_ITEM_DETASIENTO
                 detasiento.dt_codsec = detalle['dt_codsec']
-
-                ic_clasecc = detalle['ic_clasecc']
-
                 self.dbsession.add(detasiento)
                 self.dbsession.flush()
+
+                ic_clasecc = detalle['ic_clasecc']
                 dt_codigo = detasiento.dt_codigo
-                if ic_clasecc == 'XC' or ic_clasecc == 'XP':
-                    cre_tipo = 0
-                    if ic_clasecc == 'XC':
-                        cre_tipo = 1
-                    if ic_clasecc == 'XP':
-                        cre_tipo = 2
-
-                    tra_codigo_cred = ctes.TRA_COD_CRED_VENTA
-                    if int(tra_codigo) == ctes.TRA_COD_FACT_COMPRA:
-                        tra_codigo_cred = ctes.TRA_COD_CRED_COMPRA
-
-                    formcre = {
-                        'dt_codigo': dt_codigo,
-                        'cre_fecini': formcab['trn_fecreg'],
-                        'cre_fecven': None,
-                        'cre_intere': 0.0,
-                        'cre_intmor': 0.0,
-                        'cre_codban': None,
-                        'cre_saldopen': detasiento.dt_valor,
-                        'cre_tipo': cre_tipo
-                    }
-                    creditodao.crear(form=formcre, tra_codigo_cred=tra_codigo_cred)
+                if creditodao.is_clasecc_cred(ic_clasecc):
+                    cre_tipo = creditodao.get_cre_tipo(ic_clasecc)
+                    formcre = creditodao.get_form_asi(dt_codigo=dt_codigo, trn_fecreg=formcab['trn_fecreg'],
+                                                      monto_cred=detasiento.dt_valor, cre_tipo=cre_tipo)
+                    creditodao.crear(form=formcre)
 
         return trn_codigo
 
@@ -1001,18 +983,14 @@ class TasientoDao(BaseDao):
                 detasiento.dt_valor = numeros.roundm2(float(detalle['dt_valor']))
                 detasiento.dt_tipoitem = ctes.DT_TIPO_ITEM_DETASIENTO
                 detasiento.dt_codsec = detalle['dt_codsec']
+                self.dbsession.add(detasiento)
 
                 ic_clasecc = detalle['ic_clasecc']
-
-                self.dbsession.add(detasiento)
                 self.dbsession.flush()
                 dt_codigo = detasiento.dt_codigo
-                if ic_clasecc == 'XC' or ic_clasecc == 'XP':
-                    cre_tipo = 0
-                    if ic_clasecc == 'XC':
-                        cre_tipo = 1
-                    if ic_clasecc == 'XP':
-                        cre_tipo = 2
+
+                if creditodao.is_clasecc_cred(ic_clasecc):
+                    cre_tipo = creditodao.get_cre_tipo(ic_clasecc)
                     tra_codigo_int = int(tra_codigo)
                     if (tra_codigo_int == ctes.TRA_COD_ABO_COMPRA) or (
                             tra_codigo_int == ctes.TRA_COD_ABO_VENTA):
@@ -1020,21 +998,9 @@ class TasientoDao(BaseDao):
                         abonodao = TAsiAbonoDao(self.dbsession)
                         abonodao.crear(dt_codigo, detalle['dt_codcred'], detasiento.dt_valor)
                     else:
-                        tra_codigo_cred = ctes.TRA_COD_CRED_VENTA
-                        if int(tra_codigo) == ctes.TRA_COD_FACT_COMPRA:
-                            tra_codigo_cred = ctes.TRA_COD_CRED_COMPRA
-
-                        formcre = {
-                            'dt_codigo': dt_codigo,
-                            'cre_fecini': formcab['trn_fecreg'],
-                            'cre_fecven': None,
-                            'cre_intere': 0.0,
-                            'cre_intmor': 0.0,
-                            'cre_codban': None,
-                            'cre_saldopen': detasiento.dt_valor,
-                            'cre_tipo': cre_tipo
-                        }
-                        creditodao.crear(form=formcre, tra_codigo_cred=tra_codigo_cred)
+                        formcre = creditodao.get_form_asi(dt_codigo=dt_codigo, trn_fecreg=formcab['trn_fecreg'],
+                                                          monto_cred=detasiento.dt_valor, cre_tipo=cre_tipo)
+                        creditodao.crear(form=formcre)
 
         resestabsec = transaccpdv_dao.get_estabptoemi_secuencia(alm_codigo=0,
                                                                 tra_codigo=ctes.TRA_COD_ASI_CONTABLE,
@@ -1389,29 +1355,12 @@ class TasientoDao(BaseDao):
                 self.dbsession.flush()
                 dt_codigo = detpago.dt_codigo
                 if float(pago['dt_valor']) > 0.0:
-                    if ic_clasecc == 'XC' or ic_clasecc == 'XP':
-                        cre_tipo = 0
-                        if ic_clasecc == 'XC':
-                            cre_tipo = 1
-                        if ic_clasecc == 'XP':
-                            cre_tipo = 2
-
-                        creditodao = TAsicreditoDao(self.dbsession)
-                        tra_codigo_cred = ctes.TRA_COD_CRED_VENTA
-                        if int(tra_codigo) == ctes.TRA_COD_FACT_COMPRA:
-                            tra_codigo_cred = ctes.TRA_COD_CRED_COMPRA
-
-                        formcre = {
-                            'dt_codigo': dt_codigo,
-                            'cre_fecini': form['trn_fecreg'],
-                            'cre_fecven': None,
-                            'cre_intere': 0.0,
-                            'cre_intmor': 0.0,
-                            'cre_codban': None,
-                            'cre_saldopen': detpago.dt_valor,
-                            'cre_tipo': cre_tipo
-                        }
-                        creditodao.crear(form=formcre, tra_codigo_cred=tra_codigo_cred)
+                    creditodao = TAsicreditoDao(self.dbsession)
+                    if creditodao.is_clasecc_cred(ic_clasecc):
+                        cre_tipo = creditodao.get_cre_tipo(ic_clasecc)
+                        formcre = creditodao.get_form_asi(dt_codigo=dt_codigo, trn_fecreg=form['trn_fecreg'],
+                                                          monto_cred=detpago.dt_valor, cre_tipo=cre_tipo)
+                        creditodao.crear(form=formcre)
 
         totalform = numeros.roundm(float(totales['total']), 2)
         totalsuma = numeros.roundm(sumapagos, 2)

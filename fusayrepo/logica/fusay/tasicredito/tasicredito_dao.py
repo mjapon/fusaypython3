@@ -20,8 +20,14 @@ log = logging.getLogger(__name__)
 
 class TAsicreditoDao(BaseDao):
 
-    def crear(self, form, tra_codigo_cred):
+    def crear(self, form):
         tasicredito = TAsicredito()
+
+        cre_tipo = tasicredito.cre_tipo = form['cre_tipo']
+
+        tra_codigo_cred = ctes.TRA_COD_CRED_VENTA
+        if int(cre_tipo) == 2:
+            tra_codigo_cred = ctes.TRA_COD_CRED_COMPRA
 
         ttransacc_pdv = TTransaccPdvDao(self.dbsession)
         resestabsec = ttransacc_pdv.get_estabptoemi_secuencia(alm_codigo=0, tra_codigo=tra_codigo_cred,
@@ -44,6 +50,9 @@ class TAsicreditoDao(BaseDao):
 
         self.dbsession.add(tasicredito)
         ttransacc_pdv.gen_secuencia(tps_codigo=resestabsec['tps_codigo'], secuencia=secuencia)
+        self.flush()
+
+        return tasicredito.cre_codigo
 
     def clone_formdet(self, formdet):
         newformdet = {}
@@ -354,3 +363,38 @@ class TAsicreditoDao(BaseDao):
 
         tupla_desc = ('dt_codigo', 'dt_valor', 'cre_codigo')
         return self.first(sql, tupla_desc)
+
+    def get_cre_tipo(self, ic_clasecc):
+        cre_tipo = 0
+        if ic_clasecc == 'XC':
+            cre_tipo = 1
+        if ic_clasecc == 'XP':
+            cre_tipo = 2
+
+        return cre_tipo
+
+    def get_form_asi(self, dt_codigo, trn_fecreg, monto_cred, cre_tipo):
+        formcre = {
+            'dt_codigo': dt_codigo,
+            'cre_fecini': trn_fecreg,
+            'cre_fecven': None,
+            'cre_intere': 0.0,
+            'cre_intmor': 0.0,
+            'cre_codban': None,
+            'cre_saldopen': monto_cred,
+            'cre_tipo': cre_tipo
+        }
+        return formcre
+
+    def is_clasecc_cred(self, ic_clasecc):
+
+        return ic_clasecc == 'XC' or ic_clasecc == 'XP'
+
+    def find_byid(self, cre_codigo):
+        return self.dbsession.query(TAsicredito).filter(TAsicredito.cre_codigo == cre_codigo).first()
+
+    def upd_cre_saldopen(self, cre_codigo, cre_saldopen):
+        tasicredito = self.find_byid(cre_codigo=cre_codigo)
+        if tasicredito is not None:
+            tasicredito.cre_saldopen = cre_saldopen
+            self.dbsession.add(tasicredito)

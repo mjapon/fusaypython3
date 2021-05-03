@@ -28,8 +28,6 @@ class TAsiAbonoDao(BaseDao):
         return saldpend
 
     def get_modelo_contable(self, tra_codigo, sec_codigo):
-
-
         sql = """
         select cta_codigo, tmc_signo from ttransaccmc where tra_codigo = {0} and sec_codigo = {1} and tmc_valido = 0
         """.format(tra_codigo, sec_codigo)
@@ -135,3 +133,18 @@ class TAsiAbonoDao(BaseDao):
         tupla_desc = ('dt_codcre', 'cuenta')
         auxres = self.first(sql, tupla_desc)
         return auxres is not None and auxres['cuenta'] > 0
+
+    def get_total_abonos(self, dt_codcre):
+        sql = """
+        select coalesce(sum(det.dt_valor), 0.0) as suma from tasiabono abo
+        join tasidetalle det on abo.dt_codigo = det.dt_codigo
+        join tasiento asi on det.trn_codigo = asi.trn_codigo and asi.trn_valido = 0 
+        and asi.trn_docpen = 'F' and asi.trn_pagpen = 'F'
+        where abo.dt_codcre = {0}        
+        """.format(dt_codcre)
+
+        suma = self.first_col(sql, 'suma')
+        return suma
+
+    def get_abonos_entity(self, dt_codcre):
+        return self.dbsession.query(TAsiAbono).filter(TAsiAbono.dt_codcre == dt_codcre).all()

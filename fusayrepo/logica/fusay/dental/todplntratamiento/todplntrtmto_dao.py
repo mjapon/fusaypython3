@@ -5,23 +5,21 @@ Fecha de creacion 1/7/21
 """
 import datetime
 import logging
-from functools import reduce
 
 from sqlalchemy.orm import make_transient
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.dental.todplntratamiento.todplntrtmto_model import TOdPlnTrtmto
-from fusayrepo.logica.fusay.tasiabono.tasiabono_model import TAsiAbono
+from fusayrepo.logica.fusay.tasiabono.tasiabono_dao import TAsiAbonoDao
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
-from fusayrepo.logica.fusay.tasidetalle.tasidetalle_model import TAsidetalle
-from fusayrepo.logica.fusay.tasidetimp.tasidetimp_model import TAsidetimp
+from fusayrepo.logica.fusay.tasiento.auxlogicasi_dao import AuxLogicAsiDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
-from fusayrepo.logica.fusay.tasiento.tasiento_model import TAsientoAud
+from fusayrepo.logica.fusay.tasiento.tasientoaud_dao import TAsientoAudDao
 from fusayrepo.logica.fusay.tmodelocontab.tmodelocontab_dao import TModelocontabDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
 from fusayrepo.logica.fusay.ttransaccimp.ttransaccimp_dao import TTransaccImpDao
-from fusayrepo.utils import cadenas, fechas, ctes, numeros
+from fusayrepo.utils import cadenas, numeros, fechas
 
 log = logging.getLogger(__name__)
 
@@ -56,16 +54,10 @@ class TOdPlanTratamientoDao(BaseDao):
                 det['dt_debito'] = datosmc['mcd_signo']
 
         if int(formcab['trn_codigo']) > 0:
-            print('Se procede a crear una nueva factura de plan--->')
-            new_trncod = self.editar(trn_codigo=formcab['trn_codigo'], user_edita=user_crea, sec_codigo=sec_codigo,
-                                     detalles=detalles, pagos=pagos, totales=form['totales'])
+            resultedit = self.editar(trn_codigo=formcab['trn_codigo'], user_edita=user_crea, sec_codigo=sec_codigo,
+                                     detalles=detalles, pagos=pagos, totales=form['totales'], formplan=formplan)
 
-            todplantrata = self.dbsession.query(TOdPlnTrtmto).filter(TOdPlnTrtmto.pnt_id == formplan['pnt_id']).first()
-            if todplantrata is not None:
-                todplantrata.trn_codigo = new_trncod
-                self.dbsession.add(todplantrata)
-
-            return {'trn_codigo': new_trncod, 'pnt_codigo': todplantrata.pnt_id}
+            return resultedit
 
         tplantratamiento = TOdPlnTrtmto()
         tplantratamiento.pnt_nombre = cadenas.strip_upper(formplan['pnt_nombre'])
@@ -78,6 +70,7 @@ class TOdPlanTratamientoDao(BaseDao):
 
         # Registro de factura
         tsientodao = TasientoDao(self.dbsession)
+        formcab['trn_observ'] = cadenas.strip(formplan['pnt_obs'])
         trn_codigo = tsientodao.crear(form=formcab, form_persona=form_persona, user_crea=user_crea, detalles=detalles,
                                       pagos=pagos, creaupdpac=False, totales=form['totales'])
         tplantratamiento.trn_codigo = trn_codigo
@@ -86,16 +79,17 @@ class TOdPlanTratamientoDao(BaseDao):
         self.dbsession.flush()
         return {'trn_codigo': trn_codigo, 'pnt_codigo': tplantratamiento.pnt_id}
 
-    def editar(self, trn_codigo, user_edita, sec_codigo, detalles, pagos, totales):
+    def editar(self, trn_codigo, user_edita, sec_codigo, detalles, pagos, totales, formplan):
         tasientodao = TasientoDao(self.dbsession)
+        tasiauddao = TAsientoAudDao(self.dbsession)
         ttransaccdao = TTransaccDao(self.dbsession)
+        tasicredao = TAsicreditoDao(self.dbsession)
+        tasiabodao = TAsiAbonoDao(self.dbsession)
+        auxlogicasi = AuxLogicAsiDao(self.dbsession)
 
         trn_codorig = trn_codigo
         tasiento = tasientodao.find_entity_byid(trn_codorig)
-        tasicredao = TAsicreditoDao(self.dbsession)
 
-        per_codigo = 0
-        tra_codigo = 0
         iscontab = False
 
         if tasiento is not None:
@@ -114,17 +108,11 @@ class TOdPlanTratamientoDao(BaseDao):
         tasiento.trn_codigo = None
         tasiento.sec_codigo = sec_codigo
         tasiento.us_id = user_edita
-
-        datoscred = tasicredao.find_datoscred_intransacc(trn_codigo=trn_codigo)
-        abonos = None
-        if datoscred is not None:
-            print('hay datos de un credito generado buscar abonos asocioados')
-            abonos = self.dbsession.query(TAsiAbono).filter(TAsiAbono.dt_codcre == datoscred['dt_codigo']).all()
-
+        tasiento.trn_observ = formplan['pnt_obs']
         self.dbsession.add(tasiento)
         self.dbsession.flush()
 
-        trn_codigo = tasiento.trn_codigo
+        new_trn_codigo = tasiento.trn_codigo
 
         valoresdebehaber = []
 
@@ -142,110 +130,55 @@ class TOdPlanTratamientoDao(BaseDao):
                 })
 
         for detalle in detalles:
-            tasidetalle = TAsidetalle()
-
-            per_cod_det = int(detalle['per_codigo'])
-            if per_cod_det == 0:
-                per_cod_det = tasiento.per_codigo
-
-            tasidetalle.dt_codigo = None
-            tasidetalle.trn_codigo = trn_codigo
-            tasidetalle.cta_codigo = detalle['cta_codigo']
-            tasidetalle.art_codigo = detalle['art_codigo']
-            tasidetalle.per_codigo = per_cod_det
-            tasidetalle.pry_codigo = detalle['pry_codigo']
-            tasidetalle.dt_cant = detalle['dt_cant']
-            tasidetalle.dt_precio = detalle['dt_precio']
-            tasidetalle.dt_debito = detalle['dt_debito']
-            tasidetalle.dt_preref = detalle['dt_preref']
-            tasidetalle.dt_decto = detalle['dt_decto']
-            tasidetalle.dt_valor = detalle['dt_valor']
-            tasidetalle.dt_dectogen = detalle['dt_dectogen']
-            tasidetalle.dt_tipoitem = ctes.DT_TIPO_ITEM_DETALLE
-            tasidetalle.dt_valdto = detalle['dt_valdto']
-            tasidetalle.dt_valdtogen = detalle['dt_valdtogen']
-            tasidetalle.dt_codsec = detalle['dt_codsec']
-
-            valoresdebehaber.append({'dt_debito': tasidetalle.dt_debito, 'dt_valor': tasidetalle.dt_valor})
-
-            self.dbsession.add(tasidetalle)
-            self.dbsession.flush()
-            dt_codigo = tasidetalle.dt_codigo
-
-            tasidetimp = TAsidetimp()
-            tasidetimp.dai_codigo = None
-            tasidetimp.dt_codigo = dt_codigo
-            tasidetimp.dai_imp0 = detalle['dai_imp0'] if cadenas.es_nonulo_novacio(detalle['dai_imp0']) else None
-            tasidetimp.dai_impg = detalle['dai_impg'] if cadenas.es_nonulo_novacio(detalle['dai_impg']) else None
-            tasidetimp.dai_ise = detalle['dai_ise'] if cadenas.es_nonulo_novacio(detalle['dai_ise']) else None
-            tasidetimp.dai_ice = detalle['dai_ice'] if cadenas.es_nonulo_novacio(detalle['dai_ice']) else None
-
-            self.dbsession.add(tasidetimp)
+            auxlogicasi.save_tasidet_fact(detalle=detalle, trn_codigo=new_trn_codigo,
+                                          tasiper_codigo=tasiento.per_codigo)
+            valoresdebehaber.append({'dt_debito': detalle['dt_debito'], 'dt_valor': detalle['dt_valor']})
 
         for impuesto in impuestos:
-            detimpuesto = TAsidetalle()
-            detimpuesto.trn_codigo = trn_codigo
-            detimpuesto.per_codigo = per_codigo
-            detimpuesto.cta_codigo = impuesto['cta_codigo']
-            detimpuesto.art_codigo = 0
-            detimpuesto.dt_debito = impuesto['dt_debito']
-            detimpuesto.dt_valor = impuesto['dt_valor']
-            valoresdebehaber.append({'dt_debito': detimpuesto.dt_debito, 'dt_valor': detimpuesto.dt_valor})
-            detimpuesto.dt_tipoitem = ctes.DT_TIPO_ITEM_IMPUESTO
-            detimpuesto.dt_codsec = sec_codigo
-            self.dbsession.add(detimpuesto)
+            auxlogicasi.save_tasidet_imp(trn_codigo=new_trn_codigo, per_codigo=per_codigo, impuesto=impuesto,
+                                         sec_codigo=sec_codigo)
+            valoresdebehaber.append({'dt_debito': impuesto['dt_debito'], 'dt_valor': impuesto['dt_valor']})
+
+        datoscred = tasicredao.find_datoscred_intransacc(trn_codigo=trn_codigo)
+        abonos = None
+        totalabonos = 0.0
+        if datoscred is not None:
+            abonos = tasiabodao.get_abonos_entity(datoscred['dt_codigo'])
+            totalabonos = tasiabodao.get_total_abonos(dt_codcre=datoscred['dt_codigo'])
 
         sumapagos = 0.0
         for pago in pagos:
-            detpago = TAsidetalle()
-            if float(pago['dt_valor']) > 0.0:
-                detpago.trn_codigo = trn_codigo
-                detpago.per_codigo = per_codigo
-                detpago.cta_codigo = pago['cta_codigo']
-                detpago.art_codigo = 0
-                detpago.dt_debito = pago['dt_debito']
-                detpago.dt_valor = float(pago['dt_valor'])
-                detpago.dt_tipoitem = ctes.DT_TIPO_ITEM_PAGO
-                detpago.dt_codsec = pago['dt_codsec']
-                sumapagos += detpago.dt_valor
+            valorpago = float(pago['dt_valor'])
+            ic_clasecc = pago['ic_clasecc']
+            if valorpago > 0.0:
+                dt_codigo = auxlogicasi.save_tasidet_pago(trn_codigo=new_trn_codigo, per_codigo=per_codigo, pago=pago)
+                sumapagos += valorpago
+                valoresdebehaber.append({'dt_debito': pago['dt_debito'], 'dt_valor': valorpago})
+                if tasicredao.is_clasecc_cred(ic_clasecc):
+                    totalaboround = numeros.roundm2(totalabonos)
+                    totalcredround = numeros.roundm2(pago['dt_valor'])
+                    # Validar monto del credito no puede ser menos al total de abonos previos realizados
+                    if totalcredround < totalaboround:
+                        raise ErrorValidacionExc(
+                            'No es posible editar este documento, existen abonos realizados por un total de ({0}) y el crédito actual es de ({1}), favor verificar'.format(
+                                totalaboround, totalcredround))
+                    else:
+                        new_cre_saldopen = totalcredround - totalaboround
 
-                valoresdebehaber.append({'dt_debito': detpago.dt_debito, 'dt_valor': detpago.dt_valor})
+                    cre_tipo = tasicredao.get_cre_tipo(ic_clasecc)
+                    formcre = tasicredao.get_form_asi(dt_codigo=dt_codigo,
+                                                      trn_fecreg=fechas.parse_fecha(tasiento.trn_fecreg),
+                                                      monto_cred=valorpago, cre_tipo=cre_tipo)
+                    new_cre_codigo = tasicredao.crear(form=formcre)
 
-                ic_clasecc = pago['ic_clasecc']
+                    # Si hay abonos asociados se debe pasar estos abonos a la nueva factdura
+                    if abonos is not None:
+                        for abono in abonos:
+                            abono.dt_codcre = dt_codigo
+                            self.dbsession.add(abono)
 
-                self.dbsession.add(detpago)
-                self.dbsession.flush()
-                dt_codigo = detpago.dt_codigo
-                if float(pago['dt_valor']) > 0.0:
-                    if ic_clasecc == 'XC' or ic_clasecc == 'XP':
-                        cre_tipo = 0
-                        if ic_clasecc == 'XC':
-                            cre_tipo = 1
-                        if ic_clasecc == 'XP':
-                            cre_tipo = 2
-
-                        creditodao = TAsicreditoDao(self.dbsession)
-                        tra_codigo_cred = ctes.TRA_COD_CRED_VENTA
-                        if int(tra_codigo) == ctes.TRA_COD_FACT_COMPRA:
-                            tra_codigo_cred = ctes.TRA_COD_CRED_COMPRA
-
-                        formcre = {
-                            'dt_codigo': dt_codigo,
-                            'cre_fecini': fechas.parse_fecha(tasiento.trn_fecreg),
-                            'cre_fecven': None,
-                            'cre_intere': 0.0,
-                            'cre_intmor': 0.0,
-                            'cre_codban': None,
-                            'cre_saldopen': detpago.dt_valor,
-                            'cre_tipo': cre_tipo
-                        }
-                        creditodao.crear(form=formcre, tra_codigo_cred=tra_codigo_cred)
-
-                        # Si hay abonos asociados se debe pasar estos abonos a la nueva factdura
-                        if abonos is not None:
-                            for abono in abonos:
-                                abono.dt_codcre = dt_codigo
-                                self.dbsession.add(abono)
+                    # Actualizar el saldo pendiente del credito en funcion de abonos anteriores registrados
+                    tasicredao.upd_cre_saldopen(cre_codigo=new_cre_codigo, cre_saldopen=new_cre_saldopen)
 
         totalform = numeros.roundm(float(totales['total']), 2)
         totalsuma = numeros.roundm(sumapagos, 2)
@@ -254,33 +187,28 @@ class TOdPlanTratamientoDao(BaseDao):
             raise ErrorValidacionExc(
                 'El total de la factura ({0}) no coincide con la suma de los pagos ({1})'.format(totalform, totalsuma))
 
-        if iscontab:
-            # Vericar que sumen debe y haber correctamente
-            itemsdebe = map(lambda x: x['dt_valor'], filter(lambda item: item['dt_debito'] == 1, valoresdebehaber))
-            itemshaber = map(lambda x: x['dt_valor'], filter(lambda item: item['dt_debito'] == -1, valoresdebehaber))
-
-            sumadebe = reduce(lambda a, b: a + b, itemsdebe, 0.0)
-            sumahaber = reduce(lambda a, b: a + b, itemshaber, 0.0)
-
-            sumadeberound = numeros.roundm2(sumadebe)
-            sumahaberound = numeros.roundm2(sumahaber)
-            if sumadeberound != sumahaberound:
-                raise ErrorValidacionExc(
-                    'La suma del debe ({0}) y el haber({1}) no coinciden, favor verificar'.format(sumadeberound,
-                                                                                                  sumahaberound))
+        if iscontab:  # Vericar que sumen debe y haber correctamente
+            auxlogicasi.chk_sum_debe_haber(valoresdebehaber)
 
         # Se debe anular la facdtura anterior
-        tasiento_org = tasientodao.find_entity_byid(trn_codorig)
-        tasiento_org.tr_valido = 1
-        self.dbsession.add(tasiento_org)
-        tasientoaud = TAsientoAud()
-        tasientoaud.trn_codigo = tasiento_org
-        tasientoaud.aud_accion = ctes.AUD_ASIENTO_ANULAR
-        tasientoaud.aud_obs = ''
-        tasientoaud.aud_user = user_edita
-        self.dbsession.add(tasientoaud)
+        tasiauddao.save_anula_transacc(tasiento=tasientodao.find_entity_byid(trn_codorig), user_anula=user_edita)
 
-        return trn_codigo
+        self.edit_datos_plan(formplan=formplan, new_trcod=new_trn_codigo)
+
+        return {'trn_codigo': new_trn_codigo, 'pnt_codigo': formplan['pnt_id']}
+
+    def find_by_id(self, pnt_id):
+        return self.dbsession.query(TOdPlnTrtmto).filter(TOdPlnTrtmto.pnt_id == pnt_id).first()
+
+    def edit_datos_plan(self, formplan, new_trcod):
+        pnt_id = formplan['pnt_id']
+
+        plantrata = self.find_by_id(pnt_id=pnt_id)
+        if plantrata is not None:
+            plantrata.trn_codigo = new_trcod
+            plantrata.pnt_obs = formplan['pnt_obs']
+            plantrata.pnt_nombre = cadenas.strip_upper(formplan['pnt_nombre'])
+            self.dbsession.add(plantrata)
 
     def listar(self, pac_id):
         sql = """
