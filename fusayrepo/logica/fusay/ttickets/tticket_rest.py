@@ -33,12 +33,12 @@ class TTicketRest(TokenView):
             datossec = secciondao.get_byid(sec_id=self.get_sec_id())
             return {'status': 200, 'form': form, 'formcli': formcli, 'seccion': datossec}
 
-        if 'servticktes' == accion:
+        elif 'servticktes' == accion:
             itemconfigdao = TItemConfigDao(self.dbsession)
             prods = itemconfigdao.get_prods_for_tickets()
             return {'status': 200, 'items': prods}
 
-        if 'forml' == accion:
+        elif 'forml' == accion:
             tsecciondao = TSeccionDao(self.dbsession)
             secs = tsecciondao.listar()
             secciones = [{'sec_id': 0, 'sec_nombre': 'Todos'}] + secs
@@ -49,7 +49,7 @@ class TTicketRest(TokenView):
             return {'dia': hoy, 'secciones': secciones, 'sec_def': sec_id,
                     'prods': prods, 'desde': hoy, 'hasta': hoy}
 
-        if 'listar' == accion:
+        elif 'listar' == accion:
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
             seccion = self.get_request_param('seccion')
@@ -60,21 +60,34 @@ class TTicketRest(TokenView):
             sumamonto = sum(it['tk_costo'] for it in data)
             return {'status': 200, 'res': res, 'suma': sumamonto}
 
+        elif 'gdet' == accion:
+            tkid = self.get_request_param('tkid')
+            datosticket = ticket_dao.get_detalles(tk_id=tkid)
+            return self.res200({'datosticket': datosticket})
+        elif 'gformed' == accion:
+            tkid = self.get_request_param('tkid')
+            res = ticket_dao.get_form_edit(tk_id=tkid)
+            return self.res200({'form': res['form'], 'servicios': res['servicios']})
+
     def collection_post(self):
         accion = self.get_request_param('accion')
+        ticket_dao = TTicketDao(self.dbsession)
 
         if accion == 'guardar':
             allform = self.get_request_json_body()
             formcli = allform['form_cli']
             form = allform['form']
-            ticket_dao = TTicketDao(self.dbsession)
+
             tkid = ticket_dao.crear(form, formcli, self.get_user_id(), self.get_sec_id())
             return {'status': 200, 'msg': 'Registrado', 'tk_id': tkid}
+        elif accion == 'upd':
+            form = self.get_json_body()
+            ticket_dao.actualizar(tk_id=form['tk_id'], form=form)
+            return {'status': 200, 'msg': 'Actualizado exitosamente'}
 
         if accion == 'anular':
             form = self.get_json_body()
             tk_id = form['tk_id']
 
-            ticket_dao = TTicketDao(self.dbsession)
             ticket_dao.anular(tk_id=tk_id)
             return {'status': 200, 'msg': 'Ticket anulado'}
