@@ -54,13 +54,14 @@ class UploadView(FusayPublicView):
             except PixelUsadoExc as ex:
                 estado = -2
                 msg = '{0}'.format(ex)
-                return {'status': estado, 'msg': msg}
                 log.error(u'Error Pixel Usado Excepcion al tratar de guardar la compra de un pixel: {0}'.format(ex))
+                return {'status': estado, 'msg': msg}
+
             except Exception as ex:
                 estado = -1
                 msg = '{0}'.format(ex)
-                return {'status': estado, 'msg': msg}
                 log.error(u'Error al tratar de guardar la compra de un pixel: {0}'.format(ex))
+                return {'status': estado, 'msg': msg}
 
     def collection_get(self):
         accion = self.get_request_param('accion')

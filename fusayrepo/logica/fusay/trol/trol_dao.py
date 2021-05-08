@@ -30,7 +30,8 @@ class TRolDao(BaseDao):
         tupla_desc = ('rl_id', 'rl_name', 'rl_desc', 'rl_abreviacion', 'rl_grupo')
         return self.all(sql, tupla_desc)
 
-    def get_form_crea(self):
+    @staticmethod
+    def get_form_crea():
         return {
             'rl_id': 0,
             'rl_name': '',

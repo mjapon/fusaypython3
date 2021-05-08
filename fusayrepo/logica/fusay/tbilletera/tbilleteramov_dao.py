@@ -21,7 +21,8 @@ log = logging.getLogger(__name__)
 
 class TBilleteraMovDao(BaseDao):
 
-    def get_tipos_mov(self):
+    @staticmethod
+    def get_tipos_mov():
         tipos = [
             {'label': 'Todos', 'value': 0},
             {'label': 'Ingreso', 'value': 1},
@@ -30,7 +31,8 @@ class TBilleteraMovDao(BaseDao):
 
         return tipos
 
-    def get_form_filtros(self):
+    @staticmethod
+    def get_form_filtros():
         formfiltros = {
             'desde': '',
             'hasta': '',
@@ -117,7 +119,8 @@ class TBilleteraMovDao(BaseDao):
             'formasiento': formasiento
         }
 
-    def clone_formdet(self, formdet):
+    @staticmethod
+    def clone_formdet(formdet):
         newformdet = {}
         for key in formdet.keys():
             newformdet[key] = formdet[key]
@@ -140,10 +143,7 @@ class TBilleteraMovDao(BaseDao):
     def confirmar(self, bmo_id):
         tbilleteramov = self.find_by_id(bmo_id)
         if tbilleteramov is not None:
-            # Se quitó la lógica de creacionde ingreso o gasto como transaccion pendiente, ahora se crea inmediatamente como válida
-            # tasientodao = TasientoDao(self.dbsession)
             tbilleteramov.bmo_estado = 1
-            # tasientodao.update_trn_docpen(trn_codigo=tbilleteramov.trn_codigo, trn_docpen_value='F')
             self.dbsession.add(tbilleteramov)
 
     def crea_saldo_inicial(self, cta_codigo, saldoinicial, sec_codigo, usercrea):
@@ -185,9 +185,6 @@ class TBilleteraMovDao(BaseDao):
 
     def crear(self, formtosave, usercrea):
         formbillmov = formtosave['form']
-        if 'archivo' in formtosave:
-            archivo = formtosave['archivo']
-
         formasiento = formtosave['formasiento']
         tbilleteramov = TBilleteraMov()
 
@@ -249,6 +246,10 @@ class TBilleteraMovDao(BaseDao):
         tbilleteramov.bmo_estado = 0
         tbilleteramov.bmo_monto = formbillmov['bmo_monto']
         tbilleteramov.bmo_fechatransacc = fechas.parse_cadena(formbillmov['bmo_fechatransacc'])
+
+        archivo = None
+        if 'archivo' in formtosave:
+            archivo = formtosave['archivo']
 
         if archivo is not None:
             todrxdocsdao = TOdRxDocsDao(self.dbsession)

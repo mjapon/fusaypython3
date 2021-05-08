@@ -30,10 +30,3 @@ class TImpuestoDao(BaseDao):
                 res['impserv'] = impuesto['imp_valor']
 
         return res
-
-    def get_valor_iva(self, fecha):
-        fechas.format_cadena_db(fecha)
-
-        sql = """
-        select imp_id, imp_valor from timpuesto where imp_tipo = 1 and 
-        """

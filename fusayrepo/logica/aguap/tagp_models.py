@@ -5,7 +5,7 @@ Fecha de creacion 4/29/21
 """
 import logging
 
-from sqlalchemy import Column, Integer, String, DateTime, Date, Text, Numeric
+from sqlalchemy import Column, Integer, String, DateTime, Date, Text, Numeric, Boolean
 
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
@@ -30,6 +30,8 @@ class TAgpContrato(Declarative, JsonAlchemy):
     cna_direccion = Column(String(100))
     cna_referencia = Column(String(80))
     cna_adjunto = Column(Integer)
+    cna_teredad = Column(Boolean)
+    cna_costoinst = Column(Numeric, default=0.0)
     trn_codigo = Column(Integer, nullable=False, default=0)
 
 

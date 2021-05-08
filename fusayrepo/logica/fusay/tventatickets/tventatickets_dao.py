@@ -7,7 +7,6 @@ import logging
 from datetime import datetime
 
 from fusayrepo.logica.dao.base import BaseDao
-from fusayrepo.logica.fusay.dental.todrxdocs.todrxdocs_dao import TOdRxDocsDao
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.tventatickets.tventatickets_model import TVentaTickets
 from fusayrepo.utils import cadenas, fechas
@@ -17,7 +16,8 @@ log = logging.getLogger(__name__)
 
 class TVentaTicketsDao(BaseDao):
 
-    def get_form(self):
+    @staticmethod
+    def get_form():
         return {
             'vt_id': 0,
             'vt_monto': 0.0,
@@ -73,7 +73,8 @@ class TVentaTicketsDao(BaseDao):
     def get_entity_byid(self, vt_id):
         return self.dbsession.query(TVentaTickets).filter(TVentaTickets.vt_id == vt_id).first()
 
-    def get_tipos_cuentas(self):
+    @staticmethod
+    def get_tipos_cuentas():
         return [{
             'value': 1, 'label': 'Ingreso',
         },
@@ -85,7 +86,8 @@ class TVentaTicketsDao(BaseDao):
             }
         ]
 
-    def agregar_todos_inlist(self, thelist):
+    @staticmethod
+    def agregar_todos_inlist(thelist):
         cuentares = [{'ic_id': 0, 'ic_nombre': 'Todos'}]
         for item in thelist:
             cuentares.append(item)
@@ -97,10 +99,7 @@ class TVentaTicketsDao(BaseDao):
         if 'form' in formtosave:
             form = formtosave['form']
 
-        if 'archivo' in formtosave:
-            fileinfo = formtosave['archivo']
-
-        tventaTicket = TVentaTickets()
+        tventa_ticket = TVentaTickets()
         monto = form['vt_monto']
         tipo = form['vt_tipo']
         estado = 0
@@ -109,15 +108,16 @@ class TVentaTicketsDao(BaseDao):
         fecha = form['vt_fecha']
         fecha_parsed = fechas.parse_cadena(fecha)
 
-        tventaTicket.vt_fechareg = datetime.now()
-        tventaTicket.vt_monto = monto
-        tventaTicket.vt_tipo = tipo
-        tventaTicket.vt_estado = estado
-        tventaTicket.vt_obs = cadenas.strip(obs)
-        tventaTicket.vt_clase = clase
-        tventaTicket.vt_fecha = fecha_parsed
-        tventaTicket.vt_usercrea = usercrea
+        tventa_ticket.vt_fechareg = datetime.now()
+        tventa_ticket.vt_monto = monto
+        tventa_ticket.vt_tipo = tipo
+        tventa_ticket.vt_estado = estado
+        tventa_ticket.vt_obs = cadenas.strip(obs)
+        tventa_ticket.vt_clase = clase
+        tventa_ticket.vt_fecha = fecha_parsed
+        tventa_ticket.vt_usercrea = usercrea
 
+        """
         if fileinfo is not None:
             todrxdocsdao = TOdRxDocsDao(self.dbsession)
             thefile = fileinfo['archivo']
@@ -130,9 +130,10 @@ class TVentaTicketsDao(BaseDao):
                 'rxd_nombre': fileinfo['rxd_filename']
             }
             rxid = todrxdocsdao.crear(formfile, usercrea, thefile)
-            tventaTicket.vt_codadj = rxid
+            tventa_ticket.vt_codadj = rxid
+        """
 
-        self.dbsession.add(tventaTicket)
+        self.dbsession.add(tventa_ticket)
 
     def cambiar_estado(self, vt_id, estado, userupd):
         tventaticket = self.get_entity_byid(vt_id)
@@ -150,7 +151,6 @@ class TVentaTicketsDao(BaseDao):
 
     def listar(self, tipo, cuenta):
         tgrid_dao = TGridDao(self.dbsession)
-        andwhere = ""
         if cuenta is None or int(cuenta) == 0:
             andwhere = " and ic.clsic_id = {0}".format(tipo)
         else:

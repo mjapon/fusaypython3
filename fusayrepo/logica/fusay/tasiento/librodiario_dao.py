@@ -64,6 +64,22 @@ class LibroDiarioDao(BaseDao):
             'bmo_id')
         return self.all(sql, tupla_desc)
 
+    @staticmethod
+    def _aux_add_rowlibrodiario(rlist, rowdata):
+        rlist.append({
+            'trn_codigo': rowdata['trn_codigo'],
+            'tra_codigo': rowdata['tra_codigo'],
+            'cta_codigo': '',
+            'ic_code': '',
+            'trn_fecreg': '',
+            'ic_nombre': rowdata['trn_observ'],
+            'dt_debito': 0,
+            'debe': '',
+            'haber': '',
+            'tr': 2,
+            'bmo_id': rowdata['bmo_id']
+        })
+
     def listar_asientos(self, desde, hasta):
         items = self.aux_get_all_asientos(desde, hasta)
         resultlist = []
@@ -79,19 +95,7 @@ class LibroDiarioDao(BaseDao):
             if trn_codigo != lasttrncod:
                 cab = True
                 if lasttrncod != 0:
-                    resultlist.append({
-                        'trn_codigo': asiprevius['trn_codigo'],
-                        'tra_codigo': asiprevius['tra_codigo'],
-                        'cta_codigo': '',
-                        'ic_code': '',
-                        'trn_fecreg': '',
-                        'ic_nombre': asiprevius['trn_observ'],
-                        'dt_debito': 0,
-                        'debe': '',
-                        'haber': '',
-                        'tr': 2,
-                        'bmo_id': asiprevius['bmo_id']
-                    })
+                    self._aux_add_rowlibrodiario(rlist=resultlist, rowdata=item)
                 lasttrncod = trn_codigo
                 asiprevius = item
             if cab:
@@ -141,19 +145,7 @@ class LibroDiarioDao(BaseDao):
                 })
 
             if item == items[len(items) - 1]:
-                resultlist.append({
-                    'trn_codigo': asiprevius['trn_codigo'],
-                    'tra_codigo': asiprevius['tra_codigo'],
-                    'cta_codigo': '',
-                    'ic_code': '',
-                    'trn_fecreg': '',
-                    'ic_nombre': asiprevius['trn_observ'],
-                    'dt_debito': 0,
-                    'debe': '',
-                    'haber': '',
-                    'tr': 2,
-                    'bmo_id': asiprevius['bmo_id']
-                })
+                self._aux_add_rowlibrodiario(rlist=resultlist, rowdata=item)
 
         totales = {
             'debe': numeros.roundm2(totales['debe']),

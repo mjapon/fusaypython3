@@ -21,7 +21,7 @@ class TPersonaRest(TokenView):
         accion = self.get_request_param('accion')
         if 'form' == accion:
             tpersonadao = TPersonaDao(self.dbsession)
-            form = tpersonadao.getform()
+            form = tpersonadao.get_form()
             return {'status': 200, 'form': form}
         elif 'buscaci' == accion:
             tpersonadao = TPersonaDao(self.dbsession)
@@ -54,7 +54,7 @@ class TPersonaRest(TokenView):
 
         elif 'buscaemail' == accion:
             tpersonadao = TPersonaDao(self.dbsession)
-            res = tpersonadao.buscar_poremail(per_ciruc=self.get_request_param('email'))
+            res = tpersonadao.buscar_poremail(per_email=self.get_request_param('email'))
             if res is not None:
                 return {'status': 200, 'persona': res}
             else:

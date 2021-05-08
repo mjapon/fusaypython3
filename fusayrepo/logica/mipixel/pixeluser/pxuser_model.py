@@ -5,7 +5,7 @@ Fecha de creacion 11/12/20
 """
 import logging
 
-from sqlalchemy import Column, Integer, String, DateTime, Text, Date, TIMESTAMP
+from sqlalchemy import Column, Integer, String, TIMESTAMP
 
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy

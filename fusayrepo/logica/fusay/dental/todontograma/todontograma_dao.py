@@ -47,9 +47,9 @@ class TOdontogramaDao(BaseDao):
             todontograma.od_obsodonto = od_obs
             self.dbsession.add(todontograma)
 
-    def get_odontograma(self, od_id):
+    def get_odontograma_by_id(self, od_id):
         sql = """select od_id, od_fechacrea, od_fechaupd, user_crea, od_odontograma, 
-        od_obsodonto, od_tipo, od_protesis, pac_id from todontograma where od_id = {0}""".format(od_id)
+                od_obsodonto, od_tipo, od_protesis, pac_id from todontograma where od_id = {0}""".format(od_id)
         tupla_desc = ('od_id', 'od_fechacrea', 'od_fechaupd', 'user_crea', 'od_odontograma',
                       'od_obsodonto', 'od_tipo', 'od_protesis', 'pac_id')
         return self.first(sql, tupla_desc)

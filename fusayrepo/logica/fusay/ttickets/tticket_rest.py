@@ -28,7 +28,7 @@ class TTicketRest(TokenView):
             persona_dao = TPersonaDao(self.dbsession)
             tk_dia = fechas.parse_fecha(datetime.now())
             form = ticket_dao.get_form(tk_dia, self.get_sec_id())
-            formcli = persona_dao.getform()
+            formcli = persona_dao.get_form()
             secciondao = TSeccionDao(self.dbsession)
             datossec = secciondao.get_byid(sec_id=self.get_sec_id())
             return {'status': 200, 'form': form, 'formcli': formcli, 'seccion': datossec}

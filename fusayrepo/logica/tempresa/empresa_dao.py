@@ -6,6 +6,7 @@ Fecha de creacion 3/25/19
 import logging
 
 from fusayrepo.logica.dao.base import BaseDao
+from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 
 log = logging.getLogger(__name__)
 
@@ -49,3 +50,9 @@ class TEmpresaDao(BaseDao):
                       'emp_codigo',
                       'emp_menu')
         return self.first(sql, tupla_desc)
+
+    def crear(self, form, user_crea):
+        raise ErrorValidacionExc('No implementado')
+
+    def update(self, emp_codigo, form, user_edit):
+        raise ErrorValidacionExc('No implementado')

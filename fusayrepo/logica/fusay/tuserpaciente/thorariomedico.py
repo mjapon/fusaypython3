@@ -4,7 +4,8 @@ Fecha de creacion 4/25/20
 @autor: mjapon
 """
 import logging
-from sqlalchemy import Column, Integer, TIMESTAMP, String, Text, Time
+
+from sqlalchemy import Column, Integer, Time
 
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
@@ -19,4 +20,4 @@ class THorarioMedico(Declarative, JsonAlchemy):
     med_id = Column(Integer, nullable=False)
     hm_dia = Column(Integer, nullable=False)
     hm_horaini = Column(Time, nullable=False)
-    hm_horafin= Column(Time, nullable=False)
+    hm_horafin = Column(Time, nullable=False)

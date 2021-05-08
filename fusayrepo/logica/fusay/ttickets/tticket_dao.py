@@ -89,7 +89,7 @@ class TTicketDao(BaseDao):
             sqlfechas = " and date(a.tk_dia) <= '{hasta}' ".format(
                 hasta=fechas.format_cadena_db(hasta))
         else:
-            sqlfechas = " and date(a.tk_dia) = '{dia}' ".format(diadb)
+            sqlfechas = " and date(a.tk_dia) = '{0}' ".format(diadb)
 
         if len(sqlserv) > 0:
             sqlserv = ' and ({0})'.format(sqlserv)

@@ -288,16 +288,6 @@ class TAsicreditoDao(BaseDao):
         return data, totales
 
     def listar_creditos(self, per_codigo, solo_pendientes=True, clase=1):
-        """
-        Retorna listado de creditos de un referente y de una transaccion especificada
-        :param per_codigo:
-        :param tra_codigo:
-        :param solo_pendientes:
-        :return: ['cre_codigo', 'dt_codigo', 'cre_fecini', 'cre_fecven', 'cre_intere', 'cre_intmor', 'cre_compro',
-            'cre_codban',
-            'cre_saldopen', 'trn_compro', 'trn_fecha', 'trn_fecreg', 'per_id', 'referente', 'per_ciruc']
-        """
-
         tracodin = "1,2"
         if int(clase) == 2:
             tracodin = "7"

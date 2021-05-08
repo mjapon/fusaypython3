@@ -6,7 +6,7 @@ Fecha de creacion 10/9/20
 import logging
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, TIMESTAMP, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, DateTime
 
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
@@ -26,5 +26,3 @@ class TRol(Declarative, JsonAlchemy):
     rl_usercrea = Column(Integer)
     rl_fechaanula = Column(DateTime)
     rl_fechaedita = Column(DateTime)
-
-

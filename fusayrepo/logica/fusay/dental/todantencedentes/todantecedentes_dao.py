@@ -119,6 +119,7 @@ class TOdAntecedentesDao(BaseDao):
 
     def get_detalles_byantid(self, od_antid):
         cabecera = self.get_cabecera_byid(od_antid)
+        detalles = []
         if cabecera is not None:
             cat = self.get_codcat_from_tipo(cabecera['od_tipo'])
             tconsultamedica_dao = TConsultaMedicaDao(self.dbsession)

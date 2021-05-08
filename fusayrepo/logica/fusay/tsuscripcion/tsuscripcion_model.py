@@ -5,8 +5,6 @@ Fecha de creacion 1/21/21
 """
 import logging
 
-log = logging.getLogger(__name__)
-
 from sqlalchemy import Column, Integer, Text, DateTime, Date
 
 from fusayrepo.models.conf import Declarative

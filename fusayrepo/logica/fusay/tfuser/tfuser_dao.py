@@ -79,7 +79,7 @@ class TFuserDao(BaseDao):
             'roles': []
         }
         tpersonadao = TPersonaDao(self.dbsession)
-        formcli = tpersonadao.getform()
+        formcli = tpersonadao.get_form()
 
         troldao = TRolDao(self.dbsession)
         allroles = troldao.listar()

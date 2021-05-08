@@ -3,10 +3,11 @@
 Created on '02/12/2014'
 @author: 'Manuel'
 """
-from decimal import Decimal
+import datetime
 import json
 import logging
-import datetime
+from decimal import Decimal
+
 import simplejson
 
 from fusayrepo.utils import ctes
@@ -31,11 +32,13 @@ def obj_to_json(obj):
     elif '__json__' in dir(obj):
         obj = getattr(obj, '__json__')()
     elif isinstance(obj, tuple):
-        resobj={}; i=0
+        resobj = {}
+        i = 0
         for ti in obj:
-            resobj[i] = str(ti); i+=1
+            resobj[i] = str(ti)
+            i += 1
         obj = resobj
-    elif isinstance(obj,list):
+    elif isinstance(obj, list):
         obj = obj
     else:
         obj = str(obj) if obj is not None else ''
@@ -47,7 +50,7 @@ def tupla_to_json(tupla):
     jsondict = {}
     if tupla is not None:
         for i in range(len(tupla)):
-            jsondict[i]=obj_to_json(tupla[i])
+            jsondict[i] = obj_to_json(tupla[i])
     return jsondict
 
 
@@ -60,8 +63,8 @@ class SimpleJsonUtil(object):
     def type_json(self, val):
         return obj_to_json(val)
 
-    def json_to_type(self, json, obj):
-        dd = self.obj(json)
+    def json_to_type(self, jsonobj, obj):
+        dd = self.obj(jsonobj)
         for kk in dd:
             obj.__dict__[kk] = dd[kk]
         return obj
@@ -70,7 +73,7 @@ class SimpleJsonUtil(object):
         jsondict = {}
         if tupla is not None:
             for i in range(len(tupla)):
-                jsondict[ tupladesc[i] if tupladesc else i ]=obj_to_json(tupla[i])
+                jsondict[tupladesc[i] if tupladesc else i] = obj_to_json(tupla[i])
 
         return jsondict
 
@@ -80,12 +83,12 @@ class SimpleJsonUtil(object):
     def json(self, obj):
         """Retorna una representacion json del objeto"""
         dd = {}
-        if '__json__' in  dir(obj):
+        if '__json__' in dir(obj):
             dd = obj.__json__()
         else:
             dd = obj.__dict__
 
-        res = simplejson.dumps(  dd )
+        res = simplejson.dumps(dd)
         return res
 
     def dumps(self, obj):
@@ -118,6 +121,7 @@ class SimpleJsonUtil(object):
 
 class JsonAlchemy(object):
     """Clase utilitaria que serializa una Entidad SQLAlchemy a formato JSON"""
+
     def __json__(self, request=None):
         jsondict = {}
         columns = self.__table__.columns
@@ -127,12 +131,13 @@ class JsonAlchemy(object):
         return jsondict
 
 
-class JsonPyramid( object ):
+class JsonPyramid(object):
     """Clase utilitaria que serializa un objeto a formato JSON"""
+
     def __json__(self, request=None):
         atrlist = self.__dict__.keys()
         jsondict = {}
-        #Leer valor del atributo
+        # Leer valor del atributo
         if atrlist:
             for atr in atrlist:
                 val = self.__dict__[atr]

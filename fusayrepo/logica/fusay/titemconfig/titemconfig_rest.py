@@ -44,7 +44,7 @@ class TItemConfigRest(TokenView):
             return {'status': 200, 'existe': existe, 'nombreart': nombreart}
         elif 'teleservicios' == accion:
             sec_id = self.get_sec_id()
-            data = titemconfig_dao.listar_teleservicios(sec_id=sec_id)
+            data = titemconfig_dao.listar_teleservicios()
             return {'status': 200, 'data': data}
         elif 'gservdent' == accion:
             filtro = self.get_request_param('filtro')
@@ -80,7 +80,7 @@ class TItemConfigRest(TokenView):
             return self.res200({'tree': tree})
         elif 'gplancchild' == accion:
             padre = self.get_request_param('padre')
-            hijospc = titemconfig_dao.listar_hijos_plancuentas(padre=padre)
+            hijospc = titemconfig_dao.listar_hijos_plancuentas(padre=padre, sec_id=self.get_sec_id())
             return self.res200({'hijospc': hijospc})
         elif 'gformplancta' == accion:
             padre = self.get_request_param('padre')

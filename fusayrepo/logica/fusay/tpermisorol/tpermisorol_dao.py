@@ -4,13 +4,8 @@ Fecha de creacion 10/9/20
 @autor: mjapon
 """
 import logging
-from datetime import datetime
-
-from sqlalchemy import Column, Integer, TIMESTAMP, String, Text
 
 from fusayrepo.logica.dao.base import BaseDao
-from fusayrepo.models.conf import Declarative
-from fusayrepo.utils.jsonutil import JsonAlchemy
 
 log = logging.getLogger(__name__)
 

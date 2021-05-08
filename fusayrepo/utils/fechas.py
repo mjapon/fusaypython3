@@ -29,12 +29,12 @@ def format_cadena_db(cadena):
 
 
 def parse_cadena(cadena, formato=ctes.APP_FMT_FECHA):
-    '''Retorna un tipo fecha dada una cadena y el formato especificado'''
+    """Retorna un tipo fecha dada una cadena y el formato especificado"""
     return datetime.datetime.strptime(cadena, formato)
 
 
 def parse_cadena_ttod(cadena, formato=ctes.APP_FMT_FECHA_HORA):
-    '''Retorna un tipo fecha sin hora data una cadena fechahora y el formato especificado'''
+    """Retorna un tipo fecha sin hora data una cadena fechahora y el formato especificado"""
     return datetime.datetime.strptime(cadena, formato).date()
 
 
@@ -54,7 +54,7 @@ def get_fecha_letras_largo(fecha):
 
 
 def parse_fecha(fecha, formato=ctes.APP_FMT_FECHA):
-    '''Retorna una cadena dada la fecha y el formato especificado'''
+    """Retorna una cadena dada la fecha y el formato especificado"""
     if fecha is not None:
         return fecha.strftime(formato)
     else:
@@ -70,7 +70,7 @@ def get_str_fecha(fecha, formato=ctes.APP_FMT_FECHA):
 
 
 def sumar_dias(fecha, dias):
-    return (fecha + datetime.timedelta(days=dias))
+    return fecha + datetime.timedelta(days=dias)
 
 
 def sumar_meses(fecha, meses):
@@ -145,7 +145,7 @@ def hora_to_num(horastr):
         hora = horastr.strip()
         hor_min = hora.split(":")
 
-        inthora = 0.0;
+        inthora = 0.0
         intmin = 0.0
         if len(hor_min) == 2:
             try:
@@ -185,13 +185,13 @@ def numhora_to_tupla(numhora):
 
 
 def num_to_hora(numhora):
-    str_hora = '00:00'
+    horastr = '00:00'
     if numhora is not None:
         decimales = numhora % 1
         nmin = int(round(decimales * 60))
         nhoras = int(numhora)
-        str_hora = "{0}:{1}".format(str(nhoras).zfill(2), str(nmin).zfill(2))
-    return str_hora
+        horastr = "{0}:{1}".format(str(nhoras).zfill(2), str(nmin).zfill(2))
+    return horastr
 
 
 def str_hora(hora, minu):
@@ -316,12 +316,10 @@ def get_lastday_of_month():
 
 
 def isvalid(date_text):
-    valid = False
     try:
         datetime.datetime.strptime(date_text, '%d/%m/%Y')
         valid = True
     except ValueError:
-        # raise ValueError("Incorrect data format, should be YYYY-MM-DD")
         valid = False
     return valid
 

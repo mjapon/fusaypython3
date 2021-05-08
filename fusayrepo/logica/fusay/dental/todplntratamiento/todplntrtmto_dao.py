@@ -18,7 +18,6 @@ from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.tasiento.tasientoaud_dao import TAsientoAudDao
 from fusayrepo.logica.fusay.tmodelocontab.tmodelocontab_dao import TModelocontabDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
-from fusayrepo.logica.fusay.ttransaccimp.ttransaccimp_dao import TTransaccImpDao
 from fusayrepo.utils import cadenas, numeros, fechas
 
 log = logging.getLogger(__name__)
@@ -26,7 +25,8 @@ log = logging.getLogger(__name__)
 
 class TOdPlanTratamientoDao(BaseDao):
 
-    def get_form(self, pac_id):
+    @staticmethod
+    def get_form(pac_id):
         form = {
             'pnt_id': 0,
             'pnt_nombre': '',
@@ -114,31 +114,9 @@ class TOdPlanTratamientoDao(BaseDao):
 
         new_trn_codigo = tasiento.trn_codigo
 
-        valoresdebehaber = []
-
-        ttransaccimpdao = TTransaccImpDao(self.dbsession)
-        configtransaccimp = ttransaccimpdao.get_config(tra_codigo=tra_codigo, sec_codigo=sec_codigo)
-
-        impuestos = []
-        if configtransaccimp is not None and totales is not None:
-            ivaval = totales['iva']
-            if ivaval is not None and ivaval > 0:
-                impuestos.append({
-                    'cta_codigo': configtransaccimp['tra_impg'],
-                    'dt_debito': configtransaccimp['tra_signo'],
-                    'dt_valor': ivaval
-                })
-
-        for detalle in detalles:
-            auxlogicasi.save_tasidet_fact(detalle=detalle, trn_codigo=new_trn_codigo,
-                                          tasiper_codigo=tasiento.per_codigo)
-            valoresdebehaber.append({'dt_debito': detalle['dt_debito'], 'dt_valor': detalle['dt_valor']})
-
-        for impuesto in impuestos:
-            auxlogicasi.save_tasidet_imp(trn_codigo=new_trn_codigo, per_codigo=per_codigo, impuesto=impuesto,
-                                         sec_codigo=sec_codigo)
-            valoresdebehaber.append({'dt_debito': impuesto['dt_debito'], 'dt_valor': impuesto['dt_valor']})
-
+        valdebehaber = []
+        auxlogicasi.save_dets_imps_fact(detalles=detalles, tasiento=tasiento, totales=totales,
+                                        valdebehaber=valdebehaber)
         datoscred = tasicredao.find_datoscred_intransacc(trn_codigo=trn_codigo)
         abonos = None
         totalabonos = 0.0
@@ -153,7 +131,7 @@ class TOdPlanTratamientoDao(BaseDao):
             if valorpago > 0.0:
                 dt_codigo = auxlogicasi.save_tasidet_pago(trn_codigo=new_trn_codigo, per_codigo=per_codigo, pago=pago)
                 sumapagos += valorpago
-                valoresdebehaber.append({'dt_debito': pago['dt_debito'], 'dt_valor': valorpago})
+                valdebehaber.append({'dt_debito': pago['dt_debito'], 'dt_valor': valorpago})
                 if tasicredao.is_clasecc_cred(ic_clasecc):
                     totalaboround = numeros.roundm2(totalabonos)
                     totalcredround = numeros.roundm2(pago['dt_valor'])
@@ -188,7 +166,7 @@ class TOdPlanTratamientoDao(BaseDao):
                 'El total de la factura ({0}) no coincide con la suma de los pagos ({1})'.format(totalform, totalsuma))
 
         if iscontab:  # Vericar que sumen debe y haber correctamente
-            auxlogicasi.chk_sum_debe_haber(valoresdebehaber)
+            auxlogicasi.chk_sum_debe_haber(valdebehaber)
 
         # Se debe anular la facdtura anterior
         tasiauddao.save_anula_transacc(tasiento=tasientodao.find_entity_byid(trn_codorig), user_anula=user_edita)

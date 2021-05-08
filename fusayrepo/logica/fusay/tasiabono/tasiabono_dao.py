@@ -39,7 +39,7 @@ class TAsiAbonoDao(BaseDao):
         from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
         tasientodao = TasientoDao(self.dbsession)
         ttransaccdao = TTransaccDao(self.dbsession)
-        form_cab = tasientodao.get_form_cabecera(tra_codigo, alm_codigo=0, sec_codigo=0, tdv_codigo=0, tra_tipdoc=1)
+        form_cab = tasientodao.get_form_cabecera(tra_codigo, alm_codigo=0, sec_codigo=0, tdv_codigo=0, tra_emite=1)
         form_cab['sec_codigo'] = sec_codigo
         ttransacc = ttransaccdao.get_ttransacc(tra_codigo=tra_codigo)
         form_det = tasientodao.get_form_detalle_asiento()

@@ -7,7 +7,6 @@ import logging
 
 from sqlalchemy import text
 
-from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.utils.jsonutil import SimpleJsonUtil
 
 log = logging.getLogger(__name__)
@@ -27,17 +26,8 @@ class BaseDao(SimpleJsonUtil):
             sess.execute("SET search_path TO {0}".format(esquema))
         return sess
 
-    def set_esquema_acad(self):
-        self.dbsession.execute("SET search_path TO {0}".format(self.get_esquema_acad()))
-
-    def get_dbsession_acad(self):
-        acf_esquema_acad = self.get_esquema_acad()
-        if acf_esquema_acad is None:
-            raise ErrorValidacionExc(u"No esta definido acf_esquema_acad en tappconfig")
-
-        return self.get_dbsession_by_esquema(acf_esquema_acad)
-
-    def mensaje(self, estado, mensaje):
+    @staticmethod
+    def mensaje(estado, mensaje):
         return {'estado': estado, 'msg': mensaje}
 
     def all(self, sql, tupla_desc):

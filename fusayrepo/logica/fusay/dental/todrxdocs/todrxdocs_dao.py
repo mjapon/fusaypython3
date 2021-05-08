@@ -18,7 +18,8 @@ log = logging.getLogger(__name__)
 
 class TOdRxDocsDao(BaseDao):
 
-    def get_form(self, pac_id, tipo):
+    @staticmethod
+    def get_form(pac_id, tipo):
         return {
             'rxd_id': 0,
             'rxd_ruta': '',

@@ -10,6 +10,7 @@ from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tconsultamedica.tconsultamedica_model import TConsultaMedicaValores, TConsultaMedica
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
+from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.utils import fechas, cadenas, ctes
 
 log = logging.getLogger(__name__)
@@ -21,26 +22,8 @@ class TConsultaMedicaDao(BaseDao):
         form_antecedentes = self.get_form_valores(1)
         form_revxsistemas = self.get_form_valores(2)
         form_examsfisicos = self.get_form_valores(3)
-        form_paciente = {
-            'per_id': 0,
-            'per_ciruc': '',
-            'per_nombres': '',
-            'per_apellidos': '',
-            'per_direccion': '',
-            'per_telf': '',
-            'per_movil': '',
-            'per_email': '',
-            'per_fecreg': '',
-            'per_tipo': 1,
-            'per_lugnac': None,
-            'per_nota': '',
-            'per_fechanac': '',
-            'per_genero': None,
-            'per_estadocivil': 1,
-            'per_lugresidencia': None,
-            'per_ocupacion': None,
-            'per_edad': {'years': 0, 'months': 0, 'days': 0}
-        }
+        persondao = TPersonaDao(self.dbsession)
+        form_paciente = persondao.get_form()
 
         form_datosconsulta = {
             'cosm_id': 0,
@@ -76,26 +59,8 @@ class TConsultaMedicaDao(BaseDao):
         form_antecedentes = self.get_form_valores(5)
         form_examsfisicos = self.get_form_valores(3)
         # form_examdiagnostico = self.get_form_valores(4)
-        form_paciente = {
-            'per_id': 0,
-            'per_ciruc': '',
-            'per_nombres': '',
-            'per_apellidos': '',
-            'per_direccion': '',
-            'per_telf': '',
-            'per_movil': '',
-            'per_email': '',
-            'per_fecreg': '',
-            'per_tipo': 1,
-            'per_lugnac': None,
-            'per_nota': '',
-            'per_fechanac': '',
-            'per_genero': None,
-            'per_estadocivil': 1,
-            'per_lugresidencia': None,
-            'per_ocupacion': None,
-            'per_edad': {'years': 0, 'months': 0, 'days': 0}
-        }
+        persondao = TPersonaDao(self.dbsession)
+        form_paciente = persondao.get_form()
 
         form_datosconsulta = {
             'cosm_id': 0,

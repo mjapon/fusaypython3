@@ -27,12 +27,13 @@ class TOdRecetasDao(BaseDao):
             'rec_estado': 1
         }
 
-    def validar_form(self, form):
-        if (not cadenas.es_nonulo_novacio(form['rec_receta'])):
+    @staticmethod
+    def validar_form(form):
+        if not cadenas.es_nonulo_novacio(form['rec_receta']):
             raise ErrorValidacionExc('Debe ingresar la receta')
-        elif (not cadenas.es_nonulo_novacio(form['rec_indicaciones'])):
+        elif not cadenas.es_nonulo_novacio(form['rec_indicaciones']):
             raise ErrorValidacionExc('Debe ingresar las indicaciones')
-        elif (not cadenas.es_nonulo_novacio(form['pac_id'])):
+        elif not cadenas.es_nonulo_novacio(form['pac_id']):
             raise ErrorValidacionExc('Debe especificar el paciente al cual está dirigido la receta')
 
     def crear(self, form, user_crea):

@@ -21,7 +21,6 @@ def get_logo(request):
     pxid = request.params['pxid']
     pixel = pixeldao.buscar(px_id=pxid)
     if pixel is not None:
-        pixel['px_id']
         px_pathlogo = pixel['px_pathlogo']
         px_tipo = pixel['px_tipo']
         response = FileResponse(px_pathlogo, content_type=px_tipo)

@@ -81,7 +81,7 @@ class PyramidView(SimpleJsonUtil):
         self._tomar_datos()
         res = self._ejecutar_accion()
 
-        return (self.__dict__ if res is None else res)
+        return self.__dict__ if res is None else res
 
     def psession(self, key, value, sobresc=True):
         """Pone un valor en la session"""

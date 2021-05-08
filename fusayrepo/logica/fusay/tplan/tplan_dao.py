@@ -41,7 +41,8 @@ class TPlanDao(BaseDao):
 
         return planes
 
-    def get_form(self):
+    @staticmethod
+    def get_form():
         return {
             'pln_id': 0,
             'pln_estado': 0,

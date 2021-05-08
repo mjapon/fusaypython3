@@ -3,8 +3,8 @@
 Fecha de creacion 4/25/20
 @autor: mjapon
 """
-import logging
 import hashlib
+import logging
 from datetime import datetime
 
 from fusayrepo.logica.dao.base import BaseDao
@@ -64,7 +64,7 @@ class TUserPacienteDao(BaseDao):
             self.dbsession.flush()
         else:
             raise ErrorValidacionExc(
-                    u'Ya existe una cuenta registrada con el correo: {0} no se puede crear nuevamente'.format(up_email))
+                u'Ya existe una cuenta registrada con el correo: {0} no se puede crear nuevamente'.format(up_email))
 
     def existe_cuenta(self, email):
         aux_paciente = self.buscar_por_email(cadenas.strip(email))
@@ -119,39 +119,6 @@ class TUserPacienteDao(BaseDao):
         tupla_desc = ('up_id', 'up_email', 'up_tipo', 'up_nombres', 'up_celular', 'up_photourl')
         return self.first(sql, tupla_desc)
 
-    """
-    def crear_cuenta(self, form):
-        if self.existe_cuenta(form):
-            raise ErrorValidacionExc(
-                u'Ya existe un usuario registrado con la dirección de correo :{0} '.format(form['email']))
-
-        provider = form['provider']
-        nombres = form['nombres']
-        email = form['email']
-        celular = form['celular']
-        photo_url = form['photoUrl']
-        clave = form['clave']
-        clave_md5 = hashlib.md5(clave)
-
-        if provider == 'GOOGLE':
-            up_tipo = 2
-        elif provider == 'FACEBOOK':
-            up_tipo = 1
-        else:
-            up_tipo = 0
-
-        tuserpaciente = TUserPaciente()
-        tuserpaciente.up_email = cadenas.strip(email)
-        tuserpaciente.up_tipo = up_tipo
-        tuserpaciente.up_fechacrea = datetime.now()
-        tuserpaciente.up_nombres = cadenas.strip_upper(nombres)
-        tuserpaciente.up_celular = cadenas.strip_upper(celular)
-        tuserpaciente.up_photourl = photo_url
-        tuserpaciente.up_pasword = clave_md5
-
-        self.dbsession.add(tuserpaciente)
-    """
-
     def listar_citas_paciente(self, up_email):
         sql = u"""
                 select cita.cita_id, cita.cita_fecha, cita.cita_hora, cita.cita_hora_fin,cita.paciente_id, cita.cita_obs, cita.medico_id, cita.cita_serv,
@@ -203,56 +170,22 @@ class TUserPacienteDao(BaseDao):
         return citas
 
     def crear(self, form):
-        # provider = form['provider']
-        # nombres = form['nombres']
-        # email = form['email']
         celular = form['celular']
         serv_id = form['serv_id']
         med_id = form['med_id']
         dia = form['dia']
         hora_ini = form['hora_ini']
-        # photo_url = form['photoUrl']
-        # clave = form['clave']
-        # clave_md5 = hashlib.md5(clave)
-
-        # up_email = cadenas.strip(email)
-        # up_pasword = ''
-        # up_nombres = cadenas.strip_upper(nombres)
         up_celular = cadenas.strip_upper(celular)
         up_email = form['up_email']
         aux_paciente = self.buscar_por_email(up_email)
         if aux_paciente is None:
             raise ErrorValidacionExc(u'No esta registrado la dirección de correo')
-            """
-            up_tipo = 0
-            if provider == 'GOOGLE':
-                up_tipo = 2
-            else:
-                up_tipo = 1
-
-            tuserpaciente = TUserPaciente()
-            tuserpaciente.up_email = cadenas.strip(up_email)
-            tuserpaciente.up_tipo = up_tipo
-            tuserpaciente.up_estado = 0
-            tuserpaciente.up_fechacrea = datetime.now()
-            tuserpaciente.up_nombres = up_nombres
-            tuserpaciente.up_celular = up_celular
-            tuserpaciente.up_photourl = photo_url
-            tuserpaciente.up_pasword = clave_md5
-
-            self.dbsession.add(tuserpaciente)
-            self.dbsession.flush()
-            paciente_id = tuserpaciente.up_id
-            """
         else:
             paciente_id = aux_paciente.up_id
-            # aux_paciente.up_nombres = up_nombres
             if cadenas.es_nonulo_novacio(up_celular):
                 aux_paciente.up_celular = up_celular
-            # aux_paciente.up_photourl = photo_url
             self.dbsession.add(aux_paciente)
 
-        # Se procede a crear la cita
         tcita = TCita()
 
         hora_ini_num = fechas.hora_to_num(hora_ini)
@@ -360,10 +293,6 @@ class TUserPacienteDao(BaseDao):
 
         tupla_desc = ('hm_id', 'med_id', 'hm_dia', 'hm_horaini', 'hm_horafin')
         return self.all(sql, tupla_desc)
-
-    def get_dias_disponibles(self, med_id):
-        horario_med = self.get_horario_medico(med_id=med_id)
-        citas_med = self.get_horario_medico(med_id=med_id)
 
     def get_matriz_horas_medico(self, med_id, dia):
         dia_parsed = fechas.parse_cadena(dia)

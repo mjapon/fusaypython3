@@ -7,10 +7,11 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from sqlalchemy import Column, Integer, TIMESTAMP, String, Text
+from sqlalchemy import Column, Integer, String
 
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
+
 
 class TPermiso(Declarative, JsonAlchemy):
     __tablename__ = 'tpermiso'

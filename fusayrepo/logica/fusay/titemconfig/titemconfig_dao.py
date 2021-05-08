@@ -222,7 +222,7 @@ class TItemConfigDao(BaseDao):
         return formic
 
     def existe_artbynombre(self, ic_nombre):
-        if (ic_nombre is not None and len(cadenas.strip(ic_nombre)) > 0):
+        if ic_nombre is not None and len(cadenas.strip(ic_nombre)) > 0:
             sql = u"select count(*) as cuenta from titemconfig where  ic_nombre = '{0}' and ic_estado=1".format(
                 cadenas.strip(str(ic_nombre)))
             cuenta = self.first_col(sql, 'cuenta')

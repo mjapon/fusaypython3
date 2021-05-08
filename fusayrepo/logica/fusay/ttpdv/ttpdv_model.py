@@ -5,7 +5,7 @@ Fecha de creacion 11/9/20
 """
 import logging
 
-from sqlalchemy import Column, Integer, String, DateTime, Text, Date
+from sqlalchemy import Column, Integer, String, Text
 
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
@@ -22,4 +22,3 @@ class TTpdv(Declarative, JsonAlchemy):
     tdv_estado = Column(Integer, default=0, nullable=False)
     tdv_maxitem = Column(Integer, default=0, nullable=False)
     alm_codigo = Column(Integer, nullable=False)
-

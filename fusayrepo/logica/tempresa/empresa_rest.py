@@ -12,6 +12,7 @@ from fusayrepo.utils.pyramidutil import DbComunView
 
 log = logging.getLogger(__name__)
 
+
 @resource(path="/rest/tempresa/{emp_id}",collection_path="/rest/tempresa")
 class TEmpresaRest(DbComunView):
 

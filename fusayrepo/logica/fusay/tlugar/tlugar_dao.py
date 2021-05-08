@@ -28,18 +28,18 @@ class TLugarDao(BaseDao):
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
 
-    def crear(self, lug_nombre):
+    def crear(self, lug_nombre, lug_parent=None):
         if not cadenas.es_nonulo_novacio(lug_nombre) or len(cadenas.strip(lug_nombre)) <= 2:
-            raise ErrorValidacionExc(u"Se debe ingresar el nombre del lugar que desea crear")
+            raise ErrorValidacionExc('Debe ingresar el nombre de la ubicación')
+        if self.existe(lug_nombre):
+            raise ErrorValidacionExc('La ubicación {0} ya esta registrado'.format(lug_nombre))
 
-        if self.existe_lug_nombre(lug_nombre):
-            raise ErrorValidacionExc(
-                u"El lugar {0} ya esta registrado, no es posible registrar nuevamente".format(lug_nombre))
-        else:
-            tlugar = TLugar()
-            tlugar.lug_nombre = cadenas.strip_upper(lug_nombre)
-            tlugar.lug_status = 1
-            self.dbsession.add(tlugar)
+        tlugar = TLugar()
+        tlugar.lug_nombre = cadenas.strip_upper(lug_nombre)
+        tlugar.lug_parent = lug_parent
+        tlugar.lug_status = 1
+
+        self.dbsession.add(tlugar)
 
     def actualizar(self, lug_id, lug_nombre):
         if not cadenas.es_nonulo_novacio(lug_nombre) or len(cadenas.strip(lug_nombre)) <= 2:
@@ -69,21 +69,10 @@ class TLugarDao(BaseDao):
         return self.all(sql, tupla_desc)
 
     def existe(self, lug_nombre):
-        sql = "select count(*) as cuenta from public.tlugar where lug_nombre = '{0}'".format(cadenas.strip_upper(lug_nombre))
+        sql = "select count(*) as cuenta from public.tlugar where lug_nombre = '{0}'".format(
+            cadenas.strip_upper(lug_nombre))
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
-
-    def crear(self, lug_nombre, lug_parent=None):
-        if not cadenas.es_nonulo_novacio(lug_nombre):
-            raise ErrorValidacionExc('Debe ingresar el nombre de la ubicación')
-        if self.existe(lug_nombre):
-            raise ErrorValidacionExc('La ubicación {0} ya esta registrado'.format(lug_nombre))
-
-        tlugar = TLugar()
-        tlugar.lug_nombre = cadenas.strip_upper(lug_nombre)
-        tlugar.lug_parent = lug_parent
-
-        self.dbsession.add(tlugar)
 
     def editar(self, lug_id, nlug_nombre):
         pass

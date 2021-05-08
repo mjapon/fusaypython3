@@ -16,7 +16,8 @@ log = logging.getLogger(__name__)
 
 class TSuscripcionDao(BaseDao):
 
-    def get_form(self, codref):
+    @staticmethod
+    def get_form(codref):
         form = {
             'sus_id': 0,
             'pln_id': 0,

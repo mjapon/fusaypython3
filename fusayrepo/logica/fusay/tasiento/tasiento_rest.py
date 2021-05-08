@@ -37,7 +37,7 @@ class TAsientoRest(TokenView):
             alm_codigo = ttpdvdao.get_alm_codigo_from_sec_codigo(secid)
             ttransacc = ttransaccdao.get_ttransacc(tra_codigo=tra_codigo)
             form_cab = tasientodao.get_form_cabecera(tra_codigo, alm_codigo, secid, tdv_codigo,
-                                                     tra_tipdoc=ttransacc['tra_tipdoc'])
+                                                     tra_emite=ttransacc['tra_tipdoc'])
             formaspago = transaccpago.get_formas_pago(tra_codigo=tra_codigo, sec_id=self.get_sec_id())
             form_det = tasientodao.get_form_detalle(sec_codigo=secid)
 
@@ -54,7 +54,12 @@ class TAsientoRest(TokenView):
 
         elif accion == 'gdetdoc':
             trn_codigo = self.get_request_param('trncod')
-            doc = tasientodao.get_documento(trn_codigo=trn_codigo)
+            isforedit = False
+            foredit = self.get_request_param('foredit')
+            if foredit is not None:
+                isforedit = foredit == '1'
+
+            doc = tasientodao.get_documento(trn_codigo=trn_codigo, foredit=isforedit)
             return self.res200({'doc': doc})
         elif accion == 'gfact':
             per_codigo = self.get_request_param('per')
@@ -65,14 +70,12 @@ class TAsientoRest(TokenView):
             docs, totales = tasientodao.listar_documentos(per_codigo=per_codigo, clase=clase)
             return self.res200({'docs': docs, 'totales': totales})
         elif accion == 'gcred':
-            tra_codigo = 1
             per_codigo = self.get_request_param('per')
             clase = self.get_request_param('clase')
             if not cadenas.es_nonulo_novacio(clase):
                 clase = 1
 
-            creds = tasicredao.listar_creditos(per_codigo=per_codigo, tra_codigo=tra_codigo,
-                                               solo_pendientes=False, clase=clase)
+            creds = tasicredao.listar_creditos(per_codigo=per_codigo, solo_pendientes=False, clase=clase)
             return self.res200({'creds': creds})
         elif accion == 'gridventas':
             desde = self.get_request_param('desde')

@@ -5,22 +5,23 @@ Created on '29/07/15'
 """
 import logging
 import re
-import math
 
 log = logging.getLogger(__name__)
 
+
 def quitar_tildes_enies(cad):
-    return cad.replace(u"á","a").replace(u"é","e").replace(u"í","i").replace(u"ó","o").replace(u"ú","u")\
-    .replace(u"Á","A").replace(u"É","E").replace(u"Í","I").replace(u"Ó","O").replace(u"Ú","U")\
-    .replace(u"ñ","n").replace(u"Ñ","N")
+    return cad.replace(u"á", "a").replace(u"é", "e").replace(u"í", "i").replace(u"ó", "o").replace(u"ú", "u") \
+        .replace(u"Á", "A").replace(u"É", "E").replace(u"Í", "I").replace(u"Ó", "O").replace(u"Ú", "U") \
+        .replace(u"ñ", "n").replace(u"Ñ", "N")
 
 
-def quitarCarEspe(cad):#permite solo caracteres alfanumericos y espacios
-    cad= quitar_tildes_enies(cad)
+def quitarCarEspe(cad):  # permite solo caracteres alfanumericos y espacios
+    cad = quitar_tildes_enies(cad)
     for letra in cad:
         if (not letra.isalnum()) and letra != " ":
-            cad = cad.replace(letra,'')
+            cad = cad.replace(letra, '')
     return cad
+
 
 def es_nonulo_novacio(cadena):
     return cadena is not None and len(str(cadena).strip()) > 0
@@ -29,22 +30,27 @@ def es_nonulo_novacio(cadena):
 def strip(cadena):
     return cadena.strip() if cadena is not None else None
 
+
 def strip_upper(cadena):
     return cadena.strip().upper() if cadena is not None else ''
 
+
 def replace_amp(cad):
-    return str(cad).replace("&","&amp;")
+    return str(cad).replace("&", "&amp;")
+
 
 def clean_for_rentas(cad):
     return quitar_carac_especiales(replace_amp(cad))
 
+
 def quitar_carac_especiales(cad):
-    return str(cad).replace("/","").replace("<","").replace(">","").replace("-","").replace("\n"," ")
+    return str(cad).replace("/", "").replace("<", "").replace(">", "").replace("-", "").replace("\n", " ")
+
 
 def getAbecedario():
     return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-           'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-           'U', 'V', 'W', 'X', 'Y', 'Z']
+            'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+            'U', 'V', 'W', 'X', 'Y', 'Z']
 
 
 def getPosicionEnAbecedario(letra):
@@ -57,7 +63,7 @@ def parse_float(cadena, default=None):
     if cadena is None:
         return default
 
-    if len(str(cadena))>0:
+    if len(str(cadena)) > 0:
         return float(cadena)
     else:
         return default
