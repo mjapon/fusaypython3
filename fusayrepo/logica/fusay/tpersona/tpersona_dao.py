@@ -206,7 +206,7 @@ class TPersonaDao(BaseDao):
                             left join public.tlistavalores tipsanval on paciente.per_tiposangre = tipsanval.lval_id and tipsanval.lval_cat=4
                             left join public.tlistavalores tiporefval on paciente.per_tipo = coalesce(tiporefval.lval_valor,'1')::int and tiporefval.lval_cat=5
                             left join public.tlugar lugar on paciente.per_lugresidencia = lugar.lug_id
-                        where {0} = {1}""".format(cadenas.strip(propname), cadenas.strip(propvalue))
+                        where {0} = {1}""".format(cadenas.strip(propname), cadenas.strip(str(propvalue)))
         result = self.first(sql, tupla_desc)
         self._aux_add_per_edad(result)
 

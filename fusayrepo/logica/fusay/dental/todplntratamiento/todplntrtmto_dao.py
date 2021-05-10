@@ -6,19 +6,11 @@ Fecha de creacion 1/7/21
 import datetime
 import logging
 
-from sqlalchemy.orm import make_transient
-
 from fusayrepo.logica.dao.base import BaseDao
-from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.dental.todplntratamiento.todplntrtmto_model import TOdPlnTrtmto
-from fusayrepo.logica.fusay.tasiabono.tasiabono_dao import TAsiAbonoDao
-from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
-from fusayrepo.logica.fusay.tasiento.auxlogicasi_dao import AuxLogicAsiDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
-from fusayrepo.logica.fusay.tasiento.tasientoaud_dao import TAsientoAudDao
 from fusayrepo.logica.fusay.tmodelocontab.tmodelocontab_dao import TModelocontabDao
-from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
-from fusayrepo.utils import cadenas, numeros, fechas
+from fusayrepo.utils import cadenas
 
 log = logging.getLogger(__name__)
 
@@ -81,95 +73,11 @@ class TOdPlanTratamientoDao(BaseDao):
 
     def editar(self, trn_codigo, user_edita, sec_codigo, detalles, pagos, totales, formplan):
         tasientodao = TasientoDao(self.dbsession)
-        tasiauddao = TAsientoAudDao(self.dbsession)
-        ttransaccdao = TTransaccDao(self.dbsession)
-        tasicredao = TAsicreditoDao(self.dbsession)
-        tasiabodao = TAsiAbonoDao(self.dbsession)
-        auxlogicasi = AuxLogicAsiDao(self.dbsession)
-
-        trn_codorig = trn_codigo
-        tasiento = tasientodao.find_entity_byid(trn_codorig)
-
-        iscontab = False
-
-        if tasiento is not None:
-            per_codigo = tasiento.per_codigo
-            tra_codigo = tasiento.tra_codigo
-            ttransacc = ttransaccdao.get_ttransacc(tra_codigo=tra_codigo)
-
-            if ttransacc is not None:
-                iscontab = ttransacc['tra_contab'] == 1
-
-            self.dbsession.expunge(tasiento)
-            make_transient(tasiento)
-        else:
-            raise ErrorValidacionExc('No pude recupar información de la transacción (tr_cod:{0})'.format(trn_codigo))
-
-        tasiento.trn_codigo = None
-        tasiento.sec_codigo = sec_codigo
-        tasiento.us_id = user_edita
-        tasiento.trn_observ = formplan['pnt_obs']
-        self.dbsession.add(tasiento)
-        self.dbsession.flush()
-
-        new_trn_codigo = tasiento.trn_codigo
-
-        valdebehaber = []
-        auxlogicasi.save_dets_imps_fact(detalles=detalles, tasiento=tasiento, totales=totales,
-                                        valdebehaber=valdebehaber)
-        datoscred = tasicredao.find_datoscred_intransacc(trn_codigo=trn_codigo)
-        abonos = None
-        totalabonos = 0.0
-        if datoscred is not None:
-            abonos = tasiabodao.get_abonos_entity(datoscred['dt_codigo'])
-            totalabonos = tasiabodao.get_total_abonos(dt_codcre=datoscred['dt_codigo'])
-
-        sumapagos = 0.0
-        for pago in pagos:
-            valorpago = float(pago['dt_valor'])
-            ic_clasecc = pago['ic_clasecc']
-            if valorpago > 0.0:
-                dt_codigo = auxlogicasi.save_tasidet_pago(trn_codigo=new_trn_codigo, per_codigo=per_codigo, pago=pago)
-                sumapagos += valorpago
-                valdebehaber.append({'dt_debito': pago['dt_debito'], 'dt_valor': valorpago})
-                if tasicredao.is_clasecc_cred(ic_clasecc):
-                    totalaboround = numeros.roundm2(totalabonos)
-                    totalcredround = numeros.roundm2(pago['dt_valor'])
-                    # Validar monto del credito no puede ser menos al total de abonos previos realizados
-                    if totalcredround < totalaboround:
-                        raise ErrorValidacionExc(
-                            'No es posible editar este documento, existen abonos realizados por un total de ({0}) y el crédito actual es de ({1}), favor verificar'.format(
-                                totalaboround, totalcredround))
-                    else:
-                        new_cre_saldopen = totalcredround - totalaboround
-
-                    cre_tipo = tasicredao.get_cre_tipo(ic_clasecc)
-                    formcre = tasicredao.get_form_asi(dt_codigo=dt_codigo,
-                                                      trn_fecreg=fechas.parse_fecha(tasiento.trn_fecreg),
-                                                      monto_cred=valorpago, cre_tipo=cre_tipo)
-                    new_cre_codigo = tasicredao.crear(form=formcre)
-
-                    # Si hay abonos asociados se debe pasar estos abonos a la nueva factdura
-                    if abonos is not None:
-                        for abono in abonos:
-                            abono.dt_codcre = dt_codigo
-                            self.dbsession.add(abono)
-
-                    # Actualizar el saldo pendiente del credito en funcion de abonos anteriores registrados
-                    tasicredao.upd_cre_saldopen(cre_codigo=new_cre_codigo, cre_saldopen=new_cre_saldopen)
-
-        totalform = numeros.roundm(float(totales['total']), 2)
-        totalsuma = numeros.roundm(sumapagos, 2)
-
-        if totalform != totalsuma:
-            raise ErrorValidacionExc(
-                'El total de la factura ({0}) no coincide con la suma de los pagos ({1})'.format(totalform, totalsuma))
-
-        if iscontab:  # Vericar que sumen debe y haber correctamente
-            auxlogicasi.chk_sum_debe_haber(valdebehaber)
-
-        # Se debe anular la facdtura anterior
-        tasiauddao.save_anula_transacc(tasiento=tasientodao.find_entity_byid(trn_codorig), user_anula=user_edita)
+        formcab = {
+            'trn_observ': formplan['pnt_obs']
+        }
+        new_trn_codigo = tasientodao.editar(trn_codigo=trn_codigo, user_edita=user_edita, sec_codigo=sec_codigo,
+                                            detalles=detalles, pagos=pagos, totales=totales, formcab=formcab)
 
         self.edit_datos_plan(formplan=formplan, new_trcod=new_trn_codigo)
 

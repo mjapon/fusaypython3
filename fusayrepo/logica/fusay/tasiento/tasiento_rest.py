@@ -144,10 +144,18 @@ class TAsientoRest(TokenView):
         tasientodao = TasientoDao(self.dbsession)
         if accion == 'creadoc':
             form = self.get_json_body()
-            trn_codigo = tasientodao.crear(form=form['form_cab'], form_persona=form['form_persona'],
-                                           user_crea=self.get_user_id(),
-                                           detalles=form['detalles'], pagos=form['pagos'],
-                                           totales=form['totales'])
+            formcab = form['form_cab']
+            trn_codigo = int(formcab['trn_codigo'])
+            if trn_codigo > 0:
+                tasientodao.editar(trn_codigo=trn_codigo, user_edita=self.get_user_id(), sec_codigo=self.get_sec_id(),
+                                   detalles=form['detalles'], pagos=form['pagos'],
+                                   totales=form['totales'], formcab=formcab, formref=form['form_persona'],
+                                   creaupdref=True)
+            else:
+                trn_codigo = tasientodao.crear(form=formcab, form_persona=form['form_persona'],
+                                               user_crea=self.get_user_id(),
+                                               detalles=form['detalles'], pagos=form['pagos'],
+                                               totales=form['totales'])
             msg = 'Registro exitoso'
             return self.res200({'trn_codigo': trn_codigo, 'msg': msg})
         elif accion == 'anular':

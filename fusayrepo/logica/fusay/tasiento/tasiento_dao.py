@@ -8,6 +8,8 @@ import logging
 from datetime import datetime
 from functools import reduce
 
+from sqlalchemy.orm import make_transient
+
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tasiabono.tasiabono_dao import TAsiAbonoDao
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
@@ -329,6 +331,8 @@ class TasientoDao(AuxLogicAsiDao):
             'dai_ice': None,
             'icdp_grabaiva': False,
             'icdp_modcontab': 0,
+            'tipic_id': 0,
+            'ice_stock': 0,
             'subtotal': 0.0,
             'ivaval': 0.0,
             'total': 0.0
@@ -546,9 +550,16 @@ class TasientoDao(AuxLogicAsiDao):
 
         pagosobj['total'] = numeros.roundm2(totalpagos)
 
+        datosref = {}
+        if tasiento is not None and 'per_codigo' in tasiento:
+            per_codigo = tasiento['per_codigo']
+            tpersondao = TPersonaDao(self.dbsession)
+            datosref = tpersondao.buscar_porperid_full(per_id=per_codigo)
+
         return {
             'tasiento': tasiento,
             'detalles': detalles,
+            'datosref': datosref,
             'pagos': pagos,
             'pagosobj': pagosobj,
             'impuestos': impuestos,
@@ -803,37 +814,136 @@ class TasientoDao(AuxLogicAsiDao):
             return self.crear(form=formcab, form_persona=formpersona, user_crea=user_crea, detalles=detalles,
                               pagos=pagos, totales=totales)
 
-    def editar(self, form, form_persona, user_edita, detalles, pagos, totales, creaupdpac=True):
-        trn_codigo = form['trn_codigo']
-        tasiento = self.find_entity_byid(trn_codigo=trn_codigo)
+    def editar(self, trn_codigo, user_edita, sec_codigo, detalles, pagos, totales, formcab=None, formref=None,
+               creaupdref=False):
+        tasiauddao = TAsientoAudDao(self.dbsession)
+        ttransaccdao = TTransaccDao(self.dbsession)
+        tasicredao = TAsicreditoDao(self.dbsession)
+        tasiabodao = TAsiAbonoDao(self.dbsession)
+        auxlogicasi = AuxLogicAsiDao(self.dbsession)
 
-        tasientoauddao = TAsientoAudDao(self.dbsession)
-        tasientoauddao.save_anula_transacc(tasiento=tasiento, user_anula=user_edita, obs_anula='')
+        trn_codorig = trn_codigo
+        tasiento = self.find_entity_byid(trn_codorig)
 
-        new_trn_codigo = self.crear(form=form, form_persona=form_persona, user_crea=user_edita, pagos=pagos,
-                                    totales=totales, detalles=detalles, creaupdpac=creaupdpac)
+        iscontab = False
+
+        if tasiento is not None:
+            tra_codigo = tasiento.tra_codigo
+            ttransacc = ttransaccdao.get_ttransacc(tra_codigo=tra_codigo)
+
+            if ttransacc is not None:
+                iscontab = ttransacc['tra_contab'] == 1
+
+            self.dbsession.expunge(tasiento)
+            make_transient(tasiento)
+        else:
+            raise ErrorValidacionExc('No pude recupar información de la transacción (tr_cod:{0})'.format(trn_codigo))
+
+        tasiento.trn_codigo = None
+        tasiento.sec_codigo = sec_codigo
+        tasiento.us_id = user_edita
+        tasiento.trn_valido = 0
+
+        if formref is not None:
+            per_codigo, per_ciruc = self._aux_save_datos_ref(formref=formref, creaupdref=creaupdref)
+            tasiento.per_codigo = per_codigo
+
+        if formcab is not None:
+            if 'trn_fecreg' in formcab:
+                tasiento.trn_fecreg = fechas.parse_cadena(formcab['trn_fecreg'])
+            if 'trn_observ' in formcab:
+                tasiento.trn_observ = cadenas.strip_upper(formcab['trn_observ'])
+
+        # Se debe anular la factura anterior
+        tasiauddao.save_anula_transacc(tasiento=self.find_entity_byid(trn_codorig), user_anula=user_edita)
+
+        self.dbsession.add(tasiento)
+        self.dbsession.flush()
+
+        new_trn_codigo = tasiento.trn_codigo
+
+        valdebehaber = []
+        auxlogicasi.save_dets_imps_fact(detalles=detalles, tasiento=tasiento, totales=totales,
+                                        valdebehaber=valdebehaber)
+        datoscred = tasicredao.find_datoscred_intransacc(trn_codigo=trn_codigo)
+        abonos = None
+        totalabonos = 0.0
+        if datoscred is not None:
+            abonos = tasiabodao.get_abonos_entity(datoscred['dt_codigo'])
+            totalabonos = tasiabodao.get_total_abonos(dt_codcre=datoscred['dt_codigo'])
+
+        per_codigo = tasiento.per_codigo
+        sumapagos = 0.0
+        for pago in pagos:
+            valorpago = float(pago['dt_valor'])
+            ic_clasecc = pago['ic_clasecc']
+            if valorpago > 0.0:
+                dt_codigo = auxlogicasi.save_tasidet_pago(trn_codigo=new_trn_codigo, per_codigo=per_codigo, pago=pago)
+                sumapagos += valorpago
+                valdebehaber.append({'dt_debito': pago['dt_debito'], 'dt_valor': valorpago})
+                if tasicredao.is_clasecc_cred(ic_clasecc):
+                    totalaboround = numeros.roundm2(totalabonos)
+                    totalcredround = numeros.roundm2(pago['dt_valor'])
+                    # Validar monto del credito no puede ser menos al total de abonos previos realizados
+                    if totalcredround < totalaboround:
+                        raise ErrorValidacionExc(
+                            'No es posible editar este documento, existen abonos realizados por un total de ({0}) y el crédito actual es de ({1}), favor verificar'.format(
+                                totalaboround, totalcredround))
+                    else:
+                        new_cre_saldopen = totalcredround - totalaboround
+
+                    cre_tipo = tasicredao.get_cre_tipo(ic_clasecc)
+                    formcre = tasicredao.get_form_asi(dt_codigo=dt_codigo,
+                                                      trn_fecreg=fechas.parse_fecha(tasiento.trn_fecreg),
+                                                      monto_cred=valorpago, cre_tipo=cre_tipo)
+                    new_cre_codigo = tasicredao.crear(form=formcre)
+
+                    # Si hay abonos asociados se debe pasar estos abonos a la nueva factdura
+                    if abonos is not None:
+                        for abono in abonos:
+                            abono.dt_codcre = dt_codigo
+                            self.dbsession.add(abono)
+
+                    # Actualizar el saldo pendiente del credito en funcion de abonos anteriores registrados
+                    tasicredao.upd_cre_saldopen(cre_codigo=new_cre_codigo, cre_saldopen=new_cre_saldopen)
+
+        totalform = numeros.roundm(float(totales['total']), 2)
+        totalsuma = numeros.roundm(sumapagos, 2)
+
+        if totalform != totalsuma:
+            raise ErrorValidacionExc(
+                'El total de la factura ({0}) no coincide con la suma de los pagos ({1})'.format(totalform, totalsuma))
+
+        if iscontab:  # Vericar que sumen debe y haber correctamente
+            auxlogicasi.chk_sum_debe_haber(valdebehaber)
 
         return new_trn_codigo
 
-    def crear(self, form, form_persona, user_crea, detalles, pagos, totales, creaupdpac=True):
+    def _aux_save_datos_ref(self, formref, creaupdref=True):
         personadao = TPersonaDao(self.dbsession)
-        per_codigo = int(form_persona['per_id'])
+        per_codigo = int(formref['per_id'])
 
-        if 'per_ciruc' in form_persona:
-            per_ciruc = form_persona['per_ciruc']
+        if 'per_ciruc' in formref:
+            per_ciruc = formref['per_ciruc']
         else:
             per_ciruc = None
 
-        if creaupdpac and per_codigo >= 0:
+        if creaupdref and per_codigo >= 0:
             if per_codigo is not None and per_codigo > 0:
-                personadao.actualizar(per_id=per_codigo, form=form_persona)
+                personadao.actualizar(per_id=per_codigo, form=formref)
             else:
                 persona = personadao.buscar_porciruc(per_ciruc=per_ciruc)
                 if persona is not None:
                     per_codigo = persona[0]['per_id']
-                    personadao.actualizar(per_id=per_codigo, form=form_persona)
+                    personadao.actualizar(per_id=per_codigo, form=formref)
                 else:
-                    per_codigo = personadao.crear(form=form_persona)
+                    per_codigo = personadao.crear(form=formref)
+
+        return per_codigo, per_ciruc
+
+    def crear(self, form, form_persona, user_crea, detalles, pagos, totales, creaupdpac=True):
+
+        per_codigo, per_ciruc = self._aux_save_datos_ref(formref=form_persona, creaupdref=creaupdpac)
 
         tasiento = self.aux_set_datos_tasiento(usercrea=user_crea, per_codigo=per_codigo,
                                                formcab=form, per_ciruc=per_ciruc)

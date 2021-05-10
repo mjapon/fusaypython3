@@ -50,7 +50,7 @@ AUD_ASIENTO_ERRAR = 2
 AUD_ASIENTO_EDITAR = 3
 AUD_ASIENTO_ELIMINAR = 4
 
-VERSION_APP = 1.35
+VERSION_APP = 1.4
 
 # Contantes para las clase de cuentas contables
 CLASECC_EFECTIVO = "E"
