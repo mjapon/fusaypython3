@@ -54,8 +54,6 @@ class TVentaTicketsDao(BaseDao):
           where vt.vt_estado in (0,1) and vt.vt_id = {0}        
         """.format(vtkid)
 
-        print(sql)
-
         tupla_desc = ('vt_id', 'vt_fechareg', 'vt_monto', 'vt_tipo', 'ic_nombre', 'vt_estado', 'estadodesc', 'vt_obs',
                       'vt_fecha', 'refusercrea', 'usercreacuenta', 'rxd_id', 'rxd_filename', 'rxd_ext')
 

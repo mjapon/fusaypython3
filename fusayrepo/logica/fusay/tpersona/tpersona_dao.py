@@ -66,6 +66,7 @@ class TPersonaDao(BaseDao):
             'per_lugnac': None,
             'per_nota': '',
             'per_fechanac': '',
+            'per_fechanacobj': '',
             'per_genero': None,
             'per_estadocivil': 1,
             'per_lugresidencia': None,

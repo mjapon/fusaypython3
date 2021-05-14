@@ -25,7 +25,7 @@ class TAgpContrato(Declarative, JsonAlchemy):
     cna_estado = Column(Integer, default=1, nullable=False)
     cna_estadoserv = Column(Integer, default=1, nullable=False)
     cna_nmingas = Column(Integer)
-    cna_barrio = Column(String(80), nullable=False)
+    cna_barrio = Column(Integer, nullable=False, default=0)
     cna_sector = Column(String(80))
     cna_direccion = Column(String(100))
     cna_referencia = Column(String(80))
@@ -33,6 +33,7 @@ class TAgpContrato(Declarative, JsonAlchemy):
     cna_teredad = Column(Boolean)
     cna_costoinst = Column(Numeric, default=0.0)
     trn_codigo = Column(Integer, nullable=False, default=0)
+    cna_tarifa = Column(Integer, default=0, nullable=False)
 
 
 class TAgpMedidor(Declarative, JsonAlchemy):

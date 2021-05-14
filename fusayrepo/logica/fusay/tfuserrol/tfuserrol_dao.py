@@ -111,9 +111,9 @@ class TFuserRolDao(BaseDao):
             {'label': 'Movimientos', 'icon': '',
              'routerLink': ['/trndocs/1']},
             {'label': 'Emitir Factura', 'icon': 'pi pi-fw pi-money-bill',
-             'routerLink': ['/trndocform/1']},
+             'routerLink': ['/trndocform/1/c']},
             {'label': 'Emitir nota de venta', 'icon': '',
-             'routerLink': ['/trndocform/2']},
+             'routerLink': ['/trndocform/2/c']},
             {'label': 'Cuentas por cobrar', 'icon': '',
              'routerLink': ['/cuentasxcp/1']},
             {'label': 'Utilidades', 'icon': '',
@@ -124,7 +124,7 @@ class TFuserRolDao(BaseDao):
             {'label': 'Movimientos', 'icon': '', 'cicon': 'fas fa-shopping-basket',
              'routerLink': ['/trndocs/2']},
             {'label': 'Registrar factura', 'icon': '',
-             'routerLink': ['/trndocform/7']},
+             'routerLink': ['/trndocform/7/c']},
             {'label': 'Cuentas por pagar', 'icon': '',
              'routerLink': ['/cuentasxcp/2']}
         ]

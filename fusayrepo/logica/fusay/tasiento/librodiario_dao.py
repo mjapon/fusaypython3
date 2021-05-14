@@ -13,7 +13,8 @@ log = logging.getLogger(__name__)
 
 class LibroDiarioDao(BaseDao):
 
-    def get_form_filtro(self):
+    @staticmethod
+    def get_form_filtro():
         hoy = fechas.get_str_fecha_actual()
         desde = fechas.get_str_fecha(fechas.sumar_dias(fechas.get_now(), -30))
 
@@ -92,12 +93,18 @@ class LibroDiarioDao(BaseDao):
         for item in items:
             trn_codigo = item['trn_codigo']
             cab = False
+
+            idx = items.index(item)
+            idxprev = idx - 1
+            if idxprev >= 0:
+                asiprevius = items[idxprev]
+
             if trn_codigo != lasttrncod:
                 cab = True
-                if lasttrncod != 0:
-                    self._aux_add_rowlibrodiario(rlist=resultlist, rowdata=item)
                 lasttrncod = trn_codigo
-                asiprevius = item
+                if idx > 0:
+                    self._aux_add_rowlibrodiario(rlist=resultlist, rowdata=asiprevius)
+
             if cab:
                 resultlist.append({
                     'trn_codigo': item['trn_codigo'],
@@ -105,8 +112,7 @@ class LibroDiarioDao(BaseDao):
                     'cta_codigo': '',
                     'ic_code': '',
                     'trn_fecreg': item['fecdesc'],
-                    'ic_nombre': '--------------------- {0} ---------------------'.format(
-                        item['trn_compro']),
+                    'ic_nombre': '{0}'.format(item['trn_compro']),
                     'dt_debito': 0,
                     'debe': '',
                     'haber': '',

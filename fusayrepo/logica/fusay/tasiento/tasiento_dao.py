@@ -845,7 +845,7 @@ class TasientoDao(AuxLogicAsiDao):
         tasiento.trn_valido = 0
 
         if formref is not None:
-            per_codigo, per_ciruc = self._aux_save_datos_ref(formref=formref, creaupdref=creaupdref)
+            per_codigo, per_ciruc = self.aux_save_datos_ref(formref=formref, creaupdref=creaupdref)
             tasiento.per_codigo = per_codigo
 
         if formcab is not None:
@@ -919,7 +919,7 @@ class TasientoDao(AuxLogicAsiDao):
 
         return new_trn_codigo
 
-    def _aux_save_datos_ref(self, formref, creaupdref=True):
+    def aux_save_datos_ref(self, formref, creaupdref=True):
         personadao = TPersonaDao(self.dbsession)
         per_codigo = int(formref['per_id'])
 
@@ -943,7 +943,7 @@ class TasientoDao(AuxLogicAsiDao):
 
     def crear(self, form, form_persona, user_crea, detalles, pagos, totales, creaupdpac=True):
 
-        per_codigo, per_ciruc = self._aux_save_datos_ref(formref=form_persona, creaupdref=creaupdpac)
+        per_codigo, per_ciruc = self.aux_save_datos_ref(formref=form_persona, creaupdref=creaupdpac)
 
         tasiento = self.aux_set_datos_tasiento(usercrea=user_crea, per_codigo=per_codigo,
                                                formcab=form, per_ciruc=per_ciruc)
