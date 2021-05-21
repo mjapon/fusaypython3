@@ -28,6 +28,13 @@ class TagpContratoRest(TokenView):
             per_codigo = self.get_request_param('codref')
             items = tagpcontratodao.find_by_per_codigo(per_codigo=per_codigo)
             return self.res200({'items': items})
+        elif accion == 'findbynum':
+            mdg_num = self.get_request_param('num')
+            result = tagpcontratodao.find_by_nummed(mdg_num=mdg_num)
+            if result is not None:
+                return self.res200({'data': result, 'msg': 'Medidor encontrado'})
+            else:
+                return self.res404({'msg': 'No se encontró el medidor (num:{0})'.format(mdg_num)})
 
     def collection_post(self):
         accion = self.get_rqpa()

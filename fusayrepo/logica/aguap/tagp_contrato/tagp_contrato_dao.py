@@ -21,6 +21,62 @@ log = logging.getLogger(__name__)
 
 
 class TAgpContratoDao(BaseDao):
+    BASE_SQL_CONTRATOS = """
+    select cn.cna_id,
+               cn.per_id,
+               cn.cna_fechacrea,
+               cn.cna_usercrea,
+               vu.referente as usercrea,
+               cn.cna_estado,
+               cn.cna_estadoserv,
+               cn.cna_nmingas,
+               com.cmn_nombre as comunidad,
+               cn.cna_barrio,
+               cn.cna_sector,
+               cn.cna_direccion,
+               cn.cna_referencia,
+               cn.cna_teredad,
+               tm.mdg_id,
+               tm.mdg_num,
+               per.per_nombres,
+               per.per_apellidos,
+               per.per_ciruc,
+               per.per_nombres||' '||coalesce(per.per_apellidos,'') as nomapel,
+               ic.ic_nombre as tarifa,
+               ic.ic_id,
+               trf.trf_id
+        from tagp_contrato cn
+        join tagp_medidor tm on cn.cna_id = tm.cna_id and tm.mdg_estado = 1
+        join tpersona per on per.per_id = cn.per_id
+        join vusers vu on vu.us_id = cn.cna_usercrea
+        join tagp_tarifa trf on trf.trf_id = cn.cna_tarifa
+        join titemconfig ic on trf.ic_id = ic.ic_id
+        join public.tcomunidad com on cn.cna_barrio = com.cmn_id
+    """
+
+    BASE_TUPLA_DESC = ('cna_id',
+                       'per_id',
+                       'cna_fechacrea',
+                       'cna_usercrea',
+                       'usercrea',
+                       'cna_estado',
+                       'cna_estadoserv',
+                       'cna_nmingas',
+                       'comunidad',
+                       'cna_barrio',
+                       'cna_sector',
+                       'cna_direccion',
+                       'cna_referencia',
+                       'cna_teredad',
+                       'mdg_id',
+                       'mdg_num',
+                       'per_nombres',
+                       'per_apellidos',
+                       'per_ciruc',
+                       'nomapel',
+                       'tarifa',
+                       'ic_id',
+                       'trf_id')
 
     def listar_tarifas(self):
         sql = """
@@ -31,6 +87,46 @@ class TAgpContratoDao(BaseDao):
 
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'trf_id')
         return self.all(sql, tupla_desc)
+
+    def get_datos_tarifa(self, trf_id):
+        sql = """
+        select trf_id, trf_base, ic_id from tagp_tarifa where trf_id = {0}
+        """.format(trf_id)
+        tupla_desc = ('trf_id', 'trf_base', 'ic_id')
+        return self.first(sql, tupla_desc)
+
+    def listar_tarifas_exceso(self, trf_id):
+        sql = """
+        select etr_id, trf_id, etr_desde, etr_hasta, etr_costo from tagp_tarifaexc where trf_id = {0}
+        order by etr_desde asc
+        """.format(trf_id)
+        tupla_desc = ('etr_id', 'trf_id', 'etr_desde', 'etr_hasta', 'etr_costo')
+        return self.all(sql, tupla_desc)
+
+    def _buscar_tarifa_exceso(self, trf_id, consumo):
+        sql = """
+        select etr_id, trf_id, etr_desde, etr_hasta, etr_costo from tagp_tarifaexc where trf_id = {0}
+        and ({1} between etr_desde and etr_hasta) limit 1
+        """.format(trf_id, consumo)
+        tupla_desc = ('etr_id', 'trf_id', 'etr_desde', 'etr_hasta', 'etr_costo')
+        return self.first(sql, tupla_desc)
+
+    def _get_first_tarifa_exceso(self, trf_id, consumo):
+        sql = """
+        select etr_id, trf_id, etr_desde, etr_hasta, etr_costo from tagp_tarifaexc 
+        where abs({consumo} - etr_desde) = (select min(abs({consumo} - etr_desde)) from tagp_tarifaexc where trf_id = {trf_id})
+        and trf_id = {trf_id} order by etr_desde asc limit 1
+        """.format(consumo=consumo, trf_id=trf_id)
+
+        tupla_desc = ('etr_id', 'trf_id', 'etr_desde', 'etr_hasta', 'etr_costo')
+        return self.first(sql, tupla_desc)
+
+    def get_tarifa_exceso(self, trf_id, consumo):
+        tarifaexc = self._buscar_tarifa_exceso(trf_id, consumo)
+        if tarifaexc is None:
+            tarifaexc = self._get_first_tarifa_exceso(trf_id, consumo)
+
+        return tarifaexc
 
     def get_form_anterior(self):
         refdao = TPersonaDao(self.dbsession)
@@ -64,13 +160,21 @@ class TAgpContratoDao(BaseDao):
         if teredad is None:
             raise ErrorValidacionExc('No está registrado el parámetero terceraEdad, favor verificar')
 
+        valid_fl = [
+            {'name': 'cna_tarifa', 'msg': 'Debe seleccionar la tarifa', 'select': True},
+            {'name': 'mdg_num', 'msg': 'Debe ingresar el número del medidor'},
+            {'name': 'cna_barrio', 'msg': 'Debe seleccionar la comunidad', 'select': True},
+            {'name': 'cna_direccion', 'msg': 'Debe ingresar la dirección del servicio'}
+        ]
+
         return {
             'form': form_contra,
             'formper': form_per,
             'formmed': meddao.get_form(),
             'tarifas': tarifas,
             'comunidades': comunidades,
-            'teredad': int(teredad)
+            'teredad': int(teredad),
+            'validfl': valid_fl
         }
 
     def get_form(self, tipo):
@@ -146,44 +250,14 @@ class TAgpContratoDao(BaseDao):
 
         return cna_id
 
+    def find_by_nummed(self, mdg_num):
+        sql = "{0} where tm.mdg_num = '{1}'".format(self.BASE_SQL_CONTRATOS, cadenas.strip(mdg_num))
+        return self.first(sql, self.BASE_TUPLA_DESC)
+
+    def find_by_mdg_id(self, mdg_id):
+        sql = "{0} where tm.mdg_id = {1}".format(self.BASE_SQL_CONTRATOS, cadenas.strip(str(mdg_id)))
+        return self.first(sql, self.BASE_TUPLA_DESC)
+
     def find_by_per_codigo(self, per_codigo):
-
-        sql = """
-        select cn.cna_id,
-               cn.per_id,
-               cn.cna_fechacrea,
-               cn.cna_usercrea,
-               vu.referente as usercrea,
-               cn.cna_estado,
-               cn.cna_estadoserv,
-               cn.cna_nmingas,
-               com.cmn_nombre as comunidad,
-               cn.cna_barrio,
-               cn.cna_sector,
-               cn.cna_direccion,
-               cn.cna_referencia,
-               tm.mdg_num
-        from tagp_contrato cn
-        join tagp_medidor tm on cn.cna_id = tm.cna_id
-        join tpersona per on per.per_id = cn.per_id
-        join vusers vu on vu.us_id = cn.cna_usercrea
-        join public.tcomunidad com on cn.cna_barrio = com.cmn_id
-        where per.per_id = {0} 
-        """.format(per_codigo)
-
-        tupla_desc = ('cna_id',
-                      'per_id',
-                      'cna_fechacrea',
-                      'cna_usercrea',
-                      'usercrea',
-                      'cna_estado',
-                      'cna_estadoserv',
-                      'cna_nmingas',
-                      'comunidad',
-                      'cna_barrio',
-                      'cna_sector',
-                      'cna_direccion',
-                      'cna_referencia',
-                      'mdg_num')
-
-        return self.all(sql, tupla_desc)
+        sql = "{0} where per.per_id = {1}".format(self.BASE_SQL_CONTRATOS, per_codigo)
+        return self.all(sql, self.BASE_TUPLA_DESC)

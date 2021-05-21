@@ -52,7 +52,7 @@ class TAgpMedidor(Declarative, JsonAlchemy):
 class TAgpLectoMed(Declarative, JsonAlchemy):
     __tablename__ = 'tagp_lectomed'
 
-    lmd = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    lmd_id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     mdg_id = Column(Integer, nullable=False)
     lmd_mes = Column(Integer, nullable=False)
     lmd_valor = Column(Numeric(10, 2), default=0.0, nullable=False)
@@ -64,3 +64,19 @@ class TAgpLectoMed(Declarative, JsonAlchemy):
     lmd_foto = Column(Integer)
     lmd_useranula = Column(Integer)
     lmd_fechanula = Column(DateTime)
+    lmd_consumo = Column(Numeric(10, 2), default=0.0)
+    lmd_valorant = Column(Numeric(10, 2), default=0.0)
+    lmd_desde = Column(Date, nullable=False)
+    lmd_hasta = Column(Date, nullable=False)
+    lmd_anio = Column(Integer, nullable=False)
+
+
+class TagpPago(Declarative, JsonAlchemy):
+    __tablename__ = 'tagp_pago'
+
+    pg_id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    lmd_id = Column(Integer, nullable=False)
+    pg_estado = Column(Integer, default=0, nullable=False)
+    pg_usercrea = Column(Integer, default=0, nullable=False)
+    pg_fechacrea = Column(DateTime, nullable=False)
+    trn_codigo = Column(Integer, nullable=False, default=0)

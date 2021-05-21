@@ -76,7 +76,7 @@ def sumar_dias(fecha, dias):
 def sumar_meses(fecha, meses):
     """Suma el numero de meses indicados a la fecha, requiere instalar el modulo python-dateutil"""
     from dateutil.relativedelta import relativedelta
-    return fecha + relativedelta(months=meses)
+    return fecha + relativedelta(months=+meses)
 
 
 def get_ndias_mes(anio, mes):
@@ -208,6 +208,20 @@ def get_info_fecha_actual():
     mes = hoy.month
     dia = hoy.day
     return u"{0} {1} de {2} de {3}".format(get_str_dia_largo(hoy.weekday()), dia, get_str_mes_largo(mes - 1), anio)
+
+
+def get_str_fecha_larga(date):
+    anio = date.year
+    mes = date.month
+    dia = date.day
+    return u"{0} {1} de {2} de {3}".format(get_str_dia_largo(date.weekday()), dia, get_str_mes_largo(mes - 1), anio)
+
+
+def get_str_fecha_corta(date):
+    anio = date.year
+    mes = date.month
+    dia = date.day
+    return u"{0}/{1}/{2}".format(dia, get_str_mes_largo(mes - 1), anio)
 
 
 def es_fecha_menor_a(fecha_a, fecha_b):

@@ -58,3 +58,8 @@ class TagpMedidorAguaDao(BaseDao):
         medidor.mdg_fechacrea = datetime.now()
         medidor.mdg_usercrea = usercrea
         self.dbsession.add(medidor)
+
+    def buscar_byreg(self, per_id):
+        sql = """
+        select 
+        """

@@ -544,7 +544,7 @@ class TPersonaDao(BaseDao):
         select count(*) as cuenta, cred.cre_tipo from tasicredito cred
             join tasidetalle det on cred.dt_codigo = det.dt_codigo
             join tasiento asi on det.trn_codigo = asi.trn_codigo and asi.trn_valido = 0 and asi.trn_docpen = 'F' and asi.trn_pagpen = 'F'
-            where asi.per_codigo = {0}
+            where asi.per_codigo = {0} and cred.cre_saldopen>0
             group by cred.cre_tipo
         """.format(per_codigo)
         tupla_desc = ('cuenta', 'cre_tipo')
