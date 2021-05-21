@@ -221,7 +221,7 @@ class TokenView(PyramidView):
     def res200(self, res):
         return {'status': 200, **res}
 
-    def res404(self, **res):
+    def res404(self, res):
         return {'status': 404, **res}
 
     def get_rqpa(self):
