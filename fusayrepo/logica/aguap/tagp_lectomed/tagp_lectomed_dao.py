@@ -46,11 +46,19 @@ class LectoMedAguaDao(BaseDao):
         ]
 
         meses.append({'mes_id': 0, 'mes_nombre': 'Elija el mes', 'mes_corto': ''})
+
+        steps = [
+            {'label': 'Buscar referente'},
+            {'label': 'Seleccionar medidor'},
+            {'label': 'Registra Lectura'}
+        ]
+
         return {
             'form': form,
             'meses': meses,
             'anios': anios,
-            'vfl': valid_fl
+            'vfl': valid_fl,
+            'steps': steps
         }
 
     @staticmethod
@@ -176,7 +184,7 @@ class LectoMedAguaDao(BaseDao):
         sql = """        
         select lm.lmd_id, lm.mdg_id, lm.lmd_anio, lm.lmd_mes, mes.mes_nombre, lm.lmd_fechacrea, lm.lmd_valor, 
         lm.lmd_usercrea, lm.lmd_estado, lm.lmd_consumo, lm.lmd_valorant, coalesce(pg.pg_id, 0) as pg_id, 
-        pg.pg_fechacrea from tagp_lectomed lm
+        pg.pg_fechacrea, coalesce(pg.trn_codigo, 0) as trn_codigo from tagp_lectomed lm
         left join tagp_pago pg on lm.lmd_id = pg.lmd_id and pg.pg_estado = 1                
         join public.tmes mes on lm.lmd_mes = mes.mes_id
         where lm.lmd_estado = 1 and lm.mdg_id = {mdg_id} order by lm.lmd_anio desc, lm.lmd_mes desc
@@ -184,7 +192,7 @@ class LectoMedAguaDao(BaseDao):
 
         tupla_desc = (
             'lmd_id', 'mdg_id', 'lmd_anio', 'lmd_mes', 'mes_nombre', 'lmd_fechacrea', 'lmd_valor', 'lmd_usercrea',
-            'lmd_estado', 'lmd_consumo', 'lmd_valorant', 'pg_id', 'pg_fechacrea')
+            'lmd_estado', 'lmd_consumo', 'lmd_valorant', 'pg_id', 'pg_fechacrea', 'trn_codigo')
         lecturas = self.all(sql, tupla_desc)
 
         # Analizar si tiene lecturas pendientes de pago
@@ -203,8 +211,9 @@ class LectoMedAguaDao(BaseDao):
             if pagos_pend:
                 msg = 'Tiene pagos pendientes'
             else:
-                msg = 'NO tiene pagos pendientes'
-                lastpago = lecturas[len(lecturas) - 1]
+                msg = 'No tiene pagos pendientes'
+                lastpago = lecturas[0]
+
         else:
             msg = 'No hay lecturas registradas para este medidor'
 

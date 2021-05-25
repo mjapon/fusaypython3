@@ -8,6 +8,7 @@ import logging
 from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tbilletera.tbilleteramov_dao import TBilleteraMovDao
+from fusayrepo.logica.fusay.tfuser.tfuser_dao import TFuserDao
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -29,12 +30,15 @@ class TBilleteraMovRest(TokenView):
             tipo = self.get_request_param('tipo')
             cuenta = self.get_request_param('cuenta')
             cuentabill = self.get_request_param('cuentabill')
-            grid = billeteramovdao.listar_grid(desde, hasta, tipo, cuenta, cuentabill, sec_id=self.get_sec_id())
+            user = self.get_request_param('user')
+            grid = billeteramovdao.listar_grid(desde, hasta, tipo, cuenta, cuentabill, sec_id=self.get_sec_id(), user=user)
             return self.res200({'grid': grid})
         elif accion == 'formfiltros':
             formfiltro = billeteramovdao.get_form_filtros()
             tiposmovs = billeteramovdao.get_tipos_mov()
-            return self.res200({'formfiltro': formfiltro, 'tiposmovs': tiposmovs})
+            fuserdao = TFuserDao(self.dbsession)
+            users = fuserdao.listar()
+            return self.res200({'formfiltro': formfiltro, 'tiposmovs': tiposmovs, 'users': users})
         elif accion == 'getcuentasbytipo':
             tipo = self.get_request_param('tipo')
             cuentas = billeteramovdao.get_cuentas_bytipo_add_todos(tipo=tipo, sec_id=self.get_sec_id())

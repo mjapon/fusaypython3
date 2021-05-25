@@ -822,9 +822,9 @@ class TasientoDao(AuxLogicAsiDao):
         tasiabodao = TAsiAbonoDao(self.dbsession)
         auxlogicasi = AuxLogicAsiDao(self.dbsession)
 
+        datoscred = tasicredao.find_datoscred_intransacc(trn_codigo=trn_codigo)
         trn_codorig = trn_codigo
         tasiento = self.find_entity_byid(trn_codorig)
-
         iscontab = False
 
         if tasiento is not None:
@@ -865,7 +865,7 @@ class TasientoDao(AuxLogicAsiDao):
         valdebehaber = []
         auxlogicasi.save_dets_imps_fact(detalles=detalles, tasiento=tasiento, totales=totales,
                                         valdebehaber=valdebehaber)
-        datoscred = tasicredao.find_datoscred_intransacc(trn_codigo=trn_codigo)
+
         abonos = None
         totalabonos = 0.0
         if datoscred is not None:

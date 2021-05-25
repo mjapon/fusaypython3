@@ -8,6 +8,7 @@ from datetime import datetime
 
 from fusayrepo.logica.aguap.tagp_contrato.tagp_contrato_dao import TAgpContratoDao
 from fusayrepo.logica.aguap.tagp_lectomed.tagp_lectomed_dao import LectoMedAguaDao
+from fusayrepo.logica.aguap.tagp_models import TagpPago
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
@@ -84,7 +85,9 @@ class TagpCobroDao(BaseDao):
         formcab = tasientodao.get_form_cabecera(tra_codigo=agp_tracod, alm_codigo=alm_codigo, sec_codigo=sec_codigo,
                                                 tdv_codigo=tdv_codigo)
 
+        pagosdet = {}
         for lectura in lecturas:
+            lmd_id = lectura['lmd_id']
             pg_id = lectura['pg_id']
             consumo = float(lectura['lmd_consumo'])
             lmd_anio = lectura['lmd_anio']
@@ -110,14 +113,17 @@ class TagpCobroDao(BaseDao):
                         'No pude obtener datos de la tarifa (cod:{0})'.format(trf_id))
 
                 trf_base = datostarifa['trf_base']
-                consumo_exceso = 0
-                consumo_base = consumo
+                consumo_exceso_it = 0
+                consumo_base_it = consumo
                 if consumo > trf_base:
-                    consumo_exceso = numeros.roundm2(consumo - trf_base)
-                    consumo_base = trf_base
+                    consumo_exceso_it = numeros.roundm2(consumo - trf_base)
+                    consumo_base_it = trf_base
+
+                consumo_base += consumo_base_it
+                consumo_exceso += consumo_exceso_it
 
                 tarifaexceso = 0.0
-                if consumo_exceso > 0:
+                if consumo_exceso_it > 0:
                     datostarf_exceso = contratodao.get_tarifa_exceso(trf_id=trf_id, consumo=consumo_exceso)
                     if datostarf_exceso is None:
                         raise ErrorValidacionExc(
@@ -131,15 +137,26 @@ class TagpCobroDao(BaseDao):
                 cna_teredad = datoscontrato['cna_teredad']
 
                 costobase += icdp_precioventa
-                costoexceso += numeros.roundm2(consumo_exceso * tarifaexceso)
-                descuento += 0
+                costoexceso_item = numeros.roundm2(consumo_exceso_it * tarifaexceso)
+                costoexceso += costoexceso_item
+                descuento_it = 0
+                multa_it = 0
                 if cna_teredad:
-                    descuento += numeros.roundm2(float(agp_pordescte) * costobase)
+                    descuento_it = numeros.roundm2(float(agp_pordescte) * icdp_precioventa)
                 if aplica_multa:
-                    multa += float(agp_multa)
+                    multa_it += float(agp_multa)
 
-                total_it = costobase + costoexceso - descuento + multa
+                total_it = icdp_precioventa + costoexceso_item - descuento_it + multa_it
+                descuento += descuento_it
+                multa += multa_it
                 total += numeros.roundm2(total_it)
+
+                pagosdet[lmd_id] = {
+                    'costobase': icdp_precioventa,
+                    'costoexceso': costoexceso_item,
+                    'descuento': descuento_it,
+                    'multa': multa_it
+                }
 
         return {
             'costobase': costobase,
@@ -153,17 +170,20 @@ class TagpCobroDao(BaseDao):
             'fecha_actual': fechas.parse_fecha(fecha_actual),
             'multa': multa,
             'total': total,
-            'formcab': formcab
+            'formcab': formcab,
+            'pagosdet': pagosdet
         }
 
     def crear(self, form, user_crea, sec_codigo):
         referente = form['referente']
-        medidor = form['datosmed']
+        # medidor = form['datosmed']
         obs = form['obs']
         lecturas = form['lecturas']
         montos = form['montos']
 
         formcab = montos['formcab']
+        formcab['trn_observ'] = obs
+        pagosdet = montos['pagosdet']
 
         lectomedagua_dao = LectoMedAguaDao(self.dbsession)
         ids = ','.join(['{0}'.format(it) for it in lecturas])
@@ -182,7 +202,6 @@ class TagpCobroDao(BaseDao):
         if agp_icmulta is None:
             raise ErrorValidacionExc('El parámetro agp_icmulta no está configurado, favor verificar')
 
-        formdet = tasientodao.get_form_detalle(sec_codigo=sec_codigo)
         itemconfigdao = TItemConfigDao(self.dbsession)
 
         contratodao = TAgpContratoDao(self.dbsession)
@@ -193,19 +212,105 @@ class TagpCobroDao(BaseDao):
             if ic_clasecc == 'E':
                 fpago_efectivo = it
 
+        pago_efectivo = tasientodao.get_form_pago()
+
+        pago_efectivo['dt_debito'] = fpago_efectivo['dt_debito']
+        pago_efectivo['cta_codigo'] = fpago_efectivo['cta_codigo']
+        pago_efectivo['dt_valor'] = montos['total']
+        pago_efectivo['ic_clasecc'] = fpago_efectivo['ic_clasecc']
+
         pagos = []
+        detalles = []
+
+        pagos.append(pago_efectivo)
+
+        # Obtener los codigos de los servicios asociados para exceso, multa y descuento
+        ic_exceso = tparamsdao.get_param_value('agp_icexceso')
+        if ic_exceso is None:
+            raise ErrorValidacionExc('El parámetro agp_icexceso no ha sido configurado, favor verificar')
+        ic_multa = tparamsdao.get_param_value('agp_icmulta')
+        if ic_multa is None:
+            raise ErrorValidacionExc('El parámetro agp_icmulta no ha sido configurado, favor verificar')
+
+        dt_debito_det = fpago_efectivo['dt_debito'] * -1
+        totales = {
+            'total': montos['total'],
+            'iva': 0.0
+        }
+
+        for lectura in lecturas:
+            lmd_id = lectura['lmd_id']
+            pagodet = pagosdet[str(lmd_id)]
+            pg_id = lectura['pg_id']
+            if pg_id == 0:
+                datoscontrato = contratodao.find_by_mdg_id(mdg_id=lectura['mdg_id'])
+                if datoscontrato is None:
+                    raise ErrorValidacionExc(
+                        'No pude obtener los datos del contrato (cod:{0})'.format(lectura['mdg_id']))
+
+                trf_id = datoscontrato['trf_id']
+                datostarifa = contratodao.get_datos_tarifa(trf_id=trf_id)
+                if datostarifa is None:
+                    raise ErrorValidacionExc(
+                        'No pude obtener datos de la tarifa (cod:{0})'.format(trf_id))
+
+                datosprod = itemconfigdao.get_detalles_prod(ic_id=datostarifa['ic_id'])
+                formdet = tasientodao.get_form_detalle(sec_codigo=sec_codigo)
+
+                formdet['cta_codigo'] = datosprod['icdp_modcontab']
+                formdet['art_codigo'] = datosprod['ic_id']
+                formdet['dt_precio'] = pagodet['costobase']
+                formdet['dt_decto'] = pagodet['descuento']
+                formdet['dt_debito'] = dt_debito_det
+                formdet['dt_valor'] = formdet['dt_precio'] - formdet['dt_decto']
+
+                impuestos = formcab['impuestos']
+                formdet['dai_impg'] = 0.0
+                if datosprod['icdp_grabaiva']:
+                    formdet['dai_impg'] = impuestos['iva']
+                    formdet['icdp_grabaiva'] = datosprod['icdp_grabaiva']
+
+                detalles.append(formdet)
+
+                costoexceso = pagodet['costoexceso']
+                if costoexceso > 0:
+                    formdetex = tasientodao.get_form_detalle(sec_codigo=sec_codigo)
+                    datosprodex = itemconfigdao.get_detalles_prod(ic_id=ic_exceso)
+                    formdetex['cta_codigo'] = datosprodex['icdp_modcontab']
+                    formdetex['art_codigo'] = datosprodex['ic_id']
+                    formdetex['dt_precio'] = costoexceso
+                    formdetex['dt_debito'] = dt_debito_det
+                    formdetex['dt_valor'] = costoexceso
+                    formdetex['dai_impg'] = 0.0
+                    detalles.append(formdetex)
+
+                multa = pagodet['multa']
+                if multa > 0:
+                    formdetmul = tasientodao.get_form_detalle(sec_codigo=sec_codigo)
+                    datosprodmul = itemconfigdao.get_detalles_prod(ic_id=ic_multa)
+                    formdetmul['cta_codigo'] = datosprodmul['icdp_modcontab']
+                    formdetmul['art_codigo'] = datosprodmul['ic_id']
+                    formdetmul['dt_precio'] = multa
+                    formdetmul['dt_debito'] = dt_debito_det
+                    formdetmul['dt_valor'] = multa
+                    formdetmul['dai_impg'] = 0.0
+                    detalles.append(formdetmul)
+
+        if len(detalles) == 0:
+            raise ErrorValidacionExc('No hay detalles no se puede crear la factura')
+
+        trn_codigo = tasientodao.crear(form=formcab, form_persona=referente, user_crea=user_crea, detalles=detalles,
+                                       pagos=pagos, totales=totales, creaupdpac=False)
 
         for lectura in lecturas:
             pg_id = lectura['pg_id']
-            datoscontrato = contratodao.find_by_mdg_id(mdg_id=lectura['mdg_id'])
-            if datoscontrato is None:
-                raise ErrorValidacionExc(
-                    'No pude obtener los datos del contrato (cod:{0})'.format(lectura['mdg_id']))
+            if pg_id == 0:
+                tagp_pago = TagpPago()
+                tagp_pago.lmd_id = lectura['lmd_id']
+                tagp_pago.pg_estado = 1
+                tagp_pago.pg_usercrea = user_crea
+                tagp_pago.pg_fechacrea = datetime.now()
+                tagp_pago.trn_codigo = trn_codigo
+                self.dbsession.add(tagp_pago)
 
-            trf_id = datoscontrato['trf_id']
-            datostarifa = contratodao.get_datos_tarifa(trf_id=trf_id)
-            if datostarifa is None:
-                raise ErrorValidacionExc(
-                    'No pude obtener datos de la tarifa (cod:{0})'.format(trf_id))
-
-            datosprod = itemconfigdao.get_detalles_prod(ic_id=datostarifa['ic_id'])
+        return trn_codigo

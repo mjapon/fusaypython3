@@ -105,6 +105,13 @@ class DataLoggedDao(BaseDao):
                 'icon': 'fas fa-address-book',
                 'route': 'referentes',
                 'css': 'btn-outline-secondary'
+            }],
+            'AGP_ADM': [{
+                'label': 'Cobro de agua',
+                'title': 'Sistema de cobro de agua potable',
+                'icon': 'fas fa-tint',
+                'route': 'aguap/home',
+                'css': 'btn-outline-secondary'
             }]
         }
 

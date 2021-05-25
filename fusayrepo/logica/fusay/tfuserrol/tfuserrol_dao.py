@@ -139,6 +139,11 @@ class TFuserRolDao(BaseDao):
              'routerLink': ['/agenda/1']},
         ]
 
+        cbr_agua = [
+            {'label': 'Cobro de agua', 'icon': 'pi pi-fw pi-circle-off',
+             'routerLink': ['/aguap/home']},
+        ]
+
         all_menu = {
             '*': {'label': 'Inicio', 'icon': 'pi pi-fw pi-home', 'cicon': 'fas fa-home', 'routerLink': ['/lghome']},
             'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-ticket', 'cicon': 'fas fa-ticket-alt',
@@ -161,7 +166,9 @@ class TFuserRolDao(BaseDao):
             'REF_LISTAR': {'label': 'Referentes', 'icon': 'pi pi-fw pi-users', 'cicon': 'fas fa-user-friends',
                            'items': refs_list},
             'AGN_LISTAR': {'label': 'Agenda', 'icon': 'pi pi-fw pi-calendar', 'cicon': 'far fa-calendar-plus',
-                           'items': agn_list}
+                           'items': agn_list},
+            'AGP_ADM': {'label': 'Cobro Agua', 'icon': 'pi pi-fw pi-circle-off', 'cicon': 'fas fa-tint',
+                        'items': cbr_agua},
         }
 
         menu = []

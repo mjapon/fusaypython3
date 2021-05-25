@@ -312,7 +312,7 @@ class TBilleteraMovDao(BaseDao):
         else:
             raise ErrorValidacionExc('No se pudo obtener los detalles del movimiento de ingreso/gasto registrado')
 
-    def listar_grid(self, desde, hasta, tipo, cuenta, cuentabill, sec_id):
+    def listar_grid(self, desde, hasta, tipo, cuenta, cuentabill, sec_id, user=0):
 
         tgrid_dao = TGridDao(self.dbsession)
         joinbillmov = 'left join'
@@ -325,6 +325,9 @@ class TBilleteraMovDao(BaseDao):
         if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
             sfechas = " and (asi.trn_fecreg between '{0}' and '{1}')".format(fechas.format_cadena_db(desde),
                                                                              fechas.format_cadena_db(hasta))
+        if user is not None and int(user) > 0:
+            sfechas += ' and asi.us_id = {0}'.format(user)
+
         if tipo is not None and int(tipo) > 0:
             joinbillmov = 'join'
             andwhere = """ and mov.bmo_clase = {0} and coalesce(ic.ic_clasecc,'') not in ('E','B') 
