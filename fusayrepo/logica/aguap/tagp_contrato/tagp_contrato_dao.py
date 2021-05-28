@@ -254,6 +254,16 @@ class TAgpContratoDao(BaseDao):
         sql = "{0} where tm.mdg_num = '{1}'".format(self.BASE_SQL_CONTRATOS, cadenas.strip(mdg_num))
         return self.first(sql, self.BASE_TUPLA_DESC)
 
+    def filter_by_nummed(self, filtro):
+        if cadenas.es_nonulo_novacio(filtro):
+            sql = "{0} where tm.mdg_num like '{1}%' order by tm.mdg_num limit 50 ".format(self.BASE_SQL_CONTRATOS,
+                                                                                          cadenas.strip_upper(filtro))
+            print('Valor de sql es:')
+            print(sql)
+            return self.all(sql, self.BASE_TUPLA_DESC)
+        else:
+            return []
+
     def find_by_mdg_id(self, mdg_id):
         sql = "{0} where tm.mdg_id = {1}".format(self.BASE_SQL_CONTRATOS, cadenas.strip(str(mdg_id)))
         return self.first(sql, self.BASE_TUPLA_DESC)

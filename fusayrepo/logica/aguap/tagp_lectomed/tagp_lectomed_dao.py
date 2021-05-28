@@ -45,7 +45,7 @@ class LectoMedAguaDao(BaseDao):
             {'name': 'lmd_valor', 'msg': 'Debe ingresar el valor de la lectura actual'}
         ]
 
-        meses.append({'mes_id': 0, 'mes_nombre': 'Elija el mes', 'mes_corto': ''})
+        # meses.append({'mes_id': 0, 'mes_nombre': 'Elija el mes', 'mes_corto': ''})
 
         steps = [
             {'label': 'Buscar referente'},
@@ -127,19 +127,34 @@ class LectoMedAguaDao(BaseDao):
             raise ErrorValidacionExc(
                 'Ya se encuentra registrado lectura de medidor para el mes seleccionado')
 
-    def get_last_lectomed(self, mdg_num):
+    def get_previous_lectomed(self, mdg_num, anio, mes):
         sql = """
-        select lm.lmd_id, lm.lmd_mes, lm.lmd_valor, lm.lmd_fechacrea, lm.lmd_usercrea, lm.lmd_obs,
-        vu.referente as usercrea, mes.mes_nombre
+        select lm.lmd_id, lm.lmd_mes, lm.lmd_valorant,  lm.lmd_valor, lm.lmd_fechacrea, lm.lmd_usercrea, lm.lmd_obs,
+        lmd_consumo, vu.referente as usercrea, mes.mes_nombre
         from tagp_lectomed lm
         join vusers vu on lm.lmd_usercrea = vu.us_id
         join public.tmes mes on lm.lmd_mes = mes.mes_id
         join tagp_medidor md on lm.mdg_id = md.mdg_id
-        where md.mdg_num = '{0}' and lm.lmd_estado = 1 order by lm.lmd_fechacrea desc limit 1 
-        """.format(cadenas.strip(mdg_num))
+        where md.mdg_num = '{num}' and lm.lmd_estado = 1 and lm.lmd_anio<={anio} and lm.lmd_mes<={mes} order by lm.lmd_fechacrea desc limit 1 
+        """.format(num=cadenas.strip(mdg_num), anio=anio, mes=mes)
 
-        tupla_desc = ('lmd_id', 'lmd_mes', 'lmd_valor', 'lmd_fechacrea', 'lmd_usercrea', 'lmd_obs',
-                      'usercrea', 'mes_nombre')
+        tupla_desc = ('lmd_id', 'lmd_mes', 'lmd_valorant', 'lmd_valor', 'lmd_fechacrea', 'lmd_usercrea', 'lmd_obs',
+                      'lmd_consumo', 'usercrea', 'mes_nombre')
+        return self.first(sql, tupla_desc)
+
+    def get_last_lectomed(self, mdg_num):
+        sql = """
+                select lm.lmd_id, lm.lmd_mes, lm.lmd_valorant, lm.lmd_valor, lm.lmd_fechacrea, lm.lmd_usercrea, lm.lmd_obs,
+                lmd_consumo, vu.referente as usercrea, mes.mes_nombre
+                from tagp_lectomed lm
+                join vusers vu on lm.lmd_usercrea = vu.us_id
+                join public.tmes mes on lm.lmd_mes = mes.mes_id
+                join tagp_medidor md on lm.mdg_id = md.mdg_id
+                where md.mdg_num = '{num}' and lm.lmd_estado = 1 order by lm.lmd_anio desc, lm.lmd_mes desc  limit 1 
+                """.format(num=cadenas.strip(mdg_num))
+
+        tupla_desc = ('lmd_id', 'lmd_mes', 'lmd_valorant', 'lmd_valor', 'lmd_fechacrea', 'lmd_usercrea', 'lmd_obs',
+                      'lmd_consumo', 'usercrea', 'mes_nombre')
         return self.first(sql, tupla_desc)
 
     def crear(self, form, user_crea):

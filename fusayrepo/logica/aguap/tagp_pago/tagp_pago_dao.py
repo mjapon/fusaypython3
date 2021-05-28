@@ -53,6 +53,7 @@ class TagpCobroDao(BaseDao):
         agp_multa = tparamsdao.get_param_value('agp_multa')
         agp_pordescte = tparamsdao.get_param_value('agp_pordescte')
         agp_tracod = tparamsdao.get_param_value('agp_tracod')
+        agp_iccomavil = tparamsdao.get_param_value('agp_iccomavil')
 
         if agp_diacobro is None:
             raise ErrorValidacionExc('El parámetro agp_diacobro no está configurado, favor verificar')
@@ -64,6 +65,8 @@ class TagpCobroDao(BaseDao):
             raise ErrorValidacionExc('El parámetro agp_pordescte no está configurado, favor verificar')
         if agp_tracod is None:
             raise ErrorValidacionExc('El parámetro agp_tracod no está configurado, favor verificar')
+        if agp_iccomavil is None:
+            raise ErrorValidacionExc('El parámetro agp_iccomavil no está configurado, favor verificar')
 
         ids = ','.join(['{0}'.format(it) for it in lectoids])
         lecturas = lectomedagua_dao.get_datos_lectura(ids=ids)
@@ -76,6 +79,7 @@ class TagpCobroDao(BaseDao):
         tarifaexceso = 0.0
         multa = 0.0
         total = 0.0
+        comision_mavil = 0.0
 
         fecha_actual = datetime.now()
         fecha_consumo = ''
@@ -84,6 +88,10 @@ class TagpCobroDao(BaseDao):
         tasientodao = TasientoDao(self.dbsession)
         formcab = tasientodao.get_form_cabecera(tra_codigo=agp_tracod, alm_codigo=alm_codigo, sec_codigo=sec_codigo,
                                                 tdv_codigo=tdv_codigo)
+
+        is_tercera_edad = False
+
+        ic_comavil = itemconfigdao.get_detalles_prod(ic_id=agp_iccomavil)
 
         pagosdet = {}
         for lectura in lecturas:
@@ -142,6 +150,7 @@ class TagpCobroDao(BaseDao):
                 descuento_it = 0
                 multa_it = 0
                 if cna_teredad:
+                    is_tercera_edad = True
                     descuento_it = numeros.roundm2(float(agp_pordescte) * icdp_precioventa)
                 if aplica_multa:
                     multa_it += float(agp_multa)
@@ -158,6 +167,13 @@ class TagpCobroDao(BaseDao):
                     'multa': multa_it
                 }
 
+        comision_mavil = ic_comavil['icdp_precioventa']
+        if is_tercera_edad:
+            comision_mavil = comision_mavil - (comision_mavil * float(agp_pordescte))
+
+        comavil_round = numeros.roundm2(comision_mavil)
+        total += comavil_round
+
         return {
             'costobase': costobase,
             'tarifaexceso': tarifaexceso,
@@ -171,8 +187,20 @@ class TagpCobroDao(BaseDao):
             'multa': multa,
             'total': total,
             'formcab': formcab,
-            'pagosdet': pagosdet
+            'pagosdet': pagosdet,
+            'comision_mavil': comavil_round
         }
+
+    def aux_get_det(self, sec_codigo, datosprod, dt_debito, dt_valor):
+        tasientodao = TasientoDao(self.dbsession)
+        formdet = tasientodao.get_form_detalle(sec_codigo=sec_codigo)
+        formdet['cta_codigo'] = datosprod['icdp_modcontab']
+        formdet['art_codigo'] = datosprod['ic_id']
+        formdet['dt_precio'] = dt_valor
+        formdet['dt_debito'] = dt_debito
+        formdet['dt_valor'] = dt_valor
+        formdet['dai_impg'] = 0.0
+        return formdet
 
     def crear(self, form, user_crea, sec_codigo):
         referente = form['referente']
@@ -184,6 +212,7 @@ class TagpCobroDao(BaseDao):
         formcab = montos['formcab']
         formcab['trn_observ'] = obs
         pagosdet = montos['pagosdet']
+        comision_mavil = montos['comision_mavil']
 
         lectomedagua_dao = LectoMedAguaDao(self.dbsession)
         ids = ','.join(['{0}'.format(it) for it in lecturas])
@@ -195,12 +224,16 @@ class TagpCobroDao(BaseDao):
         tparamsdao = TParamsDao(self.dbsession)
         agp_icexceso = tparamsdao.get_param_value('agp_icexceso')
         agp_icmulta = tparamsdao.get_param_value('agp_icmulta')
+        agp_iccomavil = tparamsdao.get_param_value('agp_iccomavil')
 
         if agp_icexceso is None:
             raise ErrorValidacionExc('El parámetro agp_icexceso no está configurado, favor verificar')
 
         if agp_icmulta is None:
             raise ErrorValidacionExc('El parámetro agp_icmulta no está configurado, favor verificar')
+
+        if agp_iccomavil is None:
+            raise ErrorValidacionExc('El parámetro agp_iccomavil no está configurado, favor verificar')
 
         itemconfigdao = TItemConfigDao(self.dbsession)
 
@@ -223,14 +256,6 @@ class TagpCobroDao(BaseDao):
         detalles = []
 
         pagos.append(pago_efectivo)
-
-        # Obtener los codigos de los servicios asociados para exceso, multa y descuento
-        ic_exceso = tparamsdao.get_param_value('agp_icexceso')
-        if ic_exceso is None:
-            raise ErrorValidacionExc('El parámetro agp_icexceso no ha sido configurado, favor verificar')
-        ic_multa = tparamsdao.get_param_value('agp_icmulta')
-        if ic_multa is None:
-            raise ErrorValidacionExc('El parámetro agp_icmulta no ha sido configurado, favor verificar')
 
         dt_debito_det = fpago_efectivo['dt_debito'] * -1
         totales = {
@@ -256,7 +281,6 @@ class TagpCobroDao(BaseDao):
 
                 datosprod = itemconfigdao.get_detalles_prod(ic_id=datostarifa['ic_id'])
                 formdet = tasientodao.get_form_detalle(sec_codigo=sec_codigo)
-
                 formdet['cta_codigo'] = datosprod['icdp_modcontab']
                 formdet['art_codigo'] = datosprod['ic_id']
                 formdet['dt_precio'] = pagodet['costobase']
@@ -274,27 +298,23 @@ class TagpCobroDao(BaseDao):
 
                 costoexceso = pagodet['costoexceso']
                 if costoexceso > 0:
-                    formdetex = tasientodao.get_form_detalle(sec_codigo=sec_codigo)
-                    datosprodex = itemconfigdao.get_detalles_prod(ic_id=ic_exceso)
-                    formdetex['cta_codigo'] = datosprodex['icdp_modcontab']
-                    formdetex['art_codigo'] = datosprodex['ic_id']
-                    formdetex['dt_precio'] = costoexceso
-                    formdetex['dt_debito'] = dt_debito_det
-                    formdetex['dt_valor'] = costoexceso
-                    formdetex['dai_impg'] = 0.0
+                    datosprodex = itemconfigdao.get_detalles_prod(ic_id=agp_icexceso)
+                    formdetex = self.aux_get_det(sec_codigo=sec_codigo, datosprod=datosprodex,
+                                                 dt_debito=dt_debito_det, dt_valor=costoexceso)
                     detalles.append(formdetex)
 
                 multa = pagodet['multa']
                 if multa > 0:
-                    formdetmul = tasientodao.get_form_detalle(sec_codigo=sec_codigo)
-                    datosprodmul = itemconfigdao.get_detalles_prod(ic_id=ic_multa)
-                    formdetmul['cta_codigo'] = datosprodmul['icdp_modcontab']
-                    formdetmul['art_codigo'] = datosprodmul['ic_id']
-                    formdetmul['dt_precio'] = multa
-                    formdetmul['dt_debito'] = dt_debito_det
-                    formdetmul['dt_valor'] = multa
-                    formdetmul['dai_impg'] = 0.0
+                    datosprodmul = itemconfigdao.get_detalles_prod(ic_id=agp_icmulta)
+                    formdetmul = self.aux_get_det(sec_codigo=sec_codigo, datosprod=datosprodmul,
+                                                  dt_debito=dt_debito_det, dt_valor=multa)
                     detalles.append(formdetmul)
+
+        if comision_mavil > 0:
+            datosprodcm = itemconfigdao.get_detalles_prod(ic_id=agp_iccomavil)
+            formdetcm = self.aux_get_det(sec_codigo=sec_codigo, datosprod=datosprodcm,
+                                         dt_debito=dt_debito_det, dt_valor=comision_mavil)
+            detalles.append(formdetcm)
 
         if len(detalles) == 0:
             raise ErrorValidacionExc('No hay detalles no se puede crear la factura')

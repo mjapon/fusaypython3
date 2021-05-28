@@ -94,7 +94,7 @@ class TItemConfigDao(BaseDao):
                 left join titemconfig_stock ick on ick.ic_id = a.ic_id and ick.sec_id = {sec_id}
                 left join tmodelocontab mc on td.icdp_modcontab = mc.mc_id
                 left join tmodelocontabdet mcd on mcd.mc_id = mc.mc_id and mcd.tra_codigo ={tracod} and mcd.sec_codigo = {sec_id} 
-                where a.ic_estado = 1 and (a.ic_code like '{filtro}%' or a.ic_nombre like '{filtro}%') order by a.ic_nombre limit {limit}
+                where a.ic_estado = 1 and (a.ic_code like '{filtro}%' or a.ic_nombre like '%{filtro}%') order by a.ic_nombre limit {limit}
                 """.format(filtro=cadenas.strip_upper(filtro), limit=limit, sec_id=sec_id, tracod=tracod)
 
         tupla_desc = (

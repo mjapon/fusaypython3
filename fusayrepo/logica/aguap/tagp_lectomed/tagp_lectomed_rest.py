@@ -22,6 +22,15 @@ class LectoMedAguaRest(TokenView):
         if accion == 'form':
             form = lectomeddao.get_form()
             return self.res200({'form': form})
+        elif accion == 'previous':
+            numed = self.get_request_param('numed')
+            anio = self.get_request_param('anio')
+            mes = self.get_request_param('mes')
+            lastlectomed = lectomeddao.get_previous_lectomed(mdg_num=numed, anio=anio, mes=mes)
+            if lastlectomed is not None:
+                return self.res200({'lectomed': lastlectomed})
+            else:
+                return self.res404({'msg': 'No hay registro de lecturas de medidor'})
         elif accion == 'last':
             numed = self.get_request_param('numed')
             lastlectomed = lectomeddao.get_last_lectomed(mdg_num=numed)
@@ -29,6 +38,7 @@ class LectoMedAguaRest(TokenView):
                 return self.res200({'lectomed': lastlectomed})
             else:
                 return self.res404({'msg': 'No hay registro de lecturas de medidor'})
+
         elif accion == 'conspend':
             codmed = self.get_request_param('codmed')
             consumos = lectomeddao.get_lecturas(mdg_id=codmed)

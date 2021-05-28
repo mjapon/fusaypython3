@@ -35,6 +35,10 @@ class TagpContratoRest(TokenView):
                 return self.res200({'data': result, 'msg': 'Medidor encontrado'})
             else:
                 return self.res404({'msg': 'No se encontró el medidor (num:{0})'.format(mdg_num)})
+        elif accion == 'filterbynum':
+            filtro = self.get_request_param('filtro')
+            result = tagpcontratodao.filter_by_nummed(filtro=filtro)
+            return self.res200({'data': result})
 
     def collection_post(self):
         accion = self.get_rqpa()
