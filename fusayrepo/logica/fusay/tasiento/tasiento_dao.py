@@ -281,10 +281,17 @@ class TasientoDao(AuxLogicAsiDao):
             'haber': numeros.roundm2(sumahaber['dt_valor'] if type(sumahaber) is dict else sumahaber)
         }
 
+        tra_codigo = formasiento['tra_codigo']
+        datosfact_aborel = None
+        if tra_codigo == ctes.TRA_COD_ABO_VENTA or tra_codigo == ctes.TRA_COD_ABO_COMPRA:
+            tasiabodao = TAsiAbonoDao(self.dbsession)
+            datosfact_aborel = tasiabodao.find_trn_codrel_abo(detalles)
+
         return {
             'cabecera': formasiento,
             'detalles': detalles,
-            'totales': totales
+            'totales': totales,
+            'factrel': datosfact_aborel
         }
 
     @staticmethod
@@ -416,6 +423,18 @@ class TasientoDao(AuxLogicAsiDao):
 
         return detalles
 
+    def get_pagos_doc(self, trn_codigo):
+        sql = """
+        select a.trn_codigo, 
+        pagos.efectivo, pagos.credito, pagos.saldopend, pagos.total
+         from tasiento a
+         join get_pagos_factura(a.trn_codigo) as pagos(efectivo numeric, credito numeric, total numeric, saldopend numeric, trncodigo integer)
+         on a.trn_codigo = pagos.trncodigo 
+         where a.trn_codigo = {0}
+        """.format(trn_codigo)
+        tupla_desc = ('trn_codigo', 'efectivo', 'credito', 'saldopend', 'total')
+        return self.first(sql, tupla_desc)
+
     def get_detalles_doc(self, trn_codigo, dt_tipoitem, joinarts=True):
 
         joinartsql = 'a.art_codigo'
@@ -528,6 +547,7 @@ class TasientoDao(AuxLogicAsiDao):
         else:
             detalles = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=1)
         pagos = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=2, joinarts=False)
+        pagosdoc = self.get_pagos_doc(trn_codigo=trn_codigo)
         impuestos = self.get_detalles_doc(trn_codigo=trn_codigo, dt_tipoitem=3, joinarts=False)
         totales = self.calcular_totales(detalles)
 
@@ -562,6 +582,7 @@ class TasientoDao(AuxLogicAsiDao):
             'datosref': datosref,
             'pagos': pagos,
             'pagosobj': pagosobj,
+            'pagosdoc': pagosdoc,
             'impuestos': impuestos,
             'totales': totales
         }

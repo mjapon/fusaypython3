@@ -11,6 +11,7 @@ from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tasiabono.tasiabono_model import TAsiAbono
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
+from fusayrepo.utils import ctes
 
 log = logging.getLogger(__name__)
 
@@ -148,3 +149,34 @@ class TAsiAbonoDao(BaseDao):
 
     def get_abonos_entity(self, dt_codcre):
         return self.dbsession.query(TAsiAbono).filter(TAsiAbono.dt_codcre == dt_codcre).all()
+
+    def get_datos_abono_by_dt_codigo(self, dt_codigo):
+        sql = """
+        select asi.trn_codigo, asi.tra_codigo, abo.abo_codigo, abo.dt_codigo, abo.dt_codcre from 
+        tasiabono abo join tasidetalle detcred on abo.dt_codcre = detcred.dt_codigo
+        join tasiento asi on detcred.trn_codigo = asi.trn_codigo
+        where abo.dt_codigo = {0}
+        """.format(dt_codigo)
+        tupla_desc = ('trn_codigo', 'tra_codigo', 'abo_codigo', 'dt_codigo', 'dt_codcre')
+        return self.first(sql, tupla_desc)
+
+    def find_trn_codrel_abo(self, detalles):
+        """
+        Busca en los detalles una transaccion tipo cuenta por cobrar o pagar y retorna los datos de la factura o asiento relacionado
+        """
+        datosfact = None
+        for det in detalles:
+            ic_clasecc = det['ic_clasecc']
+            if ic_clasecc == ctes.CLASECC_CTAXCOBRAR or ic_clasecc == ctes.CLASECC_CTAXPAGAR:
+                dt_codigo = det['dt_codigo']
+                datosfact = self.get_datos_abono_by_dt_codigo(dt_codigo=dt_codigo)
+
+        if datosfact is not None:
+            tra_codigo = datosfact['tra_codigo']
+            isfactura = False
+            if tra_codigo in (ctes.TRA_COD_FACT_VENTA, ctes.TRA_COD_NOTAVENTA, ctes.TRA_COD_FACT_COMPRA):
+                isfactura = True
+
+            datosfact['isfact'] = isfactura
+
+        return datosfact
