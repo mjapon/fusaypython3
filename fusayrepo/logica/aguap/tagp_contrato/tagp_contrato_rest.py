@@ -39,6 +39,18 @@ class TagpContratoRest(TokenView):
             filtro = self.get_request_param('filtro')
             result = tagpcontratodao.filter_by_nummed(filtro=filtro)
             return self.res200({'data': result})
+        elif accion == 'formlista':
+            result = tagpcontratodao.get_form_filtros_listados()
+            return self.res200({key: result[key] for key in result.keys()})
+
+        elif accion == 'agp_contratos':
+            grid = tagpcontratodao.get_grid_contratos(filtro=self.get_request_param('filtro'))
+            return self.res200({'grid': grid, 'titulo': 'Lista de contratos registrados'})
+        elif accion == 'agp_lecturas':
+            grid = tagpcontratodao.get_grid_lecturas(filtro=self.get_request_param('filtro'),
+                                                     anio=self.get_request_param('anio'),
+                                                     mes=self.get_request_param('mes'))
+            return self.res200({'grid': grid, 'titulo': 'Lista de consumos por mes'})
 
     def collection_post(self):
         accion = self.get_rqpa()

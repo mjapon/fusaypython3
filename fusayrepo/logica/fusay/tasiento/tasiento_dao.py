@@ -391,7 +391,7 @@ class TasientoDao(AuxLogicAsiDao):
             select a.dt_codigo, a.trn_codigo, a.cta_codigo, a.art_codigo, a.per_codigo, a.pry_codigo, a.dt_cant, a.dt_precio, a.dt_debito,
             a.dt_preref, a.dt_decto, a.dt_valor, a.dt_dectogen, a.dt_tipoitem, a.dt_valdto, a.dt_valdtogen, a.dt_codsec, {icnombre},
             b.ic_clasecc, b.ic_code, dimp.dai_imp0, dimp.dai_impg, dimp.dai_ise, dimp.dai_ice, 
-            der.dtpreiva as dt_precioiva, der.icdpgrabaiva as icdp_grabaiva, der.subt as subtotal, der.total, der.dtdecto as dt_dectoin
+            der.dtpreiva as dt_precioiva, der.icdpgrabaiva as icdp_grabaiva, der.subt as subtotal, der.total, der.dtdectoin as dt_dectoin
             from tasidetalle a
             left join tasidetimp dimp on a.dt_codigo = dimp.dt_codigo
             join get_dataforedit_rowfact(a.dt_codigo) as der(dtcod integer, 
@@ -402,6 +402,7 @@ class TasientoDao(AuxLogicAsiDao):
             dtdectogen numeric,
             daiimpg numeric,
              dtpreiva numeric,
+             dtdectoin numeric,
              icdpgrabaiva boolean,
              subt numeric,
              ivaval numeric,

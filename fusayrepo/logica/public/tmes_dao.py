@@ -20,6 +20,9 @@ class PublicTMesDao(BaseDao):
         tupla_desc = ('mes_id', 'mes_nombre', 'mes_corto')
         return self.all(sql, tupla_desc)
 
+    def get_mes_todos(self):
+        return {'mes_id': 0, 'mes_nombre': 'Todos', 'mes_corto': 'TD'}
+
     def get_current_previus(self):
         mes = fechas.get_mes_actual()
         mes_ant = mes - 1

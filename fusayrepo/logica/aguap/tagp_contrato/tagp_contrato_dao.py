@@ -13,8 +13,10 @@ from fusayrepo.logica.aguap.tagp_models import TAgpContrato
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
+from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
+from fusayrepo.logica.public.tmes_dao import PublicTMesDao
 from fusayrepo.utils import cadenas, fechas
 
 log = logging.getLogger(__name__)
@@ -271,3 +273,51 @@ class TAgpContratoDao(BaseDao):
     def find_by_per_codigo(self, per_codigo):
         sql = "{0} where per.per_id = {1}".format(self.BASE_SQL_CONTRATOS, per_codigo)
         return self.all(sql, self.BASE_TUPLA_DESC)
+
+    def get_filtro_nomapelcedul(self, filtro):
+        whereper = ''
+        if cadenas.es_nonulo_novacio(filtro):
+            palabras = cadenas.strip_upper(filtro).split()
+            filtromod = []
+            for cad in palabras:
+                filtromod.append(u"%{0}%".format(cad))
+
+            nombreslike = u' '.join(filtromod)
+            filtrocedulas = u" per_ciruc like '{0}%'".format(cadenas.strip(filtro))
+            whereper = u"""
+                    and ( (per.per_nombres||' '||per.per_apellidos like '{nombreslike}') or ({filtrocedulas}) )
+                    """.format(nombreslike=nombreslike, filtrocedulas=filtrocedulas)
+
+        return whereper
+
+    def get_grid_contratos(self, filtro):
+        tgriddao = TGridDao(self.dbsession)
+        whereper = self.get_filtro_nomapelcedul(filtro=filtro)
+        return tgriddao.run_grid(grid_nombre='agp_contratos', whereper=whereper)
+
+    def get_grid_lecturas(self, filtro, anio, mes):
+        tgriddao = TGridDao(self.dbsession)
+        whereper = self.get_filtro_nomapelcedul(filtro=filtro)
+        wherelecto = ' and lm.lmd_anio =  {0}'.format(anio)
+        if int(mes) > 0:
+            wherelecto += ' and lm.lmd_mes = {0}'.format(mes)
+
+        return tgriddao.run_grid(grid_nombre='agp_lecturas', whereper=whereper, wherelecto=wherelecto)
+
+    def get_form_filtros_listados(self):
+        form = {
+            'anio': fechas.get_anio_actual(),
+            'mes': fechas.get_mes_actual(),
+            'filtro': ''
+        }
+
+        tmesdao = PublicTMesDao(self.dbsession)
+        meses = tmesdao.listar()
+        meses.append(tmesdao.get_mes_todos())
+
+        anios = tmesdao.get_current_previus_year()
+        return {
+            'form': form,
+            'meses': meses,
+            'anios': anios
+        }

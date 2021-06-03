@@ -187,6 +187,12 @@ class LectoMedAguaDao(BaseDao):
 
     def anular(self, lmd_id, lmd_useranula):
         lectomed = self.find_by_id(lmd_id)
+
+        from fusayrepo.logica.aguap.tagp_pago.tagp_pago_dao import TagpCobroDao
+        cobrodao = TagpCobroDao(self.dbsession)
+        if cobrodao.is_lecto_with_pago(lmd_id=lmd_id):
+            raise ErrorValidacionExc('No se puede anular esta lectura, existe un cobro realizado')
+
         if lectomed is not None:
             current_state = lectomed.lmd_estado
             if current_state == 1:

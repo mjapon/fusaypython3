@@ -51,3 +51,7 @@ class LectoMedAguaRest(TokenView):
             form = self.get_json_body()
             lectomeddao.crear(form=form, user_crea=self.get_user_id())
             return self.res200({'msg': 'Registrado exitósamente'})
+        elif accion == 'anular':
+            form = self.get_json_body()
+            lectomeddao.anular(lmd_id=form['lmd_id'], lmd_useranula=self.get_user_id())
+            return self.res200({'msg': 'Anulado exitoso'})

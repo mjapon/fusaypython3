@@ -42,6 +42,13 @@ class TagpCobroDao(BaseDao):
             'steps': steps
         }
 
+    def is_lecto_with_pago(self, lmd_id):
+        sql = """
+        select count(*) as cuenta from tagp_pago where lmd_id = {0} and pg_estado = 1
+        """.format(lmd_id)
+        cuenta = self.first_col(sql, 'cuenta')
+        return cuenta > 0
+
     def get_calculo_pago(self, lectoids, alm_codigo, tdv_codigo, sec_codigo):
         lectomedagua_dao = LectoMedAguaDao(self.dbsession)
         contratodao = TAgpContratoDao(self.dbsession)
