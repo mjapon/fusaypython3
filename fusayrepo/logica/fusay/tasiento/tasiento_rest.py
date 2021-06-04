@@ -8,6 +8,7 @@ import logging
 from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
+from fusayrepo.logica.fusay.tasiento.auxlogicchangesec import AuxLogigChangeSeccion
 from fusayrepo.logica.fusay.tasiento.librodiario_dao import LibroDiarioDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
@@ -138,6 +139,10 @@ class TAsientoRest(TokenView):
             librodiariodao = LibroDiarioDao(self.dbsession)
             form = librodiariodao.get_form_filtro()
             return self.res200({'form': form})
+        elif accion == 'formchangesec':
+            auxlogichandao = AuxLogigChangeSeccion(self.dbsession)
+            form = auxlogichandao.get_form_change_seccion(trn_codigo=self.get_request_param('trncod'))
+            return self.res200(form)
 
     def collection_post(self):
         accion = self.get_request_param('accion')
@@ -186,3 +191,12 @@ class TAsientoRest(TokenView):
                                                     useredita=self.get_user_id(),
                                                     detalles=body['detalles'], obs='')
             return self.res200({'msg': 'Asiento actualizado exitosamente', 'trn_codigo': trn_codigo})
+        elif accion == 'changesec':
+            body = self.get_json_body()
+            auxlogichandao = AuxLogigChangeSeccion(self.dbsession)
+            changed = auxlogichandao.change_seccion(trn_codigo=body['trn_codigo'], new_sec_codigo=body['sec_codigo'])
+            msg = 'No fue posible realizar el cambio de sección'
+            if changed:
+                msg = 'Cmabio de sección satisfactorio'
+
+            return self.res200({'changed': changed, 'msg': msg})
