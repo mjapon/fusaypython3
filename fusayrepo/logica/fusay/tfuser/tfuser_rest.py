@@ -70,6 +70,11 @@ class TFuserRest(DbComunView):
                         'empNombreComercial': empresa['emp_nombrecomercial']}
             else:
                 return {'autenticado': autenticado}
+        elif accion == 'chkrol':
+            form = self.get_json_body()
+            fuserdao = TFuserDao(self.dbsession)
+
+
 
 
 @resource(collection_path='/api/tfusertoken', path='/api/tfusertoken/{us_id}', cors_origins=('*',))

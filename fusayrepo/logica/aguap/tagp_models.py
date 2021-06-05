@@ -80,3 +80,15 @@ class TagpPago(Declarative, JsonAlchemy):
     pg_usercrea = Column(Integer, default=0, nullable=False)
     pg_fechacrea = Column(DateTime, nullable=False)
     trn_codigo = Column(Integer, nullable=False, default=0)
+
+
+class TagpPagosMavil(Declarative, JsonAlchemy):
+    __tablename__ = 'tagp_pagosmavil'
+    pgm_id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    pgm_anio = Column(Integer, nullable=False)
+    pgm_mes = Column(Integer, nullable=False)
+    pgm_fechacrea = Column(DateTime, nullable=False)
+    pgm_usercrea = Column(Integer, nullable=False)
+    pgm_total = Column(Numeric(12, 4), default=0.0, nullable=False)
+    pgm_estado = Column(Integer, nullable=False, default=0)
+    pgm_obs = Column(Text)

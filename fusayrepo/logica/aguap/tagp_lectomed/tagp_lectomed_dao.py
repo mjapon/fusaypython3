@@ -39,7 +39,7 @@ class LectoMedAguaDao(BaseDao):
         }
 
         valid_fl = [
-            {'name': 'mdg_num', 'msg': 'Debe ingresar el número del medidor', 'select': True},
+            {'name': 'mdg_num', 'msg': 'Debe ingresar el número del medidor'},
             {'name': 'mdg_id', 'msg': 'Debe buscar el medidor', 'select': True},
             {'name': 'lmd_mes', 'msg': 'Debe seleccionar el mes', 'select': True},
             {'name': 'lmd_valor', 'msg': 'Debe ingresar el valor de la lectura actual'}

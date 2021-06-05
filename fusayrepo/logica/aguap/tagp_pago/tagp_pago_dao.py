@@ -178,7 +178,7 @@ class TagpCobroDao(BaseDao):
         if is_tercera_edad:
             comision_mavil = comision_mavil - (comision_mavil * float(agp_pordescte))
 
-        comavil_round = numeros.roundm2(comision_mavil)
+        comavil_round = numeros.roundm2(comision_mavil * len(lecturas))
         total += comavil_round
 
         return {
