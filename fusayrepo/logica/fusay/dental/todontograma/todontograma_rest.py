@@ -44,6 +44,12 @@ class TOdontogramaRest(TokenView):
             if datosodon is None:
                 status = 404
             return {'statos': status, 'datosodon': datosodon}
+        elif accion == 'getccss':
+            css = odon_dao.get_dientes_json_css()
+            if css is not None:
+                return self.res200({'css': css})
+            else:
+                return self.res404({})
 
     def collection_post(self):
         odon_dao = TOdontogramaDao(self.dbsession)

@@ -70,11 +70,6 @@ class TFuserRest(DbComunView):
                         'empNombreComercial': empresa['emp_nombrecomercial']}
             else:
                 return {'autenticado': autenticado}
-        elif accion == 'chkrol':
-            form = self.get_json_body()
-            fuserdao = TFuserDao(self.dbsession)
-
-
 
 
 @resource(collection_path='/api/tfusertoken', path='/api/tfusertoken/{us_id}', cors_origins=('*',))
@@ -94,6 +89,11 @@ class TFuserTokenRest(TokenView):
             tfuserdao = TFuserDao(self.dbsession)
             tfuserdao.crear(form=form['form'], formcli=form['formcli'])
             return {'status': 200, 'msg': 'Usuario creado existosamente'}
+        elif accion == 'chkrol':
+            form = self.get_json_body()
+            fuserroldao = TFuserRolDao(self.dbsession)
+            isuserhas = fuserroldao.user_has_permiso(user_id=self.get_user_id(), prm_abreviacion=form['rol'])
+            return self.res200({'hasperm': isuserhas})
 
     def collection_get(self):
         accion = self.get_request_param('accion')

@@ -8,6 +8,8 @@ import logging
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.fusay.dental.todontograma.todontograma_model import TOdontograma
+from fusayrepo.utils import cadenas
+from fusayrepo.utils.jsonutil import SimpleJsonUtil
 
 log = logging.getLogger(__name__)
 
@@ -71,3 +73,44 @@ class TOdontogramaDao(BaseDao):
             resdict[item['od_tipo']] = item['od_odontograma']
 
         return resdict
+
+    def get_dientes_json_css(self):
+        sql = """
+                select odc_numpieza, odc_corona, odc_ds, odc_ds, odc_cara, odc_raiz, odc_perno, odc_reten, odc_dnt, odc_dntc 
+                from todcss
+                """
+
+        tupla_desc = (
+            'odc_numpieza', 'odc_corona', 'odc_ds', 'odc_ds', 'odc_cara', 'odc_raiz', 'odc_perno', 'odc_reten',
+            'odc_dnt', 'odc_dntc')
+
+        items = self.all(sql, tupla_desc)
+        allitems_dict = {}
+        for item in items:
+            newcss = {}
+            # print('Iter item numpieza {0}'.format(item['odc_numpieza']))
+            for key in item:
+                if key != 'odc_numpieza' and cadenas.es_nonulo_novacio(item[key]):
+                    newcss[key] = self.obj(item[key])
+            allitems_dict[item['odc_numpieza']] = newcss
+
+        return allitems_dict
+
+    def get_css(self, npieza):
+        sql = """
+        select odc_corona, odc_ds, odc_ds, odc_cara, odc_raiz, odc_perno, odc_reten, odc_dnt, odc_dntc 
+        from todcss where odc_numpieza = {0}
+        """.format(npieza)
+
+        tupla_desc = (
+            'odc_corona', 'odc_ds', 'odc_ds', 'odc_cara', 'odc_raiz', 'odc_perno', 'odc_reten',
+            'odc_dnt', 'odc_dntc')
+
+        css = self.first(sql, tupla_desc)
+        newcss = {}
+        if css is not None:
+            for key in css:
+                if cadenas.es_nonulo_novacio(css[key]):
+                    newcss[key] = self.obj(css[key])
+
+        return newcss

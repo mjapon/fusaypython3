@@ -43,7 +43,7 @@ class TFuserRolDao(BaseDao):
         select count(*) as cuenta from tfuserrol fr
         join trol rol on fr.rl_id = rol.rl_id
         join tpermisorol perol on fr.rl_id = perol.rl_id
-        join tpermiso per on perol.prm_id = per.prm_id and per.prm_abreviacion in ({0})
+        join tpermiso per on perol.prm_id = per.prm_id and per.prm_abreviacion in ('{0}')
         where fr.us_id = {1} and rol.rl_estado = 0 and per.prm_estado = 0
         """.format(prm_abreviacion, user_id)
         cuenta = self.first_col(sql, 'cuenta')
