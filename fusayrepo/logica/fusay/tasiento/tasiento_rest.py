@@ -122,7 +122,7 @@ class TAsientoRest(TokenView):
         elif accion == 'getestadoresultados':
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
-            wherecodparents = "ic_code like '4%' or ic_code like '5%'",
+            wherecodparents = "ic_code like '4%' or ic_code like '5%'"
             balancegen, parents, parentestres, restulttree = tasientodao.buid_rep_conta(desde, hasta,
                                                                                         wherecodparents,
                                                                                         sec_id=self.get_sec_id(),
