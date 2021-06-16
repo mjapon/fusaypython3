@@ -9,6 +9,7 @@ from cornice.resource import resource
 
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tfuser.tfuser_dao import TFuserDao
+from fusayrepo.logica.fusay.tfuser.tfusersec_dao import TFuserSecDao
 from fusayrepo.logica.fusay.tfuserrol.tfuserrol_dao import TFuserRolDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
@@ -43,11 +44,21 @@ class TFuserRest(DbComunView):
                 self.change_dbschema(emp_esquema)
                 autenticado = fuserdao.autenticar(us_cuenta=cadenas.strip(form['username']),
                                                   us_clave=cadenas.strip(form['password']))
+                """
                 secciones = secciondao.listar()
                 sec_id = secciones[0]['sec_id']
+                """
 
             if autenticado:
                 user = fuserdao.get_user(us_cuenta=cadenas.strip(form['username']))
+
+                fusersecdao = TFuserSecDao(self.dbsession)
+                secs_user = fusersecdao.get_secciones_user(us_id=user['us_id'])
+                if secs_user is None or len(secs_user) == 0:
+                    raise ErrorValidacionExc(
+                        'No tiene asignado una sección favor solicitar al administrador que se le asigne una sección')
+
+                sec_id = secs_user[0]['sec_id']
                 genera_token_util = GeneraTokenUtil()
                 alm_codigo = secciondao.get_alm_codigo_from_sec_codigo(sec_codigo=sec_id)
                 ttpdvs = ttpdvdao.listar_min(alm_codigo=alm_codigo)
@@ -62,7 +73,7 @@ class TFuserRest(DbComunView):
                                                     tdv_codigo=tdv_codigo)
                 return {'autenticado': autenticado,
                         'userinfo': user,
-                        'seccion': secciones[0],
+                        'seccion': secs_user[0],
                         'token': token,
                         'tdv_codigo': tdv_codigo,
                         'menu': empresa['emp_menu'],
@@ -79,10 +90,13 @@ class TFuserTokenRest(TokenView):
         accion = self.get_request_param('accion')
         if accion == 'setroles':
             tfuserroldao = TFuserRolDao(self.dbsession)
+            tfusersecdao = TFuserSecDao(self.dbsession)
             form = self.get_json_body()
             us_id = form['us_id']
             roles = form['roles']
+            secciones = form['secciones']
             tfuserroldao.editar(us_id, roles)
+            tfusersecdao.create_from_list(us_id=us_id, secciones=secciones)
             return {'status': 200, 'msg': 'Operación Exitosa'}
         elif accion == 'creauser':
             form = self.get_json_body()
@@ -111,7 +125,7 @@ class TFuserTokenRest(TokenView):
                 return {'status': 404}
         elif accion == 'formcrea':
             tfuserdao = TFuserDao(self.dbsession)
-            form = tfuserdao.get_form_crear()
+            form = tfuserdao.get_form_crear(sec_id=self.get_sec_id())
             form['status'] = 200
             return form
 

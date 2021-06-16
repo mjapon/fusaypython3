@@ -9,6 +9,7 @@ from datetime import datetime
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tfuser.tfuser_model import TFuser
+from fusayrepo.logica.fusay.tfuser.tfusersec_dao import TFuserSecDao
 from fusayrepo.logica.fusay.tfuserrol.tfuserrol_dao import TFuserRolDao
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
@@ -70,7 +71,7 @@ class TFuserDao(BaseDao):
         data = tgrid_dao.run_grid(grid_nombre='usuarios')
         return data
 
-    def get_form_crear(self):
+    def get_form_crear(self, sec_id):
         form = {
             'us_id': 0,
             'us_cuenta': '',
@@ -88,12 +89,17 @@ class TFuserDao(BaseDao):
 
         form['roles'] = allroles
 
+        fusersecdao = TFuserSecDao(self.dbsession)
+
+        form['secciones'] = fusersecdao.get_secciones_form(sec_id=sec_id)
+
         return {'form': form, 'formcli': formcli}
 
     def get_form_editar(self, us_id):
         tfuserdao = TFuserDao(self.dbsession)
         tfuser = tfuserdao.find_byid(us_id=us_id)
         tpersonadao = TPersonaDao(self.dbsession)
+        tfusersecdao = TFuserSecDao(self.dbsession)
 
         tfuserroldao = TFuserRolDao(self.dbsession)
 
@@ -114,10 +120,13 @@ class TFuserDao(BaseDao):
                     else:
                         rol['rl_marca'] = False
 
+                secciones = tfusersecdao.get_secs_user_for_edit(us_id=us_id)
+
                 form = {
                     'us_id': us_id,
                     'us_cuenta': tfuser.us_cuenta,
-                    'roles': allroles
+                    'roles': allroles,
+                    'secciones': secciones
                 }
 
                 formcli = {
@@ -188,3 +197,6 @@ class TFuserDao(BaseDao):
         us_id = tfuser.us_id
         tfuserroldao = TFuserRolDao(self.dbsession)
         tfuserroldao.crear(us_id=us_id, listaroles=form['roles'])
+
+        tfusersecdao = TFuserSecDao(self.dbsession)
+        tfusersecdao.create_from_list(us_id=us_id, secciones=form['secciones'])

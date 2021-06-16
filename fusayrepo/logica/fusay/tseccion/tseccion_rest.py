@@ -8,6 +8,7 @@ import logging
 from cornice.resource import resource
 
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
+from fusayrepo.logica.fusay.tfuser.tfusersec_dao import TFuserSecDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
 from fusayrepo.utils.generatokenutil import GeneraTokenUtil
@@ -20,9 +21,15 @@ log = logging.getLogger(__name__)
 class TSeccionRest(TokenView):
 
     def collection_get(self):
-        secdao = TSeccionDao(self.dbsession)
-        secs = secdao.listar()
-        return {'status': 200, 'items': secs}
+        accion = self.get_request_param('accion')
+        if accion == 'listar':
+            secdao = TSeccionDao(self.dbsession)
+            secs = secdao.listar()
+            return {'status': 200, 'items': secs}
+        elif accion == 'listarusec':
+            usersecdao = TFuserSecDao(self.dbsession)
+            secciones = usersecdao.get_secciones_user(us_id=self.get_user_id())
+            return self.res200({'items': secciones})
 
     def collection_post(self):
         accion = self.get_request_param('accion')
