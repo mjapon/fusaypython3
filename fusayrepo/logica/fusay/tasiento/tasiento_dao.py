@@ -444,7 +444,7 @@ class TasientoDao(AuxLogicAsiDao):
 
         sqlic_nombre = 'b.ic_nombre'
         if dt_tipoitem == ctes.DT_TIPO_ITEM_PAGO:
-            sqlic_nombre = 'b.ic_alias as ic_nombre'
+            sqlic_nombre = """case when coalesce(b.ic_alias,'')='' then b.ic_nombre else b.ic_alias end as ic_nombre"""
 
         sql = """
                 select a.dt_codigo, trn_codigo, cta_codigo, art_codigo, per_codigo, pry_codigo, dt_cant, dt_precio, dt_debito,

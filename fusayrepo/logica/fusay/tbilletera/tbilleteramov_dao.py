@@ -104,11 +104,15 @@ class TBilleteraMovDao(BaseDao):
             'billeteras': [{'cta_codigo': 0, 'dt_valor': 0.0}]
         }
 
-        cuentasformov = self.get_cuentas_bytipo(tipo=clase_mov, sec_id=sec_codigo)
-
         from fusayrepo.logica.fusay.tbilletera.tbilletera_dao import TBilleteraDao
         billdao = TBilleteraDao(self.dbsession)
         billeterasformov = billdao.listar_min(sec_id=sec_codigo)
+
+        if int(clase_mov) == 3:
+            # Se trata de una transferencia
+            cuentasformov = billeterasformov
+        else:
+            cuentasformov = self.get_cuentas_bytipo(tipo=clase_mov, sec_id=sec_codigo)
 
         tasientodao = TasientoDao(self.dbsession)
         formasiento = tasientodao.get_form_asiento(sec_codigo=sec_codigo)
@@ -211,6 +215,12 @@ class TBilleteraMovDao(BaseDao):
             dtdebito_cuentas = 1
             dtdebito_bill = -1
 
+        msgcta = 'Debe seleccionar la cuenta afectada'
+        msgbill = 'Debe seleccionar la billetera afectada'
+        if bmo_clase == 3:
+            msgcta = 'Debe seleccionar la billetera origen de la transferencia'
+            msgbill = 'Debe seleccionar la billetera destino de la transferencia'
+
         detalles = []
         for cuenta in cuentas:
             if float(cuenta['dt_valor']) > 0:
@@ -218,7 +228,7 @@ class TBilleteraMovDao(BaseDao):
                 newformdet['dt_debito'] = dtdebito_cuentas
                 newformdet['dt_valor'] = cuenta['dt_valor']
                 if int(cuenta['cta_codigo']) == 0:
-                    raise ErrorValidacionExc('Debe seleccionar la cuenta afectada')
+                    raise ErrorValidacionExc(msgcta)
 
                 newformdet['cta_codigo'] = cuenta['cta_codigo']
                 detalles.append(newformdet)
@@ -229,7 +239,7 @@ class TBilleteraMovDao(BaseDao):
                 newformdet['dt_debito'] = dtdebito_bill
                 newformdet['dt_valor'] = bill['dt_valor']
                 if int(bill['cta_codigo']) == 0:
-                    raise ErrorValidacionExc('Debe seleccionar la billetera afectada')
+                    raise ErrorValidacionExc(msgbill)
                 newformdet['cta_codigo'] = bill['cta_codigo']
                 detalles.append(newformdet)
 

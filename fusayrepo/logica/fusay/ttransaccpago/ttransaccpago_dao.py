@@ -7,11 +7,21 @@ import logging
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
+from fusayrepo.utils import ctes
 
 log = logging.getLogger(__name__)
 
 
 class TTransaccPagoDao(BaseDao):
+
+    def get_pagos_efectivo(self, sec_id):
+        sql = """
+                select b.ic_id, b.ic_code, b.ic_nombre from titemconfig b
+                join titemconfig_sec c on b.ic_id = c.ic_id and c.sec_id = {0} 
+                where b.ic_clasecc = '{1}'
+                """.format(sec_id, ctes.CLASECC_EFECTIVO)
+        tupla_desc = ('ic_id', 'ic_code', 'ic_nombre')
+        return self.all(sql, tupla_desc)
 
     def get_formas_pago(self, tra_codigo, sec_id):
         sql = """        

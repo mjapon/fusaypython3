@@ -11,6 +11,7 @@ from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tasiabono.tasiabono_model import TAsiAbono
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
+from fusayrepo.logica.fusay.ttransaccpago.ttransaccpago_dao import TTransaccPagoDao
 from fusayrepo.utils import ctes
 
 log = logging.getLogger(__name__)
@@ -54,7 +55,10 @@ class TAsiAbonoDao(BaseDao):
         form_det['cta_codigo'] = modelocont['cta_codigo']
         form_det['dt_debito'] = modelocont['tmc_signo']
 
-        return {'formcab': form_cab, 'ttransacc': ttransacc, 'formdet': form_det}
+        transaccpago = TTransaccPagoDao(self.dbsession)
+        pagosefectivo = transaccpago.get_pagos_efectivo(sec_id=sec_codigo)
+
+        return {'formcab': form_cab, 'ttransacc': ttransacc, 'formdet': form_det, 'pagosef': pagosefectivo}
 
     def listar_abonos(self, trn_codigo, trn_valido=0):
         # Se debe listar todos los abonos registrados para una factura específica:

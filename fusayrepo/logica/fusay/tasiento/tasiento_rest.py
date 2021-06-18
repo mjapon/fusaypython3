@@ -40,6 +40,7 @@ class TAsientoRest(TokenView):
             form_cab = tasientodao.get_form_cabecera(tra_codigo, alm_codigo, secid, tdv_codigo,
                                                      tra_emite=ttransacc['tra_tipdoc'])
             formaspago = transaccpago.get_formas_pago(tra_codigo=tra_codigo, sec_id=self.get_sec_id())
+            pagosefectivo = transaccpago.get_pagos_efectivo(sec_id=self.get_sec_id())
             form_det = tasientodao.get_form_detalle(sec_codigo=secid)
 
             return self.res200(
@@ -47,6 +48,7 @@ class TAsientoRest(TokenView):
                     'formcab': form_cab,
                     'ttransacc': ttransacc,
                     'formaspago': formaspago,
+                    'pagosef': pagosefectivo,
                     'formdet': form_det,
                     'impuestos': form_cab['impuestos'],
                     'secid': secid

@@ -50,6 +50,21 @@ class TFuserSecDao(BaseDao):
         tupla_desc = ('fus_id', 'us_id', 'sec_id', 'sec_nombre', 'fus_main')
         return self.all(sql, tupla_desc)
 
+    def find_main_sec(self, secciones):
+        findedsec = None
+        for sec in secciones:
+            if sec['fus_main']:
+                findedsec = sec
+
+        return findedsec
+
+    def get_default_sec(self, secciones):
+        sec = self.find_main_sec(secciones)
+        if sec is None and len(secciones) > 0:
+            sec = secciones[0]
+
+        return sec
+
     def get_secs_user_for_edit(self, us_id):
         sql = """
         select sec.sec_id, sec.sec_nombre, 

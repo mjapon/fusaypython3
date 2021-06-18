@@ -58,7 +58,9 @@ class TFuserRest(DbComunView):
                     raise ErrorValidacionExc(
                         'No tiene asignado una sección favor solicitar al administrador que se le asigne una sección')
 
-                sec_id = secs_user[0]['sec_id']
+                defaultsec = fusersecdao.get_default_sec(secciones=secs_user)
+
+                sec_id = defaultsec['sec_id']
                 genera_token_util = GeneraTokenUtil()
                 alm_codigo = secciondao.get_alm_codigo_from_sec_codigo(sec_codigo=sec_id)
                 ttpdvs = ttpdvdao.listar_min(alm_codigo=alm_codigo)
@@ -73,7 +75,7 @@ class TFuserRest(DbComunView):
                                                     tdv_codigo=tdv_codigo)
                 return {'autenticado': autenticado,
                         'userinfo': user,
-                        'seccion': secs_user[0],
+                        'seccion': defaultsec,
                         'token': token,
                         'tdv_codigo': tdv_codigo,
                         'menu': empresa['emp_menu'],
