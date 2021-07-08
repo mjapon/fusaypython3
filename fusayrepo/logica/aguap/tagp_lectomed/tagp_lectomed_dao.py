@@ -108,7 +108,7 @@ class LectoMedAguaDao(BaseDao):
             raise ErrorValidacionExc('El valor de lectura actual es incorrecto')
 
         lmd_consumo = float(form['lmd_consumo'])
-        if lmd_consumo <= 0:
+        if lmd_consumo < 0:
             raise ErrorValidacionExc('El valor de lectura actual es incorrecto')
 
     def find_by_id(self, lmd_id):
