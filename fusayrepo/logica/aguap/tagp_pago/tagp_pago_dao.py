@@ -61,6 +61,7 @@ class TagpCobroDao(BaseDao):
         agp_pordescte = tparamsdao.get_param_value('agp_pordescte')
         agp_tracod = tparamsdao.get_param_value('agp_tracod')
         agp_iccomavil = tparamsdao.get_param_value('agp_iccomavil')
+        agp_fecinicobrotarfbase = tparamsdao.get_param_value('agp_fecinicbtfb')
 
         if agp_diacobro is None:
             raise ErrorValidacionExc('El parámetro agp_diacobro no está configurado, favor verificar')
@@ -74,6 +75,8 @@ class TagpCobroDao(BaseDao):
             raise ErrorValidacionExc('El parámetro agp_tracod no está configurado, favor verificar')
         if agp_iccomavil is None:
             raise ErrorValidacionExc('El parámetro agp_iccomavil no está configurado, favor verificar')
+        if agp_fecinicobrotarfbase is None:
+            raise ErrorValidacionExc('El parámetro agp_fecinicbtfb no está configurado, favor verificar')
 
         ids = ','.join(['{0}'.format(it) for it in lectoids])
         lecturas = lectomedagua_dao.get_datos_lectura(ids=ids)
@@ -108,7 +111,8 @@ class TagpCobroDao(BaseDao):
             lmd_anio = lectura['lmd_anio']
             lmd_mes = lectura['lmd_mes']
 
-            fecha_consumo = fechas.parse_cadena('01/{0}/{1}'.format(lmd_mes, lmd_anio))
+            fecha_consumo_str = '01/{0}/{1}'.format(lmd_mes, lmd_anio)
+            fecha_consumo = fechas.parse_cadena(fecha_consumo_str)
             fecha_max_pago = fechas.sumar_meses(fecha_consumo, int(agp_permeses)).replace(day=int(agp_diacobro))
 
             aplica_multa = False
@@ -151,7 +155,6 @@ class TagpCobroDao(BaseDao):
 
                 cna_teredad = datoscontrato['cna_teredad']
 
-                costobase += icdp_precioventa
                 costoexceso_item = numeros.roundm2(consumo_exceso_it * tarifaexceso)
                 costoexceso += costoexceso_item
                 descuento_it = 0
@@ -167,8 +170,15 @@ class TagpCobroDao(BaseDao):
                 multa += multa_it
                 total += numeros.roundm2(total_it)
 
+                aplica_costobase = False
+                if fechas.es_fecha_a_mayor_o_igual_fecha_b(fecha_consumo_str, agp_fecinicobrotarfbase):
+                    aplica_costobase = True
+
+                if aplica_costobase:
+                    costobase += icdp_precioventa
+
                 pagosdet[lmd_id] = {
-                    'costobase': icdp_precioventa,
+                    'costobase': icdp_precioventa if aplica_costobase else 0.0,
                     'costoexceso': costoexceso_item,
                     'descuento': descuento_it,
                     'multa': multa_it
