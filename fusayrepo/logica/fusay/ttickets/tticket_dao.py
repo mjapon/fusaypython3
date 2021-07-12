@@ -8,8 +8,12 @@ from datetime import datetime
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
+from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
+from fusayrepo.logica.fusay.tbilletera.tbilleteramov_dao import TBilleteraMovDao
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
+from fusayrepo.logica.fusay.tmodelocontab.tmodelocontab_dao import TModelocontabDao
+from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.logica.fusay.ttickets.tticket_model import TTicket
 from fusayrepo.utils import fechas, cadenas
@@ -168,9 +172,7 @@ class TTicketDao(BaseDao):
             self.dbsession.add(tticket)
 
     def crear(self, form, form_persona, user_crea, sec_id):
-
         tticket = TTicket()
-
         persona_dao = TPersonaDao(self.dbsession)
 
         tticket.tk_nro = form['tk_nro']
@@ -194,4 +196,16 @@ class TTicketDao(BaseDao):
         self.dbsession.add(tticket)
 
         self.dbsession.flush()
-        return tticket.tk_id
+
+        tk_id = tticket.tk_id
+
+        # Logica para creacion de asiento contable
+
+        tparamsdao = TParamsDao(self.dbsession)
+        tk_contab = tparamsdao.get_param_value('tk_contab')
+        if tk_contab is not None and int(tk_contab) == 1:
+            tbillmovdao = TBilleteraMovDao(self.dbsession)
+            tbillmovdao.crea_asiento_for_ticket(valorticket=form['tk_costo'], prodstickets=form['tk_servicios'],
+                                                sec_codigo=sec_id, usercrea=user_crea)
+
+        return tk_id

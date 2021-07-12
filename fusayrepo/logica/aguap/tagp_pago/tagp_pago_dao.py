@@ -61,7 +61,8 @@ class TagpCobroDao(BaseDao):
         agp_pordescte = tparamsdao.get_param_value('agp_pordescte')
         agp_tracod = tparamsdao.get_param_value('agp_tracod')
         agp_iccomavil = tparamsdao.get_param_value('agp_iccomavil')
-        agp_fecinicobrotarfbase = tparamsdao.get_param_value('agp_fecinicbtfb')
+        # agp_fecinicobrotarfbase = tparamsdao.get_param_value('agp_fecinicbtfb')
+        agp_numdiasmulta = tparamsdao.get_param_value('agp_numdiasmulta')
 
         if agp_diacobro is None:
             raise ErrorValidacionExc('El parámetro agp_diacobro no está configurado, favor verificar')
@@ -75,8 +76,10 @@ class TagpCobroDao(BaseDao):
             raise ErrorValidacionExc('El parámetro agp_tracod no está configurado, favor verificar')
         if agp_iccomavil is None:
             raise ErrorValidacionExc('El parámetro agp_iccomavil no está configurado, favor verificar')
-        if agp_fecinicobrotarfbase is None:
-            raise ErrorValidacionExc('El parámetro agp_fecinicbtfb no está configurado, favor verificar')
+        # if agp_fecinicobrotarfbase is None:
+        #    raise ErrorValidacionExc('El parámetro agp_fecinicbtfb no está configurado, favor verificar')
+        if agp_numdiasmulta is None:
+            raise ErrorValidacionExc('El parámetro agp_numdiasmulta no está configurado, favor verificar')
 
         ids = ','.join(['{0}'.format(it) for it in lectoids])
         lecturas = lectomedagua_dao.get_datos_lectura(ids=ids)
@@ -111,10 +114,18 @@ class TagpCobroDao(BaseDao):
             lmd_anio = lectura['lmd_anio']
             lmd_mes = lectura['lmd_mes']
 
+            # Obtener el ultimo dia del mes
+            dia_cobro = fechas.get_maxday_month(int(agp_diacobro), lmd_anio, lmd_mes)
+
             fecha_consumo_str = '01/{0}/{1}'.format(lmd_mes, lmd_anio)
             fecha_consumo = fechas.parse_cadena(fecha_consumo_str)
-            fecha_max_pago = fechas.sumar_meses(fecha_consumo, int(agp_permeses)).replace(day=int(agp_diacobro))
 
+            fecha_cobro_str = '{0}/{1}/{2}'.format(dia_cobro, lmd_mes, lmd_anio)
+            fecha_cobro = fechas.parse_cadena(fecha_cobro_str)
+            fecha_max_pago = fechas.sumar_dias(fecha_cobro, int(agp_numdiasmulta))
+            # fecha_max_pago = fechas.sumar_meses(fecha_consumo, int(agp_permeses)).replace(day=int(agp_diacobro))
+
+            # Cambiar logica para aplicacion de multa la multas e d
             aplica_multa = False
             if fecha_actual.date() > fecha_max_pago.date():
                 aplica_multa = True
@@ -170,9 +181,9 @@ class TagpCobroDao(BaseDao):
                 multa += multa_it
                 total += numeros.roundm2(total_it)
 
-                aplica_costobase = False
-                if fechas.es_fecha_a_mayor_o_igual_fecha_b(fecha_consumo_str, agp_fecinicobrotarfbase):
-                    aplica_costobase = True
+                aplica_costobase = True
+                # if fechas.es_fecha_a_mayor_o_igual_fecha_b(fecha_consumo_str, agp_fecinicobrotarfbase):
+                #    aplica_costobase = True
 
                 if aplica_costobase:
                     costobase += icdp_precioventa

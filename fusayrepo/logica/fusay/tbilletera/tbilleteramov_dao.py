@@ -14,6 +14,7 @@ from fusayrepo.logica.fusay.tbilletera.tbilletera_model import TBilleteraMov
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
+from fusayrepo.logica.fusay.tventatickets.tticketmd_dao import TTicketMcDao
 from fusayrepo.utils import fechas, cadenas
 
 log = logging.getLogger(__name__)
@@ -353,3 +354,45 @@ class TBilleteraMovDao(BaseDao):
         data = tgrid_dao.run_grid(grid_nombre='ingrgastos', joinbillmov=joinbillmov, swhere=swhere, sec_id=sec_id)
 
         return data
+
+    def crea_asiento_for_ticket(self, valorticket, prodstickets, sec_codigo, usercrea):
+        tasientodao = TasientoDao(self.dbsession)
+        formasiento = tasientodao.get_form_asiento(sec_codigo=sec_codigo)
+
+        sql = "select ic_nombre from titemconfig where ic_id in ({0})".format(prodstickets)
+        tupla_desc = ('ic_nombre',)
+        prods = self.all(sql, tupla_desc)
+        prods_desc = ','.join(map(lambda x: x['ic_nombre'], prods))
+
+        formasiento['formasiento']['trn_docpen'] = 'F'
+        formasiento['formasiento']['trn_observ'] = 'P/R Venta de ticket: {0}'.format(prods_desc)
+        formasiento['formref']['per_id'] = -1
+
+        formdet = formasiento['formdet']
+
+        ticketmc_dao = TTicketMcDao(self.dbsession)
+        datosmc = ticketmc_dao.get_datos_mc(sec_codigo=sec_codigo)
+        if datosmc is None:
+            raise ErrorValidacionExc(
+                'No hay datos de configuracion de ticket en tticketmc para la seccion: {0}, no puedo generar el asiento contable'.format(
+                    sec_codigo))
+
+        detalles = []
+        newformdet = self.clone_formdet(formdet)
+        newformdet['dt_debito'] = 1
+        newformdet['dt_valor'] = valorticket
+        newformdet['cta_codigo'] = datosmc['tkm_cta_debe']
+        detalles.append(newformdet)
+
+        newformdet = self.clone_formdet(formdet)
+        newformdet['dt_debito'] = -1
+        newformdet['dt_valor'] = valorticket
+        newformdet['cta_codigo'] = datosmc['tkm_cta_haber']
+        detalles.append(newformdet)
+        formasiento['detalles'] = detalles
+
+        trn_codigo_gen = tasientodao.crear_asiento(formcab=formasiento['formasiento'],
+                                                   formref=formasiento['formref'],
+                                                   usercrea=usercrea,
+                                                   detalles=detalles)
+        return trn_codigo_gen

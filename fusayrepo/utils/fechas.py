@@ -351,3 +351,12 @@ def get_edad(fecha_nacimiento):
     today = date.today()
     age = relativedelta(today, fecha_nacimiento)
     return {'years': age.years, 'months': age.months, 'days': age.days}
+
+
+def get_maxday_month(maxdia, year, month):
+    """
+    Retorna maxdia o el ultimo dia del mes en el caso que maxdia sea mayor al ultimo dia del mes
+    """
+    today = date.today()
+    lastmontday = calendar.monthrange(year, month)[1]
+    return lastmontday if lastmontday < maxdia else maxdia
