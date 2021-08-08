@@ -38,6 +38,7 @@ class TAgpContratoDao(BaseDao):
                cn.cna_direccion,
                cn.cna_referencia,
                cn.cna_teredad,
+               cn.cna_discapacidad,
                tm.mdg_id,
                tm.mdg_num,
                per.per_nombres,
@@ -70,6 +71,7 @@ class TAgpContratoDao(BaseDao):
                        'cna_direccion',
                        'cna_referencia',
                        'cna_teredad',
+                       'cna_discapacidad',
                        'mdg_id',
                        'mdg_num',
                        'per_nombres',
@@ -151,7 +153,8 @@ class TAgpContratoDao(BaseDao):
             'cna_adjunto': 0,
             'trn_codigo': 0,
             'cna_teredad': False,
-            'cna_tarifa': 0
+            'cna_tarifa': 0,
+            'cna_discapacidad': False
         }
 
         tarifas = self.listar_tarifas()
@@ -242,6 +245,7 @@ class TAgpContratoDao(BaseDao):
         contratoagua.cna_teredad = form['cna_teredad']
         contratoagua.cna_costoinst = decimal.Decimal(form['cna_costoinst'])
         contratoagua.cna_tarifa = form['cna_tarifa']
+        contratoagua.cna_discapacidad = form['cna_discapacidad']
 
         self.dbsession.add(contratoagua)
         self.flush()
@@ -260,8 +264,6 @@ class TAgpContratoDao(BaseDao):
         if cadenas.es_nonulo_novacio(filtro):
             sql = "{0} where tm.mdg_num like '{1}%' order by tm.mdg_num limit 50 ".format(self.BASE_SQL_CONTRATOS,
                                                                                           cadenas.strip_upper(filtro))
-            print('Valor de sql es:')
-            print(sql)
             return self.all(sql, self.BASE_TUPLA_DESC)
         else:
             return []

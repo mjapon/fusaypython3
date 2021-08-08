@@ -30,10 +30,11 @@ class TAgpContrato(Declarative, JsonAlchemy):
     cna_direccion = Column(String(100))
     cna_referencia = Column(String(80))
     cna_adjunto = Column(Integer)
-    cna_teredad = Column(Boolean)
+    cna_teredad = Column(Boolean, default=False)
     cna_costoinst = Column(Numeric, default=0.0)
     trn_codigo = Column(Integer, nullable=False, default=0)
     cna_tarifa = Column(Integer, default=0, nullable=False)
+    cna_discapacidad = Column(Boolean, default=False)
 
 
 class TAgpMedidor(Declarative, JsonAlchemy):

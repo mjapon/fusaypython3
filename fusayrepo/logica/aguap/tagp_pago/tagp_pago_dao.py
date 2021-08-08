@@ -165,12 +165,13 @@ class TagpCobroDao(BaseDao):
                 icdp_precioventa = datosprod['icdp_precioventa']
 
                 cna_teredad = datoscontrato['cna_teredad']
+                cna_discapacidad = datoscontrato['cna_discapacidad']
 
                 costoexceso_item = numeros.roundm2(consumo_exceso_it * tarifaexceso)
                 costoexceso += costoexceso_item
                 descuento_it = 0
                 multa_it = 0
-                if cna_teredad:
+                if cna_teredad or cna_discapacidad:
                     is_tercera_edad = True
                     descuento_it = numeros.roundm2(float(agp_pordescte) * icdp_precioventa)
                 if aplica_multa:
