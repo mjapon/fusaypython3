@@ -7,9 +7,8 @@ import datetime
 import logging
 
 from fusayrepo.logica.dao.base import BaseDao
-from fusayrepo.logica.fusay.dental.todontograma.todontograma_model import TOdontograma
-from fusayrepo.utils import cadenas
-from fusayrepo.utils.jsonutil import SimpleJsonUtil
+from fusayrepo.logica.fusay.dental.todontograma.todontograma_model import TOdontograma, TOdontogramaHist
+from fusayrepo.utils import cadenas, fechas, ctes
 
 log = logging.getLogger(__name__)
 
@@ -37,10 +36,20 @@ class TOdontogramaDao(BaseDao):
         todontograma.pac_id = pac_id
         self.dbsession.add(todontograma)
         self.dbsession.flush()
-        return todontograma.od_id
+
+        od_id = todontograma.od_id
+        self.save_histo(od_id=od_id, user_crea=user_crea)
+
+        return od_id
+
+    def find_byid(self, od_id):
+        return self.dbsession.query(TOdontograma).filter(TOdontograma.od_id == od_id).first()
+
+    def find_histo_byid(self, odh_id):
+        return self.dbsession.query(TOdontogramaHist).filter(TOdontogramaHist.odh_id == odh_id).first()
 
     def actualizar(self, od_id, user_upd, od_odontograma, od_obs, od_protesis):
-        todontograma = self.dbsession.query(TOdontograma).filter(TOdontograma.od_id == od_id).first()
+        todontograma = self.find_byid(od_id)
         if todontograma is not None:
             todontograma.user_upd = user_upd
             todontograma.od_fechaupd = datetime.datetime.now()
@@ -48,6 +57,7 @@ class TOdontogramaDao(BaseDao):
             todontograma.od_odontograma = od_odontograma
             todontograma.od_obsodonto = od_obs
             self.dbsession.add(todontograma)
+            self.save_histo(od_id=od_id, user_crea=user_upd)
 
     def get_odontograma_by_id(self, od_id):
         sql = """select od_id, od_fechacrea, od_fechaupd, user_crea, od_odontograma, 
@@ -114,3 +124,56 @@ class TOdontogramaDao(BaseDao):
                     newcss[key] = self.obj(css[key])
 
         return newcss
+
+    def find_histo(self, pac_id, fecha):
+        sql = """
+        select odh_id from todontograma_hist where pac_id = {0} and odh_fecha = '{1}'
+        """.format(pac_id, fecha)
+
+        odh_id = self.first_col(sql, 'odh_id')
+        if odh_id is not None:
+            return self.find_histo_byid(odh_id=odh_id)
+        return None
+
+    def list_histo(self, pac_id):
+        today = fechas.get_str_fecha_actual(ctes.APP_FMT_FECHA_DB)
+        sql = """
+        select odh_id, odh_fechacrea, odh_fecha, pac_id, odh_tipo, 
+        case when odh_tipo = 1 then 'Permanente' else 'Temporal' end as tipodesc 
+        from todontograma_hist where pac_id = {0} 
+        and odh_fecha<='{1}'
+        order by odh_fecha asc
+        """.format(pac_id, today)
+
+        tupla_desc = ('odh_id', 'odh_fechacrea', 'odh_fecha', 'pac_id', 'odh_tipo', 'tipodesc')
+
+        return self.all(sql, tupla_desc)
+
+    def get_json_histo(self, odh_id):
+        sql = """
+        select odh_odontograma, odh_protesis from todontograma_hist where odh_id = {0}
+        """.format(odh_id)
+
+        tupla_desc = ('odh_odontograma', 'odh_protesis')
+        return self.first(sql, tupla_desc)
+
+    def save_histo(self, od_id, user_crea):
+        todontograma = self.find_byid(od_id=od_id)
+        today = datetime.datetime.now()
+        odhist = self.find_histo(pac_id=todontograma.pac_id, fecha=today)
+        if odhist is not None:
+            odhist.odh_odontograma = todontograma.od_odontograma
+            odhist.odh_tipo = todontograma.od_tipo
+            odhist.odh_protesis = todontograma.od_protesis
+            odhist.odh_odontograma = todontograma.od_odontograma
+            self.dbsession.add(odhist)
+        else:
+            odhistnew = TOdontogramaHist()
+            odhistnew.odh_fechacrea = today
+            odhistnew.odh_odontograma = todontograma.od_odontograma
+            odhistnew.odh_protesis = todontograma.od_protesis
+            odhistnew.odh_tipo = todontograma.od_tipo
+            odhistnew.pac_id = todontograma.pac_id,
+            odhistnew.user_crea = user_crea
+            odhistnew.odh_fecha = today
+            self.dbsession.add(odhistnew)

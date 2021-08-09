@@ -50,6 +50,17 @@ class TOdontogramaRest(TokenView):
                 return self.res200({'css': css})
             else:
                 return self.res404({})
+        elif accion == 'histo':
+            pac_id = self.get_request_param('pac')
+            histo = odon_dao.list_histo(pac_id=pac_id)
+            return self.res200({'histo': histo})
+        elif accion == 'getodonhisto':
+            odhid = self.get_request_param('odhid')
+            datosodon = odon_dao.get_json_histo(odh_id=odhid)
+            status = 200
+            if datosodon is None:
+                status = 404
+            return {'status': status, 'datosodon': datosodon}
 
     def collection_post(self):
         odon_dao = TOdontogramaDao(self.dbsession)
