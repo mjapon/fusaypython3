@@ -339,6 +339,12 @@ class TBilleteraMovDao(BaseDao):
         if user is not None and int(user) > 0:
             sfechas += ' and asi.us_id = {0}'.format(user)
 
+        tparamsdao = TParamsDao(self.dbsession)
+        fecha_ini_contab = tparamsdao.get_param_value('fecha_ini_contab', sec_id=sec_id)
+        sqlfechainicontab = ''
+        if fecha_ini_contab is not None and len(fecha_ini_contab) > 0:
+            sqlfechainicontab = " and date(asi.trn_fecha)>='{0}' ".format(fechas.format_cadena_db(fecha_ini_contab))
+
         if tipo is not None and int(tipo) > 0:
             joinbillmov = 'join'
             andwhere = """ and mov.bmo_clase = {0} and coalesce(ic.ic_clasecc,'') not in ('E','B') 
@@ -349,7 +355,7 @@ class TBilleteraMovDao(BaseDao):
         elif cuentabill is not None and int(cuentabill) > 0:
             andwhere = " and det.cta_codigo in ({0})".format(cuentabill)
 
-        swhere = " {0} {1} ".format(sfechas, andwhere)
+        swhere = " {0} {1} {2}".format(sfechas, andwhere, sqlfechainicontab)
 
         data = tgrid_dao.run_grid(grid_nombre='ingrgastos', joinbillmov=joinbillmov, swhere=swhere, sec_id=sec_id)
 

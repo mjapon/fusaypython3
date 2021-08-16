@@ -95,13 +95,14 @@ class TAsientoRest(TokenView):
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
             librodiariodao = LibroDiarioDao(self.dbsession)
-            items, totales = librodiariodao.listar_asientos(desde, hasta)
+            items, totales = librodiariodao.listar_asientos(desde, hasta, sec_id=self.get_sec_id())
             return self.res200({'items': items, 'totales': totales})
         elif accion == 'getmovscta':
             cta_codigo = self.get_request_param('cta')
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
-            res = tasientodao.listar_movs_ctacontable(cta_codigo=cta_codigo, desde=desde, hasta=hasta)
+            res = tasientodao.listar_movs_ctacontable(cta_codigo=cta_codigo, desde=desde, hasta=hasta,
+                                                      sec_id=self.get_sec_id())
             return self.res200({'res': res})
         elif accion == 'getformlibromayor':
             forml = tasientodao.get_form_libromayor()

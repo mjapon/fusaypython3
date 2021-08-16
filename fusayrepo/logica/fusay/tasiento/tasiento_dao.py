@@ -58,11 +58,19 @@ class TasientoDao(AuxLogicAsiDao):
             'hasta': fechas.get_str_fecha_actual()
         }
 
-    def listar_movs_ctacontable(self, cta_codigo, desde, hasta):
+    def listar_movs_ctacontable(self, cta_codigo, desde, hasta, sec_id=0):
         gridado = TGridDao(self.dbsession)
+
+        tparamsdao = TParamsDao(self.dbsession)
+        fecha_ini_contab = tparamsdao.get_param_value('fecha_ini_contab', sec_id=sec_id)
+        sqlfechainicontab = ''
+        if fecha_ini_contab is not None and len(fecha_ini_contab) > 0:
+            sqlfechainicontab = " and date(asi.trn_fecha)>='{0}' ".format(fechas.format_cadena_db(fecha_ini_contab))
+
         resgrid = gridado.run_grid('libromayor', cta_codigo=cta_codigo,
                                    desde=fechas.format_cadena_db(desde),
-                                   hasta=fechas.format_cadena_db(hasta))
+                                   hasta=fechas.format_cadena_db(hasta),
+                                   fecinicontab=sqlfechainicontab)
         data = resgrid['data']
         debe = map(lambda x: x['debe'], filter((lambda x: x['dt_debito'] == 1), data))
         haber = map(lambda x: x['haber'], filter((lambda x: x['dt_debito'] == -1), data))
@@ -201,17 +209,22 @@ class TasientoDao(AuxLogicAsiDao):
         for item in planctabalg:
             planctasdict[item['ic_id']] = item
 
+        tparamsdao = TParamsDao(self.dbsession)
+        fecha_ini_contab = tparamsdao.get_param_value('fecha_ini_contab', sec_id=sec_id)
+        sqlfechainicontab = ''
+        if fecha_ini_contab is not None and len(fecha_ini_contab) > 0:
+            sqlfechainicontab = " and date(t.trn_fecha)>='{0}' ".format(fechas.format_cadena_db(fecha_ini_contab))
+
         sql = """
         select det.cta_codigo, round(sum(det.dt_debito*det.dt_valor),2) as total 
         from tasidetalle det
-        join tasiento t on det.trn_codigo = t.trn_codigo 
+        join tasiento t on det.trn_codigo = t.trn_codigo and t.tra_codigo = {0} and t.trn_valido = 0 
         join titemconfig ic on det.cta_codigo = ic.ic_id
-        where
-        t.tra_codigo = {0} and t.trn_valido = 0 and  t.trn_fecreg between '{1}' and '{2}'
+        where t.trn_fecreg between '{1}' and '{2}' {3}
         group by det.cta_codigo order by det.cta_codigo
         """.format(ctes.TRA_COD_ASI_CONTABLE,
                    fechas.format_cadena_db(desde),
-                   fechas.format_cadena_db(hasta))
+                   fechas.format_cadena_db(hasta), sqlfechainicontab)
 
         tupla_desc = ('cta_codigo', 'total')
         result = self.all(sql, tupla_desc)

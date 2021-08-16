@@ -26,7 +26,7 @@ class LibroDiarioDao(BaseDao):
 
         return form
 
-    def aux_get_all_asientos(self, desde, hasta):
+    def aux_get_all_asientos(self, desde, hasta, sec_id=0):
 
         sfechas = ' '
         if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
@@ -37,12 +37,13 @@ class LibroDiarioDao(BaseDao):
         with asientos as (
         select a.trn_codigo, a.tra_codigo, a.trn_fecreg, extract(day from a.trn_fecreg) ||'-'|| m.mes_corto as fecdesc,
                a.trn_compro::int, a.trn_fecha, a.trn_valido, a.trn_docpen,
-               a.per_codigo, a.us_id, a.trn_observ,
+               a.per_codigo, a.us_id, a.trn_observ,               
                a.dt_debito, a.cta_codigo, a.ic_code, a.ic_nombre, a.dt_valor, 0 as bmo_id
         from vasientosgen a
-            join titemconfig ic on a.cta_codigo = ic.ic_id            
-                 join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
-        where trn_valido = 0 {sfechas}
+            join titemconfig ic on a.cta_codigo = ic.ic_id
+            join tasiento asi on a.trn_codigo = asi.trn_codigo and asi.sec_codigo = {sec_id}            
+            join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
+        where a.trn_valido = 0 {sfechas}
         union
         select a.trn_codigo, a.tra_codigo, a.trn_fecreg, extract(day from a.trn_fecreg) ||'-'|| m.mes_corto as fecdesc,
                a.trn_compro::int, a.trn_fecha, a.trn_valido, a.trn_docpen,
@@ -53,11 +54,14 @@ class LibroDiarioDao(BaseDao):
                  left join tbilleteramov bilmov on a.trn_codigo = bilmov.trn_codigo 
                  join titemconfig c on b.cta_codigo = c.ic_id
                  join public.tmes m on  m.mes_id =  extract(month from a.trn_fecreg)
-        where tra_codigo = 13 and trn_valido = 0 and a.trn_docpen = 'F' {sfechas})
+        where a.sec_codigo = {sec_id} and tra_codigo = 13 and trn_valido = 0 and a.trn_docpen = 'F' {sfechas})
         select trn_codigo,tra_codigo,trn_fecreg, fecdesc, trn_compro, trn_fecha, trn_valido, trn_docpen,
                per_codigo, us_id, trn_observ, dt_debito, cta_codigo, ic_code, ic_nombre, dt_valor, bmo_id from asientos
         order by trn_fecreg desc, trn_compro desc, dt_debito desc
-        """.format(sfechas=sfechas)
+        """.format(sfechas=sfechas, sec_id=sec_id)
+
+        print('sql for libro diario:')
+        print(sql)
 
         tupla_desc = (
             'trn_codigo', 'tra_codigo', 'trn_fecreg', 'fecdesc', 'trn_compro', 'trn_fecha', 'trn_valido', 'trn_docpen',
@@ -81,8 +85,8 @@ class LibroDiarioDao(BaseDao):
             'bmo_id': rowdata['bmo_id']
         })
 
-    def listar_asientos(self, desde, hasta):
-        items = self.aux_get_all_asientos(desde, hasta)
+    def listar_asientos(self, desde, hasta, sec_id=0):
+        items = self.aux_get_all_asientos(desde, hasta, sec_id=sec_id)
         resultlist = []
         lasttrncod = 0
         asiprevius = None

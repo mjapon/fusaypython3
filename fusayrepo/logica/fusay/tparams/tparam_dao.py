@@ -16,8 +16,9 @@ log = logging.getLogger(__name__)
 
 class TParamsDao(BaseDao):
 
-    def get_param_value(self, abreviacion):
-        sql = "select tprm_val as val from tparams where tprm_abrev = '{0}'".format(abreviacion)
+    def get_param_value(self, abreviacion, sec_id=0):
+        sql = "select tprm_val as val from tparams where tprm_abrev = '{0}' and tprm_seccion = {1}".format(abreviacion,
+                                                                                                           sec_id)
         val = self.first_col(sql, 'val')
         return val
 
