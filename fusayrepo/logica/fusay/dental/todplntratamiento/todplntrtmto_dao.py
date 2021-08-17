@@ -7,6 +7,7 @@ import datetime
 import logging
 
 from fusayrepo.logica.dao.base import BaseDao
+from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.dental.todplntratamiento.todplntrtmto_model import TOdPlnTrtmto
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.tmodelocontab.tmodelocontab_dao import TModelocontabDao
@@ -40,10 +41,15 @@ class TOdPlanTratamientoDao(BaseDao):
         tra_codigo = formcab['tra_codigo']
         tmodcontabdao = TModelocontabDao(self.dbsession)
         for det in detalles:
-            datosmc = tmodcontabdao.get_itemconfig_with_mc(ic_id=det['art_codigo'], tra_codigo=tra_codigo)
+            datosmc = tmodcontabdao.get_itemconfig_with_mc(ic_id=det['art_codigo'], tra_codigo=tra_codigo,
+                                                           sec_codigo=sec_codigo)
             if datosmc is not None:
                 det['cta_codigo'] = datosmc['cta_codigo']
                 det['dt_debito'] = datosmc['mcd_signo']
+            else:
+                raise ErrorValidacionExc(
+                    'No es posible registrar el plan de tratamiento, no se ha definido modelo contable (art:{0})'.format(
+                        det['art_codigo']))
 
         if int(formcab['trn_codigo']) > 0:
             resultedit = self.editar(trn_codigo=formcab['trn_codigo'], user_edita=user_crea, sec_codigo=sec_codigo,

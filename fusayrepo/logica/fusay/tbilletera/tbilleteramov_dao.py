@@ -342,8 +342,11 @@ class TBilleteraMovDao(BaseDao):
         tparamsdao = TParamsDao(self.dbsession)
         fecha_ini_contab = tparamsdao.get_param_value('fecha_ini_contab', sec_id=sec_id)
         sqlfechainicontab = ''
+        joinmayor = 'join fn_mayorizar_dtcodhasta(ic.ic_id, det.dt_codigo)'
         if fecha_ini_contab is not None and len(fecha_ini_contab) > 0:
-            sqlfechainicontab = " and date(asi.trn_fecha)>='{0}' ".format(fechas.format_cadena_db(fecha_ini_contab))
+            fec_ini_contabdb = fechas.format_cadena_db(fecha_ini_contab)
+            sqlfechainicontab = " and date(asi.trn_fecha)>='{0}' ".format(fec_ini_contabdb)
+            joinmayor = "join fn_mayorizar(ic.ic_id, '{0} 00:00:00', asi.trn_fecha)".format(fec_ini_contabdb)
 
         if tipo is not None and int(tipo) > 0:
             joinbillmov = 'join'
@@ -357,7 +360,8 @@ class TBilleteraMovDao(BaseDao):
 
         swhere = " {0} {1} {2}".format(sfechas, andwhere, sqlfechainicontab)
 
-        data = tgrid_dao.run_grid(grid_nombre='ingrgastos', joinbillmov=joinbillmov, swhere=swhere, sec_id=sec_id)
+        data = tgrid_dao.run_grid(grid_nombre='ingrgastos', joinbillmov=joinbillmov, swhere=swhere, sec_id=sec_id,
+                                  joinmayor=joinmayor)
 
         return data
 
