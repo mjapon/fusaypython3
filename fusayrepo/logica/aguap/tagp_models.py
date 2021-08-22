@@ -35,6 +35,7 @@ class TAgpContrato(Declarative, JsonAlchemy):
     trn_codigo = Column(Integer, nullable=False, default=0)
     cna_tarifa = Column(Integer, default=0, nullable=False)
     cna_discapacidad = Column(Boolean, default=False)
+    # cna_fechaupd = Column(DateTime, nullable=False)
 
 
 class TAgpMedidor(Declarative, JsonAlchemy):

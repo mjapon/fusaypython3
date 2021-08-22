@@ -59,6 +59,50 @@ class TagpMedidorAguaDao(BaseDao):
         medidor.mdg_usercrea = usercrea
         self.dbsession.add(medidor)
 
+    def find_by_id(self, mdg_id):
+        tagpmedidor = self.dbsession.query(TAgpMedidor).filter(TAgpMedidor.mdg_id == mdg_id).first()
+        return tagpmedidor
+
+    def editar(self, form, useredit):
+        tagpmedidor = self.find_by_id(form['mdg_id'])
+        if tagpmedidor is not None:
+            tagpmedidor.mdg_num = form['mdg_num']
+            self.dbsession.add(tagpmedidor)
+
+    def anular(self, form, useranula):
+        tagpmedidor = self.find_by_id(form['mdg_id'])
+        if tagpmedidor is not None:
+            tagpmedidor.mdg_estado = 2
+            self.dbsession.add(tagpmedidor)
+
+    def anular_by_cna_id(self, cna_id, useranula):
+        tagpmedidor = self.dbsession.query(TAgpMedidor).filter(TAgpMedidor.cna_id == cna_id).first()
+        if tagpmedidor is not None:
+            tagpmedidor.mdg_estado = 2
+            self.dbsession.add(tagpmedidor)
+
+    def get_form_edit(self, cna_id):
+        sql = """
+        select 
+        mdg_id,        
+        cna_id,
+        mdg_num,
+        mdg_fechacrea,
+        mdg_usercrea,
+        mdg_estado,
+        mdg_estadofis,
+        mdg_obs from tagp_medidor where cna_id ={0}    
+        """.format(cna_id)
+        tupla_desc = ('mdg_id',
+                      'cna_id',
+                      'mdg_num',
+                      'mdg_fechacrea',
+                      'mdg_usercrea',
+                      'mdg_estado',
+                      'mdg_estadofis',
+                      'mdg_obs')
+        return self.first(sql, tupla_desc)
+
     def buscar_byreg(self, per_id):
         sql = """
         select 

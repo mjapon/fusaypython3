@@ -216,6 +216,93 @@ class TAgpContratoDao(BaseDao):
         self._aux_valid_cna_direccion(form)
         self._aux_valid_cna_barrio(form)
 
+    def find_by_id(self, cna_id):
+        return self.dbsession.query(TAgpContrato).filter(TAgpContrato.cna_id == cna_id).first()
+
+    def get_form_edit(self, cna_id):
+
+        sql = """
+        select 
+            cna_id,        
+            per_id,
+            cna_fechacrea,
+            cna_fechaini,
+            cna_fechafin,
+            cna_usercrea,
+            cna_estado,
+            cna_estadoserv,
+            cna_nmingas,
+            cna_barrio,
+            cna_sector,
+            cna_direccion,
+            cna_referencia,
+            cna_adjunto,
+            trn_codigo,
+            cna_teredad,
+            cna_costoinst,
+            cna_tarifa, 
+            cna_discapacidad from tagp_contrato where  cna_id = {0}
+        """.format(cna_id)
+
+        tupla_desc = ('cna_id',
+                      'per_id',
+                      'cna_fechacrea',
+                      'cna_fechaini',
+                      'cna_fechafin',
+                      'cna_usercrea',
+                      'cna_estado',
+                      'cna_estadoserv',
+                      'cna_nmingas',
+                      'cna_barrio',
+                      'cna_sector',
+                      'cna_direccion',
+                      'cna_referencia',
+                      'cna_adjunto',
+                      'trn_codigo',
+                      'cna_teredad',
+                      'cna_costoinst',
+                      'cna_tarifa',
+                      'cna_discapacidad')
+        form_contra = self.first(sql, tupla_desc)
+
+        tagpmeddao = TagpMedidorAguaDao(self.dbsession)
+        form_med = tagpmeddao.get_form_edit(cna_id)
+        tpersonadao = TPersonaDao(self.dbsession)
+        formper = tpersonadao.aux_busca_por_prop_full('per_id', form_contra['per_id'])
+        return {
+            'form': form_contra,
+            'formper': formper,
+            'formmed': form_med
+        }
+
+    def editar(self, form, formref, formed, useredit):
+        tagpcontrato = self.find_by_id(cna_id=form['cna_id'])
+        if tagpcontrato is not None:
+            self.aux_valid_crea(form)
+
+            medidordao = TagpMedidorAguaDao(self.dbsession)
+            medidordao.editar(form=formed, useredit=useredit)
+
+            tagpcontrato.cna_tarifa = form['cna_tarifa']
+            tagpcontrato.cna_barrio = form['cna_barrio']
+            tagpcontrato.cna_sector = form['cna_sector']
+            tagpcontrato.cna_direccion = cadenas.strip_upper(form['cna_direccion'])
+            tagpcontrato.cna_referencia = cadenas.strip(form['cna_referencia'])
+
+            self.dbsession.add(tagpcontrato)
+
+            tasidato = TasientoDao(self.dbsession)
+            per_codigo, per_ciruc = tasidato.aux_save_datos_ref(formref=formref, creaupdref=True)
+
+    def anular(self, form, useranula):
+        tagpcontrago = self.find_by_id(form['cna_id'])
+        if tagpcontrago is not None:
+            tagpcontrago.cna_estado = 2
+            tagpmeddao = TagpMedidorAguaDao(self.dbsession)
+            tagpmeddao.anular_by_cna_id(cna_id=form['cna_id'], useranula=useranula)
+
+            self.dbsession.add(tagpcontrago)
+
     def crear(self, form, formref, formed, usercrea):
         # Validar informacion ingresada
 

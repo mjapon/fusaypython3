@@ -24,6 +24,11 @@ class TagpContratoRest(TokenView):
             # tipo = self.get_request_param('tipo')
             form = tagpcontratodao.get_form_anterior()
             return self.res200({'form': form})
+        elif accion == 'gformed':
+            cna_id = self.get_request_param('cna')
+            form = tagpcontratodao.get_form_edit(cna_id)
+            return self.res200({'form': form})
+
         elif accion == 'gbyref':
             per_codigo = self.get_request_param('codref')
             items = tagpcontratodao.find_by_per_codigo(per_codigo=per_codigo)
@@ -61,3 +66,12 @@ class TagpContratoRest(TokenView):
                                            usercrea=self.get_user_id())
             msg = 'Registro exitoso'
             return self.res200({'msg': msg, 'cna_id': cna_id})
+        elif accion == 'editar':
+            body = self.get_json_body()
+            tagpcontratodao.editar(form=body['form'], formref=body['formref'], formed=body['formmed'],
+                                   useredit=self.get_user_id())
+            return self.res200({'msg': 'Actualizado exitoso'})
+        elif accion == 'anular':
+            body = self.get_json_body()
+            tagpcontratodao.anular(form=body['form'], useranula=self.get_user_id())
+            return self.res200({'msg': 'Registro anulado exitosamente'})
