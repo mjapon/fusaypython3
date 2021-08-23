@@ -218,13 +218,25 @@ class TasientoDao(AuxLogicAsiDao):
         sql = """
         select det.cta_codigo, round(sum(det.dt_debito*det.dt_valor),2) as total 
         from tasidetalle det
-        join tasiento t on det.trn_codigo = t.trn_codigo and t.tra_codigo = {0} and t.trn_valido = 0 
+        join tasiento t on det.trn_codigo = t.trn_codigo and t.tra_codigo = ANY (ARRAY [1, 2, 7, 8, 9]) and t.trn_valido = 0 and t.trn_docpen = 'F' 
         join titemconfig ic on det.cta_codigo = ic.ic_id
-        where t.trn_fecreg between '{1}' and '{2}' {3}
+        where t.trn_fecreg between '{0}' and '{1}' {2}
         group by det.cta_codigo order by det.cta_codigo
-        """.format(ctes.TRA_COD_ASI_CONTABLE,
-                   fechas.format_cadena_db(desde),
-                   fechas.format_cadena_db(hasta), sqlfechainicontab)
+        """.format(fechas.format_cadena_db(desde),
+                   fechas.format_cadena_db(hasta),
+                   sqlfechainicontab)
+
+        if not isestadores:
+            sql = """
+                   select det.cta_codigo, round(sum(det.dt_debito*det.dt_valor),2) as total 
+                   from tasidetalle det
+                   join tasiento t on det.trn_codigo = t.trn_codigo and t.tra_codigo = {0} and t.trn_valido = 0 
+                   join titemconfig ic on det.cta_codigo = ic.ic_id
+                   where t.trn_fecreg between '{1}' and '{2}' {3}
+                   group by det.cta_codigo order by det.cta_codigo
+                   """.format(ctes.TRA_COD_ASI_CONTABLE,
+                              fechas.format_cadena_db(desde),
+                              fechas.format_cadena_db(hasta), sqlfechainicontab)
 
         tupla_desc = ('cta_codigo', 'total')
         result = self.all(sql, tupla_desc)

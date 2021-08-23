@@ -62,14 +62,21 @@ class TagpContratoRest(TokenView):
         tagpcontratodao = TAgpContratoDao(self.dbsession)
         if accion == 'crea':
             body = self.get_json_body()
+            edcrearef = True
+            if 'edcrearef' in body:
+                edcrearef = body['edcrearef']
+
             cna_id = tagpcontratodao.crear(form=body['form'], formref=body['formref'], formed=body['formmed'],
-                                           usercrea=self.get_user_id())
+                                           usercrea=self.get_user_id(), editcrearef=edcrearef)
             msg = 'Registro exitoso'
             return self.res200({'msg': msg, 'cna_id': cna_id})
         elif accion == 'editar':
             body = self.get_json_body()
+            edcrearef = True
+            if 'edcrearef' in body:
+                edcrearef = body['edcrearef']
             tagpcontratodao.editar(form=body['form'], formref=body['formref'], formed=body['formmed'],
-                                   useredit=self.get_user_id())
+                                   useredit=self.get_user_id(), editcrearef=edcrearef)
             return self.res200({'msg': 'Actualizado exitoso'})
         elif accion == 'anular':
             body = self.get_json_body()

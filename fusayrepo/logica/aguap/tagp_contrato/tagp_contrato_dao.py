@@ -275,8 +275,9 @@ class TAgpContratoDao(BaseDao):
             'formmed': form_med
         }
 
-    def editar(self, form, formref, formed, useredit):
+    def editar(self, form, formref, formed, useredit, editcrearef=True):
         tagpcontrato = self.find_by_id(cna_id=form['cna_id'])
+
         if tagpcontrato is not None:
             self.aux_valid_crea(form)
 
@@ -291,8 +292,9 @@ class TAgpContratoDao(BaseDao):
 
             self.dbsession.add(tagpcontrato)
 
-            tasidato = TasientoDao(self.dbsession)
-            per_codigo, per_ciruc = tasidato.aux_save_datos_ref(formref=formref, creaupdref=True)
+            if editcrearef:
+                tasidato = TasientoDao(self.dbsession)
+                per_codigo, per_ciruc = tasidato.aux_save_datos_ref(formref=formref, creaupdref=True)
 
     def anular(self, form, useranula):
         tagpcontrago = self.find_by_id(form['cna_id'])
@@ -303,14 +305,17 @@ class TAgpContratoDao(BaseDao):
 
             self.dbsession.add(tagpcontrago)
 
-    def crear(self, form, formref, formed, usercrea):
+    def crear(self, form, formref, formed, usercrea, editcrearef=True):
         # Validar informacion ingresada
 
         self.aux_valid_crea(form)
         medidordao = TagpMedidorAguaDao(self.dbsession)
 
-        tasidato = TasientoDao(self.dbsession)
-        per_codigo, per_ciruc = tasidato.aux_save_datos_ref(formref=formref, creaupdref=True)
+        per_codigo = int(formref['per_id'])
+
+        if editcrearef:
+            tasidato = TasientoDao(self.dbsession)
+            per_codigo, per_ciruc = tasidato.aux_save_datos_ref(formref=formref, creaupdref=True)
 
         contratoagua = TAgpContrato()
 
