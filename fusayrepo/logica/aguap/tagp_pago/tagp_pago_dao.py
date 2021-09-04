@@ -6,6 +6,8 @@ Fecha de creacion 5/19/21
 import logging
 from datetime import datetime
 
+import simplejson
+
 from fusayrepo.logica.aguap.tagp_contrato.tagp_contrato_dao import TAgpContratoDao
 from fusayrepo.logica.aguap.tagp_lectomed.tagp_lectomed_dao import LectoMedAguaDao
 from fusayrepo.logica.aguap.tagp_models import TagpPago
@@ -15,7 +17,8 @@ from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.ttransaccpago.ttransaccpago_dao import TTransaccPagoDao
-from fusayrepo.utils import numeros, fechas
+from fusayrepo.utils import numeros, fechas, cadenas
+from fusayrepo.utils.jsonutil import SimpleJsonUtil
 
 log = logging.getLogger(__name__)
 
@@ -41,6 +44,21 @@ class TagpCobroDao(BaseDao):
             'form': form,
             'steps': steps
         }
+
+    def get_datos_pago(self, trn_codigo):
+
+        sql = "select  pg_id, lmd_id, pg_estado, pg_usercrea, pg_fechacrea, trn_codigo, pg_json from tagp_pago where trn_codigo = {0}".format(
+            trn_codigo)
+
+        tupla_desc = ('pg_id', 'lmd_id', 'pg_estado', 'pg_usercrea', 'pg_fechacrea', 'trn_codigo', 'pg_json')
+
+        datospago = self.first(sql, tupla_desc)
+        if datospago is not None:
+            pg_json = datospago['pg_json']
+            if cadenas.es_nonulo_novacio(pg_json):
+                datospago['pg_json_obj'] = simplejson.loads(pg_json)
+
+        return datospago
 
     def is_lecto_with_pago(self, lmd_id):
         sql = """
@@ -351,6 +369,19 @@ class TagpCobroDao(BaseDao):
         trn_codigo = tasientodao.crear(form=formcab, form_persona=referente, user_crea=user_crea, detalles=detalles,
                                        pagos=pagos, totales=totales, creaupdpac=False)
 
+        pg_json = {
+            "trn": trn_codigo,
+            "pexceso": montos['consumo_exceso'],
+            "pvconsumo": montos['costobase'] + montos['comision_mavil'],
+            "pvexceso": montos['costoexceso'],
+            "pvsubt": montos['costobase'] + montos['costoexceso'],
+            "pvdesc": montos['descuento'],
+            "pvmulta": montos['multa'],
+            "pvtotal": montos['total'],
+            "pfechamaxpago": montos['fecha_max_pago']
+
+        }
+
         for lectura in lecturas:
             pg_id = lectura['pg_id']
             if pg_id == 0:
@@ -360,6 +391,7 @@ class TagpCobroDao(BaseDao):
                 tagp_pago.pg_usercrea = user_crea
                 tagp_pago.pg_fechacrea = datetime.now()
                 tagp_pago.trn_codigo = trn_codigo
+                tagp_pago.pg_json = self.dumps(pg_json)
                 self.dbsession.add(tagp_pago)
 
         return trn_codigo

@@ -289,6 +289,7 @@ class TAgpContratoDao(BaseDao):
             tagpcontrato.cna_sector = form['cna_sector']
             tagpcontrato.cna_direccion = cadenas.strip_upper(form['cna_direccion'])
             tagpcontrato.cna_referencia = cadenas.strip(form['cna_referencia'])
+            tagpcontrato.cna_teredad = form['cna_teredad']
 
             self.dbsession.add(tagpcontrato)
 

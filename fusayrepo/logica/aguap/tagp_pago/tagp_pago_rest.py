@@ -28,6 +28,10 @@ class TagpCobroRest(TokenView):
             pagomavildao = TagpPagoMavilDao(self.dbsession)
             form = pagomavildao.get_form()
             return self.res200({'form': form})
+        elif accion == 'gdatospago':
+            trncod = self.get_request_param('trncod')
+            datospago = cobrodao.get_datos_pago(trn_codigo=trncod)
+            return self.res200({'datospago': datospago})
 
     def collection_post(self):
         accion = self.get_rqpa()
@@ -39,6 +43,7 @@ class TagpCobroRest(TokenView):
             datospago = cobrodao.get_calculo_pago(lectoids=body['lectos'], alm_codigo=alm_codigo,
                                                   tdv_codigo=self.get_tdv_codigo(), sec_codigo=self.get_sec_id())
             return self.res200({'datospago': datospago})
+
         elif accion == 'crea':
             form = self.get_json_body()
             trn_codigo = cobrodao.crear(form=form, user_crea=self.get_user_id(), sec_codigo=self.get_sec_id())
@@ -54,3 +59,8 @@ class TagpCobroRest(TokenView):
             form = self.get_json_body()
             pagomavildao.crear(form, user_crea=self.get_user_id())
             return self.res200({'msg': 'Pago registrado exitosamente'})
+        elif accion == 'anular':
+            pagomavildao = TagpPagoMavilDao(self.dbsession)
+            form = self.get_json_body()
+            pagomavildao.anular(form=form, useranula=self.get_user_id())
+            return self.res200({'msg':'Anulado exitoso'})

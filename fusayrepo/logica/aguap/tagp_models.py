@@ -82,6 +82,7 @@ class TagpPago(Declarative, JsonAlchemy):
     pg_usercrea = Column(Integer, default=0, nullable=False)
     pg_fechacrea = Column(DateTime, nullable=False)
     trn_codigo = Column(Integer, nullable=False, default=0)
+    pg_json = Column(Text)
 
 
 class TagpPagosMavil(Declarative, JsonAlchemy):

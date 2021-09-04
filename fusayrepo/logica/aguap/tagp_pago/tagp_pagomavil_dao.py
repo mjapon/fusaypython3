@@ -1,8 +1,9 @@
 import datetime
 
-from fusayrepo.logica.aguap.tagp_models import TagpPagosMavil
+from fusayrepo.logica.aguap.tagp_models import TagpPagosMavil, TagpPago
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
+from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.public.tmes_dao import PublicTMesDao
@@ -52,12 +53,18 @@ class TagpPagoMavilDao(BaseDao):
     def find_by_id(self, pgm_id):
         return self.dbsession.query(TagpPagosMavil).filter(TagpPagosMavil.pgm_id == pgm_id).first()
 
-    def anular(self, form):
+    def find_tagppago(self, pg_id):
+        return self.dbsession.query(TagpPago).filter(TagpPago.pg_id == pg_id).first()
+
+    def anular(self, form, useranula):
         pgm_id = form['pgm_id']
-        tagp_pagomavil = self.find_by_id(pgm_id)
+        tagp_pagomavil = self.find_tagppago(pgm_id)
         if tagp_pagomavil is not None:
-            tagp_pagomavil.pgm_estado = 1
+            tagp_pagomavil.pg_estado = 2
             self.dbsession.add(tagp_pagomavil)
+            tasientodao = TasientoDao(self.dbsession)
+            if not tasientodao.is_transacc_in_state(trn_codigo=tagp_pagomavil.trn_codigo, state=1):
+                tasientodao.anular(trn_codigo=tagp_pagomavil.trn_codigo, user_anula=useranula, obs_anula='')
 
     def get_grid_pagos_mavil(self, anio, mes):
         griddao = TGridDao(self.dbsession)
