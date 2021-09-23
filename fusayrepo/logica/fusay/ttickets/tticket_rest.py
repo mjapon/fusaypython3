@@ -68,6 +68,10 @@ class TTicketRest(TokenView):
             tkid = self.get_request_param('tkid')
             res = ticket_dao.get_form_edit(tk_id=tkid)
             return self.res200({'form': res['form'], 'servicios': res['servicios']})
+        elif 'histservpac' == accion:
+            perid = self.get_request_param('perid')
+            histserv = ticket_dao.listar_servicios_persona(per_id=perid)
+            return self.res200({'histserv': histserv})
 
     def collection_post(self):
         accion = self.get_request_param('accion')

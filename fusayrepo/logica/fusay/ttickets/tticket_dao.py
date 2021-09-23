@@ -171,6 +171,46 @@ class TTicketDao(BaseDao):
             tticket.tk_servicios = form['tk_servicios']
             self.dbsession.add(tticket)
 
+    def listar_servicios_persona(self, per_id):
+        sql = """        
+        select
+            a.tk_id,
+            a.tk_nro,
+            a.tk_dia,
+               p.per_nombres||' '||p.per_apellidos as per_nomapel,
+               p.per_ciruc,
+               p.per_email,
+               a.tk_costo,
+               a.tk_estado,
+                 sec.sec_nombre,
+                (select string_agg(b.ic_nombre::text, ',') from titemconfig b where b.ic_id in(
+                                                       with the_data(str) as (
+                                                           select a.tk_servicios
+                                                       )
+                                                       select elem::int
+                                                       from the_data, unnest(string_to_array(str, ',')) elem
+                                                   ) ) as servicios
+        from ttickets a
+        join tpersona p on a.tk_perid = p.per_id
+        join tseccion sec on a.sec_id = sec.sec_id
+        where a.tk_estado=1 and a.tk_perid = {0}  order by a.tk_dia desc, a.tk_nro
+        """.format(per_id)
+
+        tupla_desc = (
+            'tk_id',
+            'tk_nro',
+            'tk_dia',
+            'per_nomapel',
+            'per_ciruc',
+            'per_email',
+            'tk_costo',
+            'tk_estado',
+            'sec_nombre',
+            'servicios'
+        )
+
+        return self.all(sql, tupla_desc)
+
     def crear(self, form, form_persona, user_crea, sec_id):
         tticket = TTicket()
         persona_dao = TPersonaDao(self.dbsession)
