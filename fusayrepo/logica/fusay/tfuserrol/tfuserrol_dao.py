@@ -117,7 +117,9 @@ class TFuserRolDao(BaseDao):
             {'label': 'Cuentas por cobrar', 'icon': '',
              'routerLink': ['/cuentasxcp/1']},
             {'label': 'Utilidades', 'icon': '',
-             'routerLink': ['/utilventas']}
+             'routerLink': ['/utilventas']},
+            {'label': 'Cierre Caja', 'icon': '',
+             'routerLink': ['/cierrecaja']}
         ]
 
         compras_list = [

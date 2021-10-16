@@ -26,3 +26,7 @@ def roundm6(valor):
 
 def get_valor_iva(valor, iva):
     return roundm6(valor * iva)
+
+
+def sumar_iva(valor, iva):
+    return roundm6(valor * (1.0 + iva))

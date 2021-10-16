@@ -170,6 +170,7 @@ class TagpCobroDao(BaseDao):
                 consumo_base += consumo_base_it
                 consumo_exceso += consumo_exceso_it
 
+                """
                 tarifaexceso = 0.0
                 if consumo_exceso_it > 0:
                     datostarf_exceso = contratodao.get_tarifa_exceso(trf_id=trf_id, consumo=consumo_exceso)
@@ -178,6 +179,7 @@ class TagpCobroDao(BaseDao):
                             'No se ha configurado el costo por exceso de consumo (trf:{0})'.format(trf_id))
 
                     tarifaexceso = datostarf_exceso['etr_costo']
+                """
 
                 datosprod = itemconfigdao.get_detalles_prod(ic_id=datoscontrato['ic_id'])
                 icdp_precioventa = datosprod['icdp_precioventa']
@@ -185,7 +187,21 @@ class TagpCobroDao(BaseDao):
                 cna_teredad = datoscontrato['cna_teredad']
                 cna_discapacidad = datoscontrato['cna_discapacidad']
 
-                costoexceso_item = numeros.roundm2(consumo_exceso_it * tarifaexceso)
+                costoexceso_item = 0
+                if consumo_exceso_it <= 5:
+                    costoexceso_item = numeros.roundm2(consumo_exceso_it * 0.25)
+                else:
+                    resto = consumo_exceso_it
+                    itercosto = 0.25
+                    while resto > 5:
+                        costoexceso_item += numeros.roundm2(5 * itercosto)
+                        resto = resto - 5
+                        itercosto += 0.05
+
+                    if resto > 0:
+                        costoexceso_item += numeros.roundm2(resto * itercosto)
+
+                # costoexceso_item = numeros.roundm2(consumo_exceso_it * tarifaexceso)
                 costoexceso += costoexceso_item
                 descuento_it = 0
                 multa_it = 0

@@ -355,7 +355,7 @@ class TasientoDao(AuxLogicAsiDao):
             'dt_valor': 0.0,
             'dt_dectogen': 0.0,
             'dt_tipoitem': 1,
-            'dt_valdto': 0.0,
+            'dt_valdto': -1,
             'dt_valdtogen': 0.0,
             'dt_codsec': sec_codigo,
             'dai_imp0': None,
@@ -622,26 +622,34 @@ class TasientoDao(AuxLogicAsiDao):
         giva = 0.0
         gdescuentos = 0.0
         gtotal = 0.0
+        descglobal = 0.0
 
         for det in detalles:
             dt_cant = det['dt_cant']
             dai_impg = det['dai_impg']
             dt_decto = det['dt_decto']
+            dt_decto_cant = dt_decto * dt_cant
+            if det['dt_valdto'] >= 0.0:
+                dt_decto_cant = dt_decto
+            dt_dectogen = det['dt_dectogen']
             dt_precio = det['dt_precio']
             subtotal = dt_cant * dt_precio
-            subtforiva = (dt_cant * dt_precio) - dt_decto
+            subtforiva = (dt_cant * dt_precio) - (dt_decto_cant + dt_dectogen)
             ivaval = 0.0
+            dt_dectogeniva = dt_dectogen
             if dai_impg > 0:
                 ivaval = numeros.get_valor_iva(subtforiva, dai_impg)
                 gsubtotal12 += subtforiva
+                dt_dectogeniva = numeros.sumar_iva(dt_dectogen, dai_impg)
             else:
                 gsubtotal0 += subtotal
 
-            ftotal = subtotal - dt_decto + ivaval
+            ftotal = subtotal - (dt_decto_cant + dt_dectogen) + ivaval
             giva += ivaval
-            gdescuentos += dt_decto
+            gdescuentos += (dt_decto_cant + dt_dectogen)
             gtotal += ftotal
             gsubtotal += subtotal
+            descglobal += dt_dectogeniva
 
         return {
             'subtotal': numeros.roundm2(gsubtotal),
@@ -649,7 +657,9 @@ class TasientoDao(AuxLogicAsiDao):
             'subtotal0': numeros.roundm2(gsubtotal0),
             'iva': numeros.roundm2(giva),
             'descuentos': numeros.roundm2(gdescuentos),
-            'total': numeros.roundm2(gtotal)
+            'total': numeros.roundm2(gtotal),
+            'descglobalin': numeros.roundm2(descglobal),
+            'descglobal': numeros.roundm2(descglobal)
         }
 
     @staticmethod
