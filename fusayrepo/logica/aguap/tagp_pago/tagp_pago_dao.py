@@ -18,7 +18,6 @@ from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.ttransaccpago.ttransaccpago_dao import TTransaccPagoDao
 from fusayrepo.utils import numeros, fechas, cadenas
-from fusayrepo.utils.jsonutil import SimpleJsonUtil
 
 log = logging.getLogger(__name__)
 
@@ -265,11 +264,15 @@ class TagpCobroDao(BaseDao):
         formdet['dai_impg'] = 0.0
         return formdet
 
-    def crear(self, form, user_crea, sec_codigo):
+    def crear(self, form, user_crea, sec_codigo, abono_cxpagar=False):
+        """
+        abono_cxpagar: True indica que se debe usar una cuenta por pagar para realizar la factura,
+        False: Usa la forma de pago en efectivo (por defecto es False)
+        """
+
         referente = form['referente']
-        # medidor = form['datosmed']
         obs = form['obs']
-        lecturas = form['lecturas']
+        lectoids = form['lecturas']
         montos = form['montos']
 
         formcab = montos['formcab']
@@ -278,8 +281,8 @@ class TagpCobroDao(BaseDao):
         comision_mavil = montos['comision_mavil']
 
         lectomedagua_dao = LectoMedAguaDao(self.dbsession)
-        ids = ','.join(['{0}'.format(it) for it in lecturas])
-        lecturas = lectomedagua_dao.get_datos_lectura(ids=ids)
+        ids = ','.join(['{0}'.format(it) for it in lectoids])
+        lecturas_db = lectomedagua_dao.get_datos_lectura(ids=ids)
 
         tasientodao = TasientoDao(self.dbsession)
         transacpagodao = TTransaccPagoDao(self.dbsession)
@@ -315,10 +318,31 @@ class TagpCobroDao(BaseDao):
         pago_efectivo['dt_valor'] = montos['total']
         pago_efectivo['ic_clasecc'] = fpago_efectivo['ic_clasecc']
 
+        paramsado = TParamsDao(self.dbsession)
+        cta_code_haber = paramsado.get_param_value('cta_adelagua_haber')
+
+        datos_cta_haber = itemconfigdao.get_detalles_ctacontable_by_code(ic_code=cta_code_haber)
+
+        pago_cxpagar = tasientodao.get_form_pago()
+        pago_cxpagar['dt_debito'] = fpago_efectivo['dt_debito']
+        pago_cxpagar['cta_codigo'] = datos_cta_haber['ic_id']
+        pago_cxpagar['dt_valor'] = montos['total']
+        pago_cxpagar['ic_clasecc'] = 'XP'
+
         pagos = []
         detalles = []
 
-        pagos.append(pago_efectivo)
+        if abono_cxpagar:
+            from fusayrepo.logica.aguap.tagp_pago.tagp_adelantos import AdelantosManageUtil
+            adelantos = AdelantosManageUtil(self.dbsession)
+            adelantos = adelantos.get_adelantos(per_id=referente['per_id'])
+            if adelantos is not None and len(adelantos) > 0:
+                pago_cxpagar['dt_codcre'] = adelantos[0]['dt_codigo']
+                pagos.append(pago_cxpagar)
+            else:
+                raise ErrorValidacionExc('No hay adelantos registrados no puedo cobrar esta factura')
+        else:
+            pagos.append(pago_efectivo)
 
         dt_debito_det = fpago_efectivo['dt_debito'] * -1
         totales = {
@@ -326,9 +350,10 @@ class TagpCobroDao(BaseDao):
             'iva': 0.0
         }
 
-        for lectura in lecturas:
+        for lectura in lecturas_db:
             lmd_id = lectura['lmd_id']
-            pagodet = pagosdet[str(lmd_id)]
+            # pagodet = pagosdet[str(lmd_id)]
+            pagodet = pagosdet[lmd_id]
             pg_id = lectura['pg_id']
             if pg_id == 0:
                 datoscontrato = contratodao.find_by_mdg_id(mdg_id=lectura['mdg_id'])
@@ -383,7 +408,7 @@ class TagpCobroDao(BaseDao):
             raise ErrorValidacionExc('No hay detalles no se puede crear la factura')
 
         trn_codigo = tasientodao.crear(form=formcab, form_persona=referente, user_crea=user_crea, detalles=detalles,
-                                       pagos=pagos, totales=totales, creaupdpac=False)
+                                       pagos=pagos, totales=totales, creaupdpac=False, creabono=abono_cxpagar)
 
         pg_json = {
             "trn": trn_codigo,
@@ -398,7 +423,7 @@ class TagpCobroDao(BaseDao):
 
         }
 
-        for lectura in lecturas:
+        for lectura in lecturas_db:
             pg_id = lectura['pg_id']
             if pg_id == 0:
                 tagp_pago = TagpPago()

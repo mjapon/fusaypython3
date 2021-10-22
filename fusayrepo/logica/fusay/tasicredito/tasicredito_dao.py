@@ -66,11 +66,10 @@ class TAsicreditoDao(BaseDao):
         formasiento = tasientodao.get_form_asiento(sec_codigo=sec_codigo)
 
         tparamdao = TParamsDao(self.dbsession)
-        cod_cta_ing = "5.%"
-        cod_cta_gast = "4.%"
-
         cod_cta_caja = tparamdao.get_param_value('codCtaContabCaj')
         cod_cta_ban = tparamdao.get_param_value('codCtaContabBan')
+        cod_cta_ing = "5.%"
+        cod_cta_gast = "4.%"
 
         cajabancos = "({0}%|{1}%)".format(cod_cta_caja, cod_cta_ban)
 

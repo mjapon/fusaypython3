@@ -114,6 +114,18 @@ class LectoMedAguaDao(BaseDao):
     def find_by_id(self, lmd_id):
         return self.dbsession.query(TAgpLectoMed).filter(TAgpLectoMed.lmd_id == lmd_id).first()
 
+    def find_per_id_from_mdg_id(self, mdg_id):
+        """
+        Busca el codigo del referente dado el codigo del medidor
+        """
+        sql = """
+        select contra.per_id
+                from tagp_medidor med
+                join tagp_contrato contra on med.cna_id = contra.cna_id
+                where med.mdg_id = {0}
+        """.format(mdg_id)
+        return self.first_col(sql, 'per_id')
+
     def existe_lectura(self, mdg_id, lmd_mes, lmd_anio):
         sql = """
         select count(*) as cuenta from tagp_lectomed where mdg_id = {0} and lmd_mes = {1} and lmd_anio = {2} 
@@ -157,7 +169,7 @@ class LectoMedAguaDao(BaseDao):
                       'lmd_consumo', 'usercrea', 'mes_nombre')
         return self.first(sql, tupla_desc)
 
-    def crear(self, form, user_crea):
+    def crear(self, form, user_crea, sec_id, tdv_codigo):
         self._aux_valid_mdg_id(form)
         self._aux_valid_lmd_mes(form)
         self._aux_valid_lmd_valor(form)
@@ -184,6 +196,20 @@ class LectoMedAguaDao(BaseDao):
         lectomed.lmd_hasta = fechas.sumar_dias(desde, 30)
 
         self.dbsession.add(lectomed)
+        self.dbsession.flush()
+
+        lecto_id = lectomed.lmd_id
+
+        trn_codigo = 0
+
+        from fusayrepo.logica.aguap.tagp_pago.tagp_adelantos import AdelantosManageUtil
+        adelantos_dao = AdelantosManageUtil(self.dbsession)
+        per_id = self.find_per_id_from_mdg_id(mdg_id=form['mdg_id'])
+        if adelantos_dao.has_adelantos(per_id=per_id):
+            trn_codigo = adelantos_dao.crear_factura(lecto_id=lecto_id, per_id=per_id, user_crea=user_crea, sec_codigo=sec_id,
+                                                     tdv_codigo=tdv_codigo)
+
+        return trn_codigo
 
     def anular(self, lmd_id, lmd_useranula):
         lectomed = self.find_by_id(lmd_id)

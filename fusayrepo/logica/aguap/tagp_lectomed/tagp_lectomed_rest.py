@@ -49,8 +49,13 @@ class LectoMedAguaRest(TokenView):
         lectomeddao = LectoMedAguaDao(self.dbsession)
         if accion == 'crea':
             form = self.get_json_body()
-            lectomeddao.crear(form=form, user_crea=self.get_user_id())
-            return self.res200({'msg': 'Registrado exitósamente'})
+            trn_codigo = lectomeddao.crear(form=form, user_crea=self.get_user_id(), sec_id=self.get_sec_id(),
+                                           tdv_codigo=self.get_tdv_codigo())
+            msg_pago_adel = ''
+            if trn_codigo > 0:
+                msg_pago_adel = 'Esta lectura de agua fue registrada como pagada, ya que el referente tenia un adelanto registrado'
+            return self.res200(
+                {'msg': 'Registrado exitósamente', 'trn_codigo': trn_codigo, 'msg_pago_adel': msg_pago_adel})
         elif accion == 'anular':
             form = self.get_json_body()
             lectomeddao.anular(lmd_id=form['lmd_id'], lmd_useranula=self.get_user_id())

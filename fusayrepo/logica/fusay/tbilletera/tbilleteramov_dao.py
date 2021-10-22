@@ -360,8 +360,17 @@ class TBilleteraMovDao(BaseDao):
 
         swhere = " {0} {1} {2}".format(sfechas, andwhere, sqlfechainicontab)
 
+        if cuentabill is None or int(cuentabill) == 0:
+            sqlfirstbill = """
+            select ic_id from tbilletera where bil_estado = 1
+            and ic_id in (select ic_id from titemconfig_sec where sec_id = {0})
+            order by bil_id asc limit 1
+            """.format(sec_id)
+
+            cuentabill = self.first_col(sqlfirstbill, 'ic_id')
+
         data = tgrid_dao.run_grid(grid_nombre='ingrgastos', joinbillmov=joinbillmov, swhere=swhere, sec_id=sec_id,
-                                  joinmayor=joinmayor)
+                                  joinmayor=joinmayor, cuentabill=cuentabill)
 
         return data
 

@@ -712,13 +712,13 @@ class TasientoDao(AuxLogicAsiDao):
 
         return trn_codigo
 
-    def crear_asiento(self, formcab, formref, usercrea, detalles, roundvalor=True):
+    def crear_asiento(self, formcab, formref, usercrea, detalles, roundvalor=True, update_datosref=True):
         persodao = TPersonaDao(self.dbsession)
 
         per_codigo = int(formref['per_id'])
         if per_codigo == 0:
             per_codigo = persodao.crear(form=formref)
-        elif per_codigo > 0:
+        elif per_codigo > 0 and update_datosref:
             per_codigo = persodao.actualizar(per_id=per_codigo, form=formref)
 
         tasiento = self.aux_set_datos_tasiento(usercrea=usercrea, per_codigo=per_codigo, formcab=formcab)
@@ -999,7 +999,10 @@ class TasientoDao(AuxLogicAsiDao):
 
         return per_codigo, per_ciruc
 
-    def crear(self, form, form_persona, user_crea, detalles, pagos, totales, creaupdpac=True):
+    def crear(self, form, form_persona, user_crea, detalles, pagos, totales, creaupdpac=True, creabono=False):
+        """
+        creabono: True indica que se debe registrar un abono de una cuenta por pagar asociado
+        """
 
         per_codigo, per_ciruc = self.aux_save_datos_ref(formref=form_persona, creaupdref=creaupdpac)
 
@@ -1012,6 +1015,7 @@ class TasientoDao(AuxLogicAsiDao):
 
         sumapagos = 0.0
         creditodao = TAsicreditoDao(self.dbsession)
+        abonodao = TAsiAbonoDao(self.dbsession)
         for pago in pagos:
             valorpago = float(pago['dt_valor'])
             if valorpago > 0.0:
@@ -1020,10 +1024,14 @@ class TasientoDao(AuxLogicAsiDao):
                 valdebehaber.append({'dt_debito': pago['dt_debito'], 'dt_valor': valorpago})
                 ic_clasecc = pago['ic_clasecc']
                 if creditodao.is_clasecc_cred(ic_clasecc):
-                    cre_tipo = creditodao.get_cre_tipo(ic_clasecc)
-                    formcre = creditodao.get_form_asi(dt_codigo=dt_codigo, trn_fecreg=form['trn_fecreg'],
-                                                      monto_cred=valorpago, cre_tipo=cre_tipo)
-                    creditodao.crear(form=formcre)
+                    if creabono:
+                        dt_codcre = pago['dt_codcre']
+                        abonodao.crear(dt_codigo=dt_codigo, dt_codcre=dt_codcre, monto_abono=valorpago)
+                    else:
+                        cre_tipo = creditodao.get_cre_tipo(ic_clasecc)
+                        formcre = creditodao.get_form_asi(dt_codigo=dt_codigo, trn_fecreg=form['trn_fecreg'],
+                                                          monto_cred=valorpago, cre_tipo=cre_tipo)
+                        creditodao.crear(form=formcre)
 
         totalform = numeros.roundm(float(totales['total']), 2)
         totalsuma = numeros.roundm(sumapagos, 2)

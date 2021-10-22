@@ -56,6 +56,18 @@ class TagpPagoMavilDao(BaseDao):
     def find_tagppago(self, pg_id):
         return self.dbsession.query(TagpPago).filter(TagpPago.pg_id == pg_id).first()
 
+    def find_by_trn_codigo(self, trn_codigo):
+        sql = """
+        select pg_id, trn_codigo from tagp_pago  where pg_estado = 1 and trn_codigo = {0}
+        """.format(trn_codigo)
+        tupla_desc = ('pg_id', 'trn_codigo')
+        return self.first(sql, tupla_desc)
+
+    def anula_solo_pago(self, pg_id):
+        tagp_pagomavil = self.find_tagppago(pg_id)
+        tagp_pagomavil.pg_estado = 2
+        self.dbsession.add(tagp_pagomavil)
+
     def anular(self, form, useranula):
         pgm_id = form['pgm_id']
         tagp_pagomavil = self.find_tagppago(pgm_id)

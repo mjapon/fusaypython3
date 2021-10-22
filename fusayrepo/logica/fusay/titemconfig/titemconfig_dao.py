@@ -723,16 +723,22 @@ class TItemConfigDao(BaseDao):
 
         return titemconfig.ic_id
 
-    def get_detalles_ctacontable(self, ic_id):
+    def aux_get_detalles_ctacontable(self, colnamewhere, colvalue):
         sql = """
-            select a.ic_id, a.ic_nombre, a.ic_code, a.ic_padre, a.tipic_id, a.ic_fechacrea, a.ic_estado, a.clsic_id, 
-            a.ic_clasecc, a.ic_alias, coalesce(b.ic_code)||' '|| coalesce(b.ic_nombre) as padre, a.ic_nota
-                    from titemconfig a left join titemconfig b on a.ic_padre = b.ic_id where a.ic_id = {0}
-            """.format(ic_id)
+                    select a.ic_id, a.ic_nombre, a.ic_code, a.ic_padre, a.tipic_id, a.ic_fechacrea, a.ic_estado, a.clsic_id, 
+                    a.ic_clasecc, a.ic_alias, coalesce(b.ic_code)||' '|| coalesce(b.ic_nombre) as padre, a.ic_nota
+                            from titemconfig a left join titemconfig b on a.ic_padre = b.ic_id where a.{0} = {1}
+                    """.format(colnamewhere, colvalue)
 
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'tipic_id',
                       'ic_fechacrea', 'ic_estado', 'clsic_id', 'ic_clasecc', 'ic_alias', 'padre', 'ic_nota')
         return self.first(sql, tupla_desc)
+
+    def get_detalles_ctacontable(self, ic_id):
+        return self.aux_get_detalles_ctacontable(colnamewhere="ic_id", colvalue=ic_id)
+
+    def get_detalles_ctacontable_by_code(self, ic_code):
+        return self.aux_get_detalles_ctacontable(colnamewhere="ic_code", colvalue="'{0}'".format(ic_code))
 
     def aux_listar_plan_cuentas(self, where, sec_id):
         sql = """
