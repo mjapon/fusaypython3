@@ -370,7 +370,7 @@ class TBilleteraMovDao(BaseDao):
             cuentabill = self.first_col(sqlfirstbill, 'ic_id')
 
         data = tgrid_dao.run_grid(grid_nombre='ingrgastos', joinbillmov=joinbillmov, swhere=swhere, sec_id=sec_id,
-                                  joinmayor=joinmayor, cuentabill=cuentabill)
+                                  joinmayor=joinmayor, cuentabill=cuentabill, sqlfechainicontab=sqlfechainicontab)
 
         return data
 
