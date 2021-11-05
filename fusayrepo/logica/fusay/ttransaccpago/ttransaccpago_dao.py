@@ -18,7 +18,7 @@ class TTransaccPagoDao(BaseDao):
         sql = """
                 select b.ic_id, b.ic_code, b.ic_nombre from titemconfig b
                 join titemconfig_sec c on b.ic_id = c.ic_id and c.sec_id = {0} 
-                where b.ic_clasecc = '{1}'
+                where b.ic_clasecc = '{1}' and b.ic_estado = 1
                 """.format(sec_id, ctes.CLASECC_EFECTIVO)
         tupla_desc = ('ic_id', 'ic_code', 'ic_nombre')
         return self.all(sql, tupla_desc)
@@ -28,7 +28,7 @@ class TTransaccPagoDao(BaseDao):
         select a.ttp_codigo, a.tra_codigo, a.cta_codigo, b.ic_alias as ic_nombre, a.ttp_signo as dt_debito, 
         0.0 as dt_valor, 1 as dt_codsec, a.ttp_coddocs, a.ttp_tipcomprob, b.ic_clasecc
         from ttransaccpago a join titemconfig b on a.cta_codigo = b.ic_id  
-        where a.tra_codigo = {0} and a.sec_codigo = {1}         
+        where a.tra_codigo = {0} and a.sec_codigo = {1}             
         order by a.ttp_orden
         """.format(tra_codigo, sec_id)
         tupla_desc = (

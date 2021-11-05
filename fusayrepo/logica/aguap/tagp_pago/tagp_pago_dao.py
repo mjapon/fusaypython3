@@ -352,8 +352,7 @@ class TagpCobroDao(BaseDao):
 
         for lectura in lecturas_db:
             lmd_id = lectura['lmd_id']
-            # pagodet = pagosdet[str(lmd_id)]
-            pagodet = pagosdet[lmd_id]
+            pagodet = pagosdet[int(str(lmd_id))]
             pg_id = lectura['pg_id']
             if pg_id == 0:
                 datoscontrato = contratodao.find_by_mdg_id(mdg_id=lectura['mdg_id'])

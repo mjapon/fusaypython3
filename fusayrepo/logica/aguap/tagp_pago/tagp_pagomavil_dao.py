@@ -80,6 +80,8 @@ class TagpPagoMavilDao(BaseDao):
 
     def get_grid_pagos_mavil(self, anio, mes):
         griddao = TGridDao(self.dbsession)
+        # swhere = ' and extract(year from asi.trn_fecha) =  {0} and extract(month from asi.trn_fecha)  = {1} '.format(
+        #    anio, mes)
         swhere = ' and lm.lmd_anio = {0} and lm.lmd_mes = {1} '.format(anio, mes)
         return griddao.run_grid(grid_nombre='agp_pagosmavil', swhere=swhere)
 

@@ -369,6 +369,10 @@ class TAgpContratoDao(BaseDao):
         sql = "{0} where per.per_id = {1}".format(self.BASE_SQL_CONTRATOS, per_codigo)
         return self.all(sql, self.BASE_TUPLA_DESC)
 
+    def find_by_mdg_id(self, mdg_id):
+        sql = "{0} where tm.mdg_id = {1}".format(self.BASE_SQL_CONTRATOS, mdg_id)
+        return self.first(sql, self.BASE_TUPLA_DESC)
+
     def get_filtro_nomapelcedul(self, filtro):
         whereper = ''
         if cadenas.es_nonulo_novacio(filtro):
@@ -390,19 +394,48 @@ class TAgpContratoDao(BaseDao):
         whereper = self.get_filtro_nomapelcedul(filtro=filtro)
         return tgriddao.run_grid(grid_nombre='agp_contratos', whereper=whereper)
 
-    def get_grid_lecturas(self, filtro, anio, mes):
+    def get_grid_lecturas(self, filtro, anio, mes, estado):
         tgriddao = TGridDao(self.dbsession)
         whereper = self.get_filtro_nomapelcedul(filtro=filtro)
         wherelecto = ' and lm.lmd_anio =  {0}'.format(anio)
+
+        joinlecto = 'left join'
+        wherelast = ''
         if int(mes) > 0:
             wherelecto += ' and lm.lmd_mes = {0}'.format(mes)
 
-        return tgriddao.run_grid(grid_nombre='agp_lecturas', whereper=whereper, wherelecto=wherelecto)
+        if int(estado) == 1:
+            wherelast = 'where  coalesce(lm.lmd_id,0) = 0'
+        elif int(estado) == 2:
+            joinlecto = 'join'
+
+        return tgriddao.run_grid(grid_nombre='agp_lecturas', whereper=whereper, wherelecto=wherelecto,
+                                 joinlecto=joinlecto, wherelast=wherelast, anio=anio, mes=mes)
+
+    def get_grid_pagos(self, filtro, anio, mes, estado):
+        tgriddao = TGridDao(self.dbsession)
+        whereper = self.get_filtro_nomapelcedul(filtro=filtro)
+        wherelecto = ' and lm.lmd_anio =  {0}'.format(anio)
+
+        joinlecto = 'left join'
+        wherelast = ''
+        if int(mes) > 0:
+            wherelecto += ' and lm.lmd_mes = {0}'.format(mes)
+
+        if int(estado) == 1:
+            wherelast = 'where coalesce(pg.trn_codigo,0) = 0'
+        elif int(estado) == 2:
+            joinlecto = 'join'
+            wherelast = 'where pg.trn_codigo>0'
+
+        return tgriddao.run_grid(grid_nombre='agp_pagos', whereper=whereper, wherelecto=wherelecto,
+                                 joinlecto=joinlecto, wherelast=wherelast, anio=anio, mes=mes)
 
     def get_form_filtros_listados(self):
         form = {
             'anio': fechas.get_anio_actual(),
             'mes': fechas.get_mes_actual(),
+            'estado': 0,
             'filtro': ''
         }
 
@@ -411,8 +444,12 @@ class TAgpContratoDao(BaseDao):
         meses.append(tmesdao.get_mes_todos())
 
         anios = tmesdao.get_current_previus_year()
+        estados = [{'label': 'Todos', 'value': 0},
+                   {'label': 'Pendientes', 'value': 1},
+                   {'label': 'Registrados', 'value': 2}]
         return {
             'form': form,
             'meses': meses,
-            'anios': anios
+            'anios': anios,
+            'estados': estados
         }

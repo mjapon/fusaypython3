@@ -56,6 +56,14 @@ class TagpCobroRest(TokenView):
             return self.res200({'datospago': datospago})
         elif accion == 'crea':
             form = self.get_json_body()
+            parsedpagosdet = {}
+            if 'montos' in form:
+                montos = form['montos']
+                if 'pagosdet' in montos:
+                    pagosdet = montos['pagosdet']
+                    for key in pagosdet.keys():
+                        parsedpagosdet[int(str(key))] = pagosdet[key]
+                    form['montos']['pagosdet'] = parsedpagosdet
             trn_codigo = cobrodao.crear(form=form, user_crea=self.get_user_id(), sec_codigo=self.get_sec_id())
             msg = 'Cobro registrado exitósamente, ¿Desea imprimir el comprobante?'
             return self.res200({'msg': msg, 'trncod': trn_codigo})

@@ -33,6 +33,11 @@ class TagpContratoRest(TokenView):
             per_codigo = self.get_request_param('codref')
             items = tagpcontratodao.find_by_per_codigo(per_codigo=per_codigo)
             return self.res200({'items': items})
+        elif accion == 'gbycodmed':
+            codmed = self.get_request_param('codmed')
+            datosmed = tagpcontratodao.find_by_mdg_id(mdg_id=codmed)
+            return self.res200({'datosmed': datosmed})
+
         elif accion == 'findbynum':
             mdg_num = self.get_request_param('num')
             result = tagpcontratodao.find_by_nummed(mdg_num=mdg_num)
@@ -54,8 +59,15 @@ class TagpContratoRest(TokenView):
         elif accion == 'agp_lecturas':
             grid = tagpcontratodao.get_grid_lecturas(filtro=self.get_request_param('filtro'),
                                                      anio=self.get_request_param('anio'),
-                                                     mes=self.get_request_param('mes'))
+                                                     mes=self.get_request_param('mes'),
+                                                     estado=self.get_request_param('estado'))
             return self.res200({'grid': grid, 'titulo': 'Lista de consumos por mes'})
+        elif accion == 'agp_pagos':
+            grid = tagpcontratodao.get_grid_pagos(filtro=self.get_request_param('filtro'),
+                                                  anio=self.get_request_param('anio'),
+                                                  mes=self.get_request_param('mes'),
+                                                  estado=self.get_request_param('estado'))
+            return self.res200({'grid': grid, 'titulo': 'Lista de pagos por mes'})
 
     def collection_post(self):
         accion = self.get_rqpa()
