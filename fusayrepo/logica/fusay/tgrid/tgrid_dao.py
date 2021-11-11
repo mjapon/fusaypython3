@@ -36,8 +36,8 @@ class TGridDao(BaseDao):
 
         sql = grid_basesql.format(**params)
 
-        log.debug('sql que se ejecuta es:')
-        log.debug(sql)
+        log.info('sql que se ejecuta para grid {0} es:'.format(grid_nombre))
+        log.info(sql)
 
         data = self.all(sql, tupla_desc)
         return {'data': data, 'cols': cols}

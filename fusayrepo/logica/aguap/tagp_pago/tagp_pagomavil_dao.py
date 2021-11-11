@@ -82,7 +82,9 @@ class TagpPagoMavilDao(BaseDao):
         griddao = TGridDao(self.dbsession)
         # swhere = ' and extract(year from asi.trn_fecha) =  {0} and extract(month from asi.trn_fecha)  = {1} '.format(
         #    anio, mes)
-        swhere = ' and lm.lmd_anio = {0} and lm.lmd_mes = {1} '.format(anio, mes)
+        # swhere = ' and lm.lmd_anio = {0} and lm.lmd_mes = {1} '.format(anio, mes)
+        swhere = ' and extract(year from asi.trn_fecha) = {0} and extract(month from asi.trn_fecha) = {1} '.format(anio,
+                                                                                                                   mes)
         return griddao.run_grid(grid_nombre='agp_pagosmavil', swhere=swhere)
 
     def get_grid_newcontratosmavil(self, anio, mes):
@@ -100,9 +102,18 @@ class TagpPagoMavilDao(BaseDao):
         grid_facturas = self.get_grid_pagos_mavil(anio, mes)
         grid_newcontract = self.get_grid_newcontratosmavil(anio, mes)
 
+        keys = {}
         totalfacturas = 0.0
+        datares = []
         if 'data' in grid_facturas:
-            for row in grid_facturas['data']:
+            # Primero hago un filtro
+            for item in grid_facturas['data']:
+                key = '{0}_{1}'.format(item['trn_codigo'], item['dt_codigo'])
+                if key not in keys.keys():
+                    keys[key] = '1'
+                    datares.append(item)
+
+            for row in datares:
                 totalfacturas += row['comavil']
 
         totalnewcontracts = 0.0
@@ -111,6 +122,8 @@ class TagpPagoMavilDao(BaseDao):
                 totalnewcontracts += row['comavil']
 
         total = totalfacturas + totalnewcontracts
+
+        grid_facturas['data'] = datares
 
         return {
             'gridfacts': grid_facturas,
