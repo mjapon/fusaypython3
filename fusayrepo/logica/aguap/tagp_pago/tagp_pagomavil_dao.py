@@ -1,5 +1,7 @@
 import datetime
 
+from sqlalchemy import and_
+
 from fusayrepo.logica.aguap.tagp_models import TagpPagosMavil, TagpPago
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
@@ -21,6 +23,7 @@ class TagpPagoMavilDao(BaseDao):
             'pgm_id': 0,
             'pgm_anio': fechas.get_anio_actual(),
             'pgm_mes': fechas.get_mes_actual(),
+            'fecha': fechas.get_str_fecha_actual(),
             'pgm_total': 0.0,
             'pgm_obs': ''
         }
@@ -56,6 +59,10 @@ class TagpPagoMavilDao(BaseDao):
     def find_tagppago(self, pg_id):
         return self.dbsession.query(TagpPago).filter(TagpPago.pg_id == pg_id).first()
 
+    def find_pagos_trn_cod(self, trn_codigo):
+        return self.dbsession.query(TagpPago).filter(
+            and_(TagpPago.trn_codigo == trn_codigo, TagpPago.pg_estado == 1)).all()
+
     def find_by_trn_codigo(self, trn_codigo):
         sql = """
         select pg_id, trn_codigo from tagp_pago  where pg_estado = 1 and trn_codigo = {0}
@@ -74,33 +81,43 @@ class TagpPagoMavilDao(BaseDao):
         if tagp_pagomavil is not None:
             tagp_pagomavil.pg_estado = 2
             self.dbsession.add(tagp_pagomavil)
+
+            # Se debe anular todos los pagos asociados con la factura:
+            all_pagos_factura = self.find_pagos_trn_cod(tagp_pagomavil.trn_codigo)
+            if all_pagos_factura is not None:
+                for it_pago in all_pagos_factura:
+                    it_pago.pg_estado = 2
+                    self.dbsession.add(it_pago)
+
             tasientodao = TasientoDao(self.dbsession)
             if not tasientodao.is_transacc_in_state(trn_codigo=tagp_pagomavil.trn_codigo, state=1):
                 tasientodao.anular(trn_codigo=tagp_pagomavil.trn_codigo, user_anula=useranula, obs_anula='')
 
-    def get_grid_pagos_mavil(self, anio, mes):
+    def get_grid_pagos_mavil(self, anio, mes, fecha):
         griddao = TGridDao(self.dbsession)
         # swhere = ' and extract(year from asi.trn_fecha) =  {0} and extract(month from asi.trn_fecha)  = {1} '.format(
         #    anio, mes)
         # swhere = ' and lm.lmd_anio = {0} and lm.lmd_mes = {1} '.format(anio, mes)
-        swhere = ' and extract(year from asi.trn_fecha) = {0} and extract(month from asi.trn_fecha) = {1} '.format(anio,
-                                                                                                                   mes)
+        # swhere = ' and extract(year from asi.trn_fecha) = {0} and extract(month from asi.trn_fecha) = {1} '.format(anio,
+        #                                                                                                           mes)
+
+        swhere = """ and date(asi.trn_fecha) >= '{0}'""".format(fechas.format_cadena_db(fecha))
+
         return griddao.run_grid(grid_nombre='agp_pagosmavil', swhere=swhere)
 
-    def get_grid_newcontratosmavil(self, anio, mes):
+    def get_grid_newcontratosmavil(self, anio, mes, fecha):
         paramsdao = TParamsDao(self.dbsession)
         fechainicobro = paramsdao.get_param_value('agp_fecinicbreg')
         if cadenas.es_nonulo_novacio(fechainicobro):
-            fechainicobrodb = fechas.format_cadena_db(fechainicobro)
-            swhere = """ and date(cna_fechacrea)>={0} and date_part('year',cna_fechacrea) = {1}
-             and date_part('month',cna_fechacrea) = {2}""".format(fechainicobrodb, anio, mes)
+            # fechainicobrodb = fechas.format_cadena_db(fechainicobro)
+            swhere = """ and date(cna_fechacrea)>={0}""".format(fechas.format_cadena_db('fecha'))
             griddao = TGridDao(self.dbsession)
             return griddao.run_grid(grid_nombre='agp_newcnmavil', swhere=swhere)
         return []
 
-    def get_reporte_pagos_mavil(self, anio, mes):
-        grid_facturas = self.get_grid_pagos_mavil(anio, mes)
-        grid_newcontract = self.get_grid_newcontratosmavil(anio, mes)
+    def get_reporte_pagos_mavil(self, anio, mes, fecha):
+        grid_facturas = self.get_grid_pagos_mavil(anio, mes, fecha)
+        grid_newcontract = self.get_grid_newcontratosmavil(anio, mes, fecha)
 
         keys = {}
         totalfacturas = 0.0

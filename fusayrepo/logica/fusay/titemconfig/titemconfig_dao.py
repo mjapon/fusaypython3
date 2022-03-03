@@ -29,7 +29,7 @@ class TItemConfigDao(BaseDao):
         if codcat is not None and int(codcat) > 0:
             swherecat = ' and ic.catic_id = {0}'.format(codcat)
 
-        swhere = u" (ic.ic_code like '{0}%' or ic.ic_nombre like '{0}%') {1}".format(
+        swhere = u" (ic.ic_code like '{0}%' or ic.ic_nombre like '%{0}%') {1}".format(
             cadenas.strip_upper(filtro), swherecat
         )
 

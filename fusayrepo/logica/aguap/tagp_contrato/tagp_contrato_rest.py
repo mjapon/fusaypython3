@@ -21,7 +21,6 @@ class TagpContratoRest(TokenView):
 
         tagpcontratodao = TAgpContratoDao(self.dbsession)
         if accion == 'form':
-            # tipo = self.get_request_param('tipo')
             form = tagpcontratodao.get_form_anterior()
             return self.res200({'form': form})
         elif accion == 'gformed':
@@ -68,6 +67,10 @@ class TagpContratoRest(TokenView):
                                                   mes=self.get_request_param('mes'),
                                                   estado=self.get_request_param('estado'))
             return self.res200({'grid': grid, 'titulo': 'Lista de pagos por mes'})
+        elif accion == 'listar':
+            filtro = self.get_request_param('filtro')
+            gridcontratos = tagpcontratodao.listar_grid_for_view(filtro)
+            return self.res200({'gridcontratos': gridcontratos})
 
     def collection_post(self):
         accion = self.get_rqpa()

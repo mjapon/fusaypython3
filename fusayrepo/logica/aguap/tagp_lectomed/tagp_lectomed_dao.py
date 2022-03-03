@@ -9,6 +9,7 @@ from datetime import datetime
 from fusayrepo.logica.aguap.tagp_models import TAgpLectoMed
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
+from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.public.tmes_dao import PublicTMesDao
 from fusayrepo.utils import cadenas, fechas
 
@@ -20,7 +21,7 @@ class LectoMedAguaDao(BaseDao):
     def get_form(self):
 
         tmesdao = PublicTMesDao(self.dbsession)
-        meses = tmesdao.get_current_previus()
+        meses = tmesdao.listar()
         anios = tmesdao.get_current_previus_year()
 
         form = {
@@ -139,7 +140,34 @@ class LectoMedAguaDao(BaseDao):
             raise ErrorValidacionExc(
                 'Ya se encuentra registrado lectura de medidor para el mes seleccionado')
 
+    def get_back_lecto(self, mdg_id, anio, mes):
+        aux_fecha_str = '{0}/{1}/{2}'.format('01', mes, anio)
+        aux_fecha_str_db = fechas.format_cadena_db(aux_fecha_str)
+        sql = """
+        select lm.lmd_id, lm.lmd_mes, lm.lmd_valorant,  lm.lmd_valor, lm.lmd_fechacrea, lm.lmd_usercrea, lm.lmd_obs,
+        lmd_consumo, vu.referente as usercrea, mes.mes_nombre
+        from tagp_lectomed lm
+        join vusers vu on lm.lmd_usercrea = vu.us_id
+        join public.tmes mes on lm.lmd_mes = mes.mes_id
+        join tagp_medidor md on lm.mdg_id = md.mdg_id
+        where md.mdg_id = '{mdg_id}' and to_date('01-'||lmd_mes||'-'|| lmd_anio,'dd-mm-yyyy')<'{fecha}' 
+        order by lm.lmd_fechacrea desc limit 1
+        """.format(mdg_id=mdg_id, fecha=aux_fecha_str_db)
+        tupla_desc = ('lmd_id', 'lmd_mes', 'lmd_valorant', 'lmd_valor', 'lmd_fechacrea', 'lmd_usercrea', 'lmd_obs',
+                      'lmd_consumo', 'usercrea', 'mes_nombre')
+
+        print('sql')
+        print(sql)
+
+        return self.first(sql, tupla_desc)
+
     def get_previous_lectomed(self, mdg_num, anio, mes):
+        anio_param = anio
+        mes_param = mes
+        if int(mes) == 1:
+            mes_param = 12
+            anio_param = int(anio) - 1
+
         sql = """
         select lm.lmd_id, lm.lmd_mes, lm.lmd_valorant,  lm.lmd_valor, lm.lmd_fechacrea, lm.lmd_usercrea, lm.lmd_obs,
         lmd_consumo, vu.referente as usercrea, mes.mes_nombre
@@ -148,7 +176,7 @@ class LectoMedAguaDao(BaseDao):
         join public.tmes mes on lm.lmd_mes = mes.mes_id
         join tagp_medidor md on lm.mdg_id = md.mdg_id
         where md.mdg_num = '{num}' and lm.lmd_estado = 1 and lm.lmd_anio<={anio} and lm.lmd_mes<={mes} order by lm.lmd_fechacrea desc limit 1 
-        """.format(num=cadenas.strip(mdg_num), anio=anio, mes=mes)
+        """.format(num=cadenas.strip(mdg_num), anio=anio_param, mes=mes_param)
 
         tupla_desc = ('lmd_id', 'lmd_mes', 'lmd_valorant', 'lmd_valor', 'lmd_fechacrea', 'lmd_usercrea', 'lmd_obs',
                       'lmd_consumo', 'usercrea', 'mes_nombre')
@@ -206,7 +234,8 @@ class LectoMedAguaDao(BaseDao):
         adelantos_dao = AdelantosManageUtil(self.dbsession)
         per_id = self.find_per_id_from_mdg_id(mdg_id=form['mdg_id'])
         if adelantos_dao.has_adelantos(per_id=per_id):
-            trn_codigo = adelantos_dao.crear_factura(lecto_id=lecto_id, per_id=per_id, user_crea=user_crea, sec_codigo=sec_id,
+            trn_codigo = adelantos_dao.crear_factura(lecto_id=lecto_id, per_id=per_id, user_crea=user_crea,
+                                                     sec_codigo=sec_id,
                                                      tdv_codigo=tdv_codigo)
 
         return trn_codigo
@@ -226,6 +255,45 @@ class LectoMedAguaDao(BaseDao):
                 lectomed.lmd_fechanula = datetime.now()
                 lectomed.lmd_useranula = lmd_useranula
                 self.dbsession.add(lectomed)
+
+    def get_lectopend_by_lmd_id(self, lmd_id):
+        sql = """        
+                        select lm.lmd_id, lm.mdg_id, lm.lmd_anio, lm.lmd_mes, mes.mes_nombre, lm.lmd_fechacrea, lm.lmd_valor, 
+                        lm.lmd_usercrea, lm.lmd_estado, lm.lmd_consumo, lm.lmd_valorant, coalesce(pg.pg_id, 0) as pg_id, 
+                        pg.pg_fechacrea, coalesce(pg.trn_codigo, 0) as trn_codigo, true as marcado 
+                        from tagp_lectomed lm
+                        left join tagp_pago pg on lm.lmd_id = pg.lmd_id and pg.pg_estado = 1                
+                        join public.tmes mes on lm.lmd_mes = mes.mes_id
+                        where lm.lmd_estado = 1 and lm.lmd_id = {lmd_id} and coalesce(pg.pg_id, 0)=0 order by lm.lmd_anio desc, lm.lmd_mes desc
+                        """.format(lmd_id=lmd_id)
+
+        tupla_desc = (
+            'lmd_id', 'mdg_id', 'lmd_anio', 'lmd_mes', 'mes_nombre', 'lmd_fechacrea', 'lmd_valor', 'lmd_usercrea',
+            'lmd_estado', 'lmd_consumo', 'lmd_valorant', 'pg_id', 'pg_fechacrea', 'trn_codigo', 'marcado')
+        lecturas = self.all(sql, tupla_desc)
+
+        return lecturas
+
+    def get_lecturas_pendientes(self, mdg_id):
+        """
+        Busca todas las lecturas pendientes de pago
+        """
+        sql = """        
+                select lm.lmd_id, lm.mdg_id, lm.lmd_anio, lm.lmd_mes, mes.mes_nombre, lm.lmd_fechacrea, lm.lmd_valor, 
+                lm.lmd_usercrea, lm.lmd_estado, lm.lmd_consumo, lm.lmd_valorant, coalesce(pg.pg_id, 0) as pg_id, 
+                pg.pg_fechacrea, coalesce(pg.trn_codigo, 0) as trn_codigo, true as marcado 
+                from tagp_lectomed lm
+                left join tagp_pago pg on lm.lmd_id = pg.lmd_id and pg.pg_estado = 1                
+                join public.tmes mes on lm.lmd_mes = mes.mes_id
+                where lm.lmd_estado = 1 and lm.mdg_id = {mdg_id} and coalesce(pg.pg_id, 0)=0 order by lm.lmd_anio desc, lm.lmd_mes desc
+                """.format(mdg_id=mdg_id)
+
+        tupla_desc = (
+            'lmd_id', 'mdg_id', 'lmd_anio', 'lmd_mes', 'mes_nombre', 'lmd_fechacrea', 'lmd_valor', 'lmd_usercrea',
+            'lmd_estado', 'lmd_consumo', 'lmd_valorant', 'pg_id', 'pg_fechacrea', 'trn_codigo', 'marcado')
+        lecturas = self.all(sql, tupla_desc)
+
+        return lecturas
 
     def get_lecturas(self, mdg_id):
         sql = """        
@@ -272,6 +340,13 @@ class LectoMedAguaDao(BaseDao):
             'lastpago': lastpago
         }
 
+    def listar_lecturas_medidor(self, mdg_id, limit=24):
+        gridao = TGridDao(self.dbsession)
+        where = "lm.mdg_id  ={0}".format(mdg_id)
+        grid = gridao.run_grid(grid_nombre='agp_lecturas_view', where=where, limit=limit)
+
+        return grid
+
     def get_lecturas_nopagadas(self, mdg_id):
         sql = """
         select lm.lmd_id, lm.mdg_id, lm.lmd_anio, lm.lmd_mes, mes.mes_nombre, lm.lmd_fechacrea, lm.lmd_valor, 
@@ -290,6 +365,18 @@ class LectoMedAguaDao(BaseDao):
             'lmd_estado', 'lmd_consumo', 'lmd_valorant')
 
         return self.all(sql, tupla_desc)
+
+    def get_info_basic_lectura(self, lecto_id):
+        sql = """
+        select lm.lmd_id, lm.mdg_id, lm.lmd_anio, lm.lmd_mes, lm.lmd_valor, 
+        lm.lmd_consumo, lm.lmd_fechacrea, lm.lmd_valorant, mes.mes_nombre from tagp_lectomed lm
+        join public.tmes mes on lm.lmd_mes = mes.mes_id
+        where lm.lmd_id = {0}  
+        """.format(lecto_id)
+        tupla_desc = (
+            'lmd_id', 'mdg_id', 'lmd_anio', 'lmd_mes', 'lmd_valor', 'lmd_consumo', 'lmd_fechacrea', 'lmd_valorant',
+            'mes_nombre')
+        return self.first(sql, tupla_desc)
 
     def get_datos_lectura(self, ids):
         sql = """

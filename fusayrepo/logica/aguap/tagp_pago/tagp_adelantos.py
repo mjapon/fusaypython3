@@ -1,4 +1,6 @@
 # coding: utf-8
+from fusayrepo.logica.aguap.tagp_lectomed.tagp_lectomed_dao import LectoMedAguaDao
+from fusayrepo.logica.aguap.tagp_models import TAgpLectoMed
 from fusayrepo.logica.aguap.tagp_pago.tagp_pago_dao import TagpCobroDao
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
@@ -29,11 +31,7 @@ class AdelantosManageUtil(BaseDao):
     def get_pagos_con_adelanto(self, trn_codigo):
 
         tasiabonodao = TAsiAbonoDao(self.dbsession)
-        abonos =  tasiabonodao.listar_abonos(trn_codigo=trn_codigo)
-
-
-
-
+        abonos = tasiabonodao.listar_abonos(trn_codigo=trn_codigo)
 
     def get_adelantos(self, per_id):
         paramsado = TParamsDao(self.dbsession)
@@ -57,8 +55,12 @@ class AdelantosManageUtil(BaseDao):
     def crear_factura(self, lecto_id, per_id, user_crea, sec_codigo, tdv_codigo):
         cobrodao = TagpCobroDao(self.dbsession)
         secdao = TSeccionDao(self.dbsession)
+        lectodao = LectoMedAguaDao(self.dbsession)
+
+        datos_lectura = lectodao.get_info_basic_lectura(lecto_id)
         form = {'referente': {'per_id': per_id},
-                'obs': 'Registro de pago automático, haciendo uso de adelanto registrado'}
+                'obs': 'Registro de pago automático, haciendo uso de adelanto registrado MES-{mes}'.format(
+                    mes=datos_lectura['mes_nombre'])}
         lecturas = [{'lmd_id': lecto_id}]
         lectoids = [lecto_id]
         form['lecturas'] = lectoids

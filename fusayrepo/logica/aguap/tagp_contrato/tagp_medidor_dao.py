@@ -103,6 +103,59 @@ class TagpMedidorAguaDao(BaseDao):
                       'mdg_obs')
         return self.first(sql, tupla_desc)
 
+    def get_datos_completos(self, mdg_id):
+        sql = """
+        select cn.cna_id,
+           cn.per_id,
+           cn.cna_fechacrea,
+         date(cn.cna_fechacrea) as dcna_fechacrea,
+           cn.cna_usercrea,
+           vu.referente as usercrea,
+            per.per_ciruc,
+            per.per_apellidos,
+            per.per_nombres,
+            com.cmn_nombre as comunidad,
+            cn.cna_barrio,
+            cn.cna_sector,
+            cn.cna_direccion,
+            tm.mdg_num,
+            ic.ic_nombre as tarifa,
+            cn.cna_teredad,
+            case WHEN cn.cna_teredad THEN 'Si' else 'No' end as teredad,
+            case
+               when cn.cna_estadoserv=1 then 'Habilitado'
+               when cn.cna_estadoserv=1 then 'Suspendido'
+               else 'Desconocido' end as cna_estadoserv_desc,
+            cn.cna_estado,
+            cn.cna_estadoserv,
+            cn.cna_nmingas,
+            cn.cna_referencia,
+            tm.mdg_id,
+            coalesce(per.per_apellidos,'')||' '||per.per_nombres as nomapel,
+           ic.ic_id,
+           trf.trf_id
+    from tagp_contrato cn
+    join tagp_medidor tm on cn.cna_id = tm.cna_id and tm.mdg_estado = 1
+    join tpersona per on per.per_id = cn.per_id 
+    join vusers vu on vu.us_id = cn.cna_usercrea
+    join tagp_tarifa trf on trf.trf_id = cn.cna_tarifa
+    join titemconfig ic on trf.ic_id = ic.ic_id
+    join public.tcomunidad com on cn.cna_barrio = com.cmn_id
+    where  tm.mdg_id  = {0} 
+    order by per_apellidos, per_nombres
+        
+        """.format(mdg_id)
+
+        tupla_desc = (
+            'cna_id', 'per_id', 'cna_fechacrea', 'dcna_fechacrea', 'cna_usercrea', 'usercrea', 'per_ciruc',
+            'per_apellidos', 'per_nombres', 'comunidad', 'cna_barrio', 'cna_sector', 'cna_direccion', 'mdg_num',
+            'tarifa', 'cna_teredad', 'teredad', 'cna_estadoserv_desc', 'cna_estado', 'cna_estadoserv', 'cna_nmingas',
+            'cna_referencia', 'mdg_id', 'nomapel', 'ic_id', 'trf_id'
+        )
+
+        datos_medidor = self.first(sql, tupla_desc)
+        return datos_medidor
+
     def buscar_byreg(self, per_id):
         sql = """
         select 

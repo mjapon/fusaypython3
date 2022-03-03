@@ -45,7 +45,6 @@ class TagpCobroDao(BaseDao):
         }
 
     def get_datos_pago(self, trn_codigo):
-
         sql = "select  pg_id, lmd_id, pg_estado, pg_usercrea, pg_fechacrea, trn_codigo, pg_json from tagp_pago where trn_codigo = {0}".format(
             trn_codigo)
 
@@ -281,6 +280,7 @@ class TagpCobroDao(BaseDao):
         comision_mavil = montos['comision_mavil']
 
         lectomedagua_dao = LectoMedAguaDao(self.dbsession)
+
         ids = ','.join(['{0}'.format(it) for it in lectoids])
         lecturas_db = lectomedagua_dao.get_datos_lectura(ids=ids)
 

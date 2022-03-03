@@ -47,7 +47,10 @@ class TAgpContratoDao(BaseDao):
                per.per_nombres||' '||coalesce(per.per_apellidos,'') as nomapel,
                ic.ic_nombre as tarifa,
                ic.ic_id,
-               trf.trf_id
+               trf.trf_id,
+               case when cn.cna_estadoserv = 1 then 'Habilitado'
+               when cn.cna_estadoserv = 2 then 'Suspendido'
+               else 'Desconocido' end as estadoserv
         from tagp_contrato cn
         join tagp_medidor tm on cn.cna_id = tm.cna_id and tm.mdg_estado = 1
         join tpersona per on per.per_id = cn.per_id
@@ -80,7 +83,8 @@ class TAgpContratoDao(BaseDao):
                        'nomapel',
                        'tarifa',
                        'ic_id',
-                       'trf_id')
+                       'trf_id',
+                       'estadoserv')
 
     def listar_tarifas(self):
         sql = """
@@ -361,17 +365,39 @@ class TAgpContratoDao(BaseDao):
         else:
             return []
 
-    def find_by_mdg_id(self, mdg_id):
-        sql = "{0} where tm.mdg_id = {1}".format(self.BASE_SQL_CONTRATOS, cadenas.strip(str(mdg_id)))
-        return self.first(sql, self.BASE_TUPLA_DESC)
-
     def find_by_per_codigo(self, per_codigo):
         sql = "{0} where per.per_id = {1}".format(self.BASE_SQL_CONTRATOS, per_codigo)
         return self.all(sql, self.BASE_TUPLA_DESC)
 
     def find_by_mdg_id(self, mdg_id):
-        sql = "{0} where tm.mdg_id = {1}".format(self.BASE_SQL_CONTRATOS, mdg_id)
+        sql = "{0} where tm.mdg_id = {1}".format(self.BASE_SQL_CONTRATOS, cadenas.strip(str(mdg_id)))
         return self.first(sql, self.BASE_TUPLA_DESC)
+
+    def listar_validos(self):
+        sql = "{0} where cn.cna_estado = 1 order by nomapel asc".format(self.BASE_SQL_CONTRATOS)
+        return self.all(sql, self.BASE_TUPLA_DESC)
+
+    def listar_grid_for_view(self, filtro):
+        griddao = TGridDao(self.dbsession)
+        wherefiltro = self.get_filtro_contratos_view(filtro)
+        return griddao.run_grid(grid_nombre='agp_contratos_view', wherefiltro=wherefiltro)
+
+    def get_filtro_contratos(self, filtro):
+        filtro = self.get_filtro_nomapelcedul(filtro)
+        whereper = ''
+        if cadenas.es_nonulo_novacio(filtro):
+            whereper = u"""and ( {0} )""".format()
+        return whereper
+
+    def get_filtro_contratos_view(self, filtro):
+        nomapelcedul = self.get_filtro_nomapelcedul(filtro)
+        where = ''
+        if cadenas.es_nonulo_novacio(filtro):
+            filtronumed = " or (tm.mdg_num like '%{0}%')".format(filtro.strip())
+            where = """
+            and ( {0} {1} )
+            """.format(nomapelcedul, filtronumed)
+        return where
 
     def get_filtro_nomapelcedul(self, filtro):
         whereper = ''
@@ -382,21 +408,21 @@ class TAgpContratoDao(BaseDao):
                 filtromod.append(u"%{0}%".format(cad))
 
             nombreslike = u' '.join(filtromod)
-            filtrocedulas = u" per_ciruc like '{0}%'".format(cadenas.strip(filtro))
+            filtrocedulas = u" per.per_ciruc like '{0}%'".format(cadenas.strip(filtro))
             whereper = u"""
-                    and ( (per.per_nombres||' '||per.per_apellidos like '{nombreslike}') or ({filtrocedulas}) )
+                     (per.per_nombres||' '||per.per_apellidos like '{nombreslike}') or ({filtrocedulas}) 
                     """.format(nombreslike=nombreslike, filtrocedulas=filtrocedulas)
 
         return whereper
 
     def get_grid_contratos(self, filtro):
         tgriddao = TGridDao(self.dbsession)
-        whereper = self.get_filtro_nomapelcedul(filtro=filtro)
+        whereper = self.get_filtro_contratos(filtro=filtro)
         return tgriddao.run_grid(grid_nombre='agp_contratos', whereper=whereper)
 
     def get_grid_lecturas(self, filtro, anio, mes, estado):
         tgriddao = TGridDao(self.dbsession)
-        whereper = self.get_filtro_nomapelcedul(filtro=filtro)
+        whereper = self.get_filtro_contratos(filtro=filtro)
         wherelecto = ' and lm.lmd_anio =  {0}'.format(anio)
 
         joinlecto = 'left join'
@@ -414,7 +440,7 @@ class TAgpContratoDao(BaseDao):
 
     def get_grid_pagos(self, filtro, anio, mes, estado):
         tgriddao = TGridDao(self.dbsession)
-        whereper = self.get_filtro_nomapelcedul(filtro=filtro)
+        whereper = self.get_filtro_contratos(filtro=filtro)
         wherelecto = ' and lm.lmd_anio =  {0}'.format(anio)
 
         joinlecto = 'left join'

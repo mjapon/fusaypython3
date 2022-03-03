@@ -70,7 +70,8 @@ class TagpCobroRest(TokenView):
         elif accion == 'repagmavil':
             form = self.get_json_body()
             pagomavildao = TagpPagoMavilDao(self.dbsession)
-            reporte = pagomavildao.get_reporte_pagos_mavil(anio=form['pgm_anio'], mes=form['pgm_mes'])
+            reporte = pagomavildao.get_reporte_pagos_mavil(anio=form['pgm_anio'], mes=form['pgm_mes'],
+                                                           fecha=form['fechaobj'])
             return self.res200({'reporte': reporte})
         elif accion == 'saverepagmavil':
             pagomavildao = TagpPagoMavilDao(self.dbsession)
