@@ -100,5 +100,5 @@ class TagpCobroRest(TokenView):
                 raise ErrorValidacionExc('No pude recuperar datos del pago ')
 
             pagomavil.anula_solo_pago(pg_id=datospago['pg_id'])
-            msg = 'Pago anulado anulado exitosamente'
+            msg = 'Pago anulado exitosamente'
             return self.res200({'msg': msg})

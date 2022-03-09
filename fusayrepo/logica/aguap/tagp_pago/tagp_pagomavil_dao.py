@@ -5,6 +5,7 @@ from sqlalchemy import and_
 from fusayrepo.logica.aguap.tagp_models import TagpPagosMavil, TagpPago
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
+from fusayrepo.logica.fusay.tasiabono.tasiabono_dao import TAsiAbonoDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
@@ -91,7 +92,19 @@ class TagpPagoMavilDao(BaseDao):
 
             tasientodao = TasientoDao(self.dbsession)
             if not tasientodao.is_transacc_in_state(trn_codigo=tagp_pagomavil.trn_codigo, state=1):
-                tasientodao.anular(trn_codigo=tagp_pagomavil.trn_codigo, user_anula=useranula, obs_anula='')
+                # tasientodao.anular(trn_codigo=tagp_pagomavil.trn_codigo, user_anula=useranula, obs_anula='')
+
+                # Verificar si existen abonos registrados como pagos adelantados, estos se deben anular tambien
+                sql_abonos_adelantos = """
+                select abo_codigo, dt_codigo, dt_codcre  from tasiabono t  where 
+                t.dt_codigo  in(select dt_codigo from tasidetalle where trn_codigo = {0} and dt_tipoitem = 2);
+                """.format(tagp_pagomavil.trn_codigo)
+                tupla_desc = ('abo_codigo', 'dt_codigo', 'dt_codcre')
+                abonos = self.first(sql_abonos_adelantos, tupla_desc)
+                if abonos is not None:
+                    tasiabondao = TAsiAbonoDao(self.dbsession)
+                    tasiabondao.anular(abo_codigo=abonos['abo_codigo'], user_anula=useranula,
+                                       obs_anula='Se anula abono de pago adelantado (BY SYS)')
 
     def get_grid_pagos_mavil(self, anio, mes, fecha):
         griddao = TGridDao(self.dbsession)

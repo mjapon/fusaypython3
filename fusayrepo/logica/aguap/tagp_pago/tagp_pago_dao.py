@@ -123,12 +123,15 @@ class TagpCobroDao(BaseDao):
         ic_comavil = itemconfigdao.get_detalles_prod(ic_id=agp_iccomavil)
 
         pagosdet = {}
+        label_meses = []
         for lectura in lecturas:
             lmd_id = lectura['lmd_id']
             pg_id = lectura['pg_id']
             consumo = float(lectura['lmd_consumo'])
             lmd_anio = lectura['lmd_anio']
             lmd_mes = lectura['lmd_mes']
+
+            label_meses.append("{0}-{1}".format(fechas.get_str_mes_largo(lmd_mes - 1), lmd_anio))
 
             # Obtener el ultimo dia del mes
             dia_cobro = fechas.get_maxday_month(int(agp_diacobro), lmd_anio, lmd_mes)
@@ -234,6 +237,8 @@ class TagpCobroDao(BaseDao):
 
         comavil_round = numeros.roundm2(comision_mavil * len(lecturas))
         total += comavil_round
+        aux_label_meses = " , ".join(label_meses)
+        observacion = "Pago consumo de agua: {0}".format(aux_label_meses)
 
         return {
             'costobase': costobase,
@@ -249,7 +254,8 @@ class TagpCobroDao(BaseDao):
             'total': total,
             'formcab': formcab,
             'pagosdet': pagosdet,
-            'comision_mavil': comavil_round
+            'comision_mavil': comavil_round,
+            'obs': observacion
         }
 
     def aux_get_det(self, sec_codigo, datosprod, dt_debito, dt_valor):

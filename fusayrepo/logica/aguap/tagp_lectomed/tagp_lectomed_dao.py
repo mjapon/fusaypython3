@@ -150,8 +150,8 @@ class LectoMedAguaDao(BaseDao):
         join vusers vu on lm.lmd_usercrea = vu.us_id
         join public.tmes mes on lm.lmd_mes = mes.mes_id
         join tagp_medidor md on lm.mdg_id = md.mdg_id
-        where md.mdg_id = '{mdg_id}' and to_date('01-'||lmd_mes||'-'|| lmd_anio,'dd-mm-yyyy')<'{fecha}' 
-        order by lm.lmd_fechacrea desc limit 1
+        where lm.lmd_estado = 1 and md.mdg_id = '{mdg_id}' and 
+        to_date('01-'||lmd_mes||'-'|| lmd_anio,'dd-mm-yyyy')<'{fecha}' order by lm.lmd_fechacrea desc limit 1
         """.format(mdg_id=mdg_id, fecha=aux_fecha_str_db)
         tupla_desc = ('lmd_id', 'lmd_mes', 'lmd_valorant', 'lmd_valor', 'lmd_fechacrea', 'lmd_usercrea', 'lmd_obs',
                       'lmd_consumo', 'usercrea', 'mes_nombre')
@@ -233,10 +233,16 @@ class LectoMedAguaDao(BaseDao):
         from fusayrepo.logica.aguap.tagp_pago.tagp_adelantos import AdelantosManageUtil
         adelantos_dao = AdelantosManageUtil(self.dbsession)
         per_id = self.find_per_id_from_mdg_id(mdg_id=form['mdg_id'])
-        if adelantos_dao.has_adelantos(per_id=per_id):
-            trn_codigo = adelantos_dao.crear_factura(lecto_id=lecto_id, per_id=per_id, user_crea=user_crea,
-                                                     sec_codigo=sec_id,
-                                                     tdv_codigo=tdv_codigo)
+        saldo_adelantos = adelantos_dao.get_saldo_adelantos(per_id=per_id)
+        if saldo_adelantos > 0.0:
+            alcanza_adelanto = adelantos_dao.check_saldo_adelanto_contra_total_fact(lecto_id=lecto_id,
+                                                                                    saldo_adelanto=saldo_adelantos,
+                                                                                    sec_codigo=sec_id,
+                                                                                    tdv_codigo=tdv_codigo)
+            if alcanza_adelanto:
+                trn_codigo = adelantos_dao.crear_factura(lecto_id=lecto_id, per_id=per_id, user_crea=user_crea,
+                                                         sec_codigo=sec_id,
+                                                         tdv_codigo=tdv_codigo)
 
         return trn_codigo
 

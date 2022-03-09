@@ -70,7 +70,8 @@ class TAsientoRest(TokenView):
             if not cadenas.es_nonulo_novacio(clase):
                 clase = 1
 
-            docs, totales = tasientodao.listar_documentos(per_codigo=per_codigo, clase=clase)
+            docs, totales = tasientodao.listar_documentos(per_codigo=per_codigo, clase=clase,
+                                                          sec_codigo=self.get_sec_id())
             return self.res200({'docs': docs, 'totales': totales})
         elif accion == 'gcred':
             per_codigo = self.get_request_param('per')
@@ -78,7 +79,8 @@ class TAsientoRest(TokenView):
             if not cadenas.es_nonulo_novacio(clase):
                 clase = 1
 
-            creds = tasicredao.listar_creditos(per_codigo=per_codigo, solo_pendientes=False, clase=clase)
+            creds = tasicredao.listar_creditos(per_codigo=per_codigo, solo_pendientes=False, clase=clase,
+                                               sec_codigo=self.get_sec_id())
             return self.res200({'creds': creds})
         elif accion == 'gridventas':
             desde = self.get_request_param('desde')

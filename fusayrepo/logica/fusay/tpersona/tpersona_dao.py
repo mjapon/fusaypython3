@@ -527,7 +527,7 @@ class TPersonaDao(BaseDao):
 
         return tpersona.per_id
 
-    def contar_transaccs(self, per_codigo):
+    def contar_transaccs(self, per_codigo, sec_codigo=0):
         """
         Retorna el total de transaccion de facturas, compras, cuentas por cobrar y pagar que tiene un referente
         :param per_codigo:
@@ -535,9 +535,9 @@ class TPersonaDao(BaseDao):
         """
         sql = """
         select count(*) as cuenta, tra_codigo from tasiento where per_codigo = {0}
-        and trn_valido = 0 and trn_docpen = 'F' and trn_pagpen = 'F'
+        and trn_valido = 0 and trn_docpen = 'F' and trn_pagpen = 'F' and sec_codigo={1}
         group by tra_codigo
-        """.format(per_codigo)
+        """.format(per_codigo, sec_codigo)
 
         tupla_desc = ('cuenta', 'tra_codigo')
         alltransacss = self.all(sql, tupla_desc)
@@ -545,10 +545,11 @@ class TPersonaDao(BaseDao):
         sql = """
         select count(*) as cuenta, cred.cre_tipo from tasicredito cred
             join tasidetalle det on cred.dt_codigo = det.dt_codigo
-            join tasiento asi on det.trn_codigo = asi.trn_codigo and asi.trn_valido = 0 and asi.trn_docpen = 'F' and asi.trn_pagpen = 'F'
-            where asi.per_codigo = {0} and cred.cre_saldopen>0
+            join tasiento asi on det.trn_codigo = asi.trn_codigo and asi.trn_valido = 0 
+                and asi.trn_docpen = 'F' and asi.trn_pagpen = 'F'
+            where asi.per_codigo = {0} and cred.cre_saldopen>0 and asi.sec_codigo={1}
             group by cred.cre_tipo
-        """.format(per_codigo)
+        """.format(per_codigo, sec_codigo)
         tupla_desc = ('cuenta', 'cre_tipo')
         allcreds = self.all(sql, tupla_desc)
 

@@ -286,7 +286,7 @@ class TAsicreditoDao(BaseDao):
 
         return data, totales
 
-    def listar_creditos(self, per_codigo, solo_pendientes=True, clase=1):
+    def listar_creditos(self, per_codigo, solo_pendientes=True, clase=1, sec_codigo=0):
         tracodin = "1,2"
         if int(clase) == 2:
             tracodin = "7"
@@ -319,9 +319,10 @@ class TAsicreditoDao(BaseDao):
         join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo and tasi.trn_pagpen = 'F' 
              and tasi.trn_docpen = 'F' and tasi.trn_valido = 0
         join tpersona per on tasi.per_codigo = per.per_id and per.per_id = {per_codigo}
-        where cred.cre_tipo = {cre_tipo} {sqlpend}
+        where cred.cre_tipo = {cre_tipo} {sqlpend} and tasi.sec_codigo = {sec_codigo}
         order by tasi.trn_fecreg desc
-        """.format(tracodin=tracodin, per_codigo=per_codigo, cre_tipo=clase, sqlpend=sqlpendientes)
+        """.format(tracodin=tracodin, per_codigo=per_codigo, cre_tipo=clase, sqlpend=sqlpendientes,
+                   sec_codigo=sec_codigo)
 
         tupla_desc = (
             'cre_codigo', 'dt_codigo', 'cre_fecini', 'cre_fecven', 'cre_intere', 'cre_intmor', 'cre_compro',

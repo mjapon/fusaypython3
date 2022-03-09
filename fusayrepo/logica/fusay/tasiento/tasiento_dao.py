@@ -373,7 +373,7 @@ class TasientoDao(AuxLogicAsiDao):
 
         return form
 
-    def listar_documentos(self, per_codigo, clase=1):
+    def listar_documentos(self, per_codigo, clase=1, sec_codigo=0):
         """
         Listar facturas validas de un referente especificaco
         :param per_codigo:
@@ -384,6 +384,10 @@ class TasientoDao(AuxLogicAsiDao):
         if int(clase) == 2:
             tracodin = "7"
 
+        sql_sec_codigo = ""
+        if sec_codigo > 0:
+            sql_sec_codigo = " and a.sec_codigo = {0}".format(sec_codigo)
+
         sql = """
         select a.trn_codigo, a.trn_fecreg, a.trn_fecha, a.trn_compro, a.trn_observ,
         pagos.efectivo, pagos.credito, pagos.saldopend, pagos.total
@@ -391,8 +395,8 @@ class TasientoDao(AuxLogicAsiDao):
          join get_pagos_factura(a.trn_codigo) as pagos(efectivo numeric, credito numeric, total numeric, saldopend numeric, trncodigo integer)
          on a.trn_codigo = pagos.trncodigo 
          where per_codigo = {percodigo}
-        and tra_codigo in ({tracodin}) and trn_valido = 0 and trn_docpen = 'F' order by trn_fecha desc 
-        """.format(percodigo=per_codigo, tracodin=tracodin)
+        and tra_codigo in ({tracodin}) and trn_valido = 0 and trn_docpen = 'F' {sql_sec} order by trn_fecha desc 
+        """.format(percodigo=per_codigo, tracodin=tracodin, sql_sec=sql_sec_codigo)
 
         tupla_desc = (
             'trn_codigo', 'trn_fecreg', 'trn_fecha', 'trn_compro', 'trn_observ', 'efectivo', 'credito', 'saldopend',

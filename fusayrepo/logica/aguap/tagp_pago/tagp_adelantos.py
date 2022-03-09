@@ -11,7 +11,7 @@ from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
-from fusayrepo.utils import fechas
+from fusayrepo.utils import fechas, numeros
 
 
 class AdelantosManageUtil(BaseDao):
@@ -28,8 +28,15 @@ class AdelantosManageUtil(BaseDao):
         adelantos = self.get_adelantos(per_id)
         return adelantos is not None and len(adelantos) > 0
 
-    def get_pagos_con_adelanto(self, trn_codigo):
+    def get_saldo_adelantos(self, per_id):
+        adelantos = self.get_adelantos(per_id)
+        saldo_adelantos = 0
+        if adelantos is not None and len(adelantos) > 0:
+            saldo_adelantos = adelantos[0]['cre_saldopen']
 
+        return saldo_adelantos
+
+    def get_pagos_con_adelanto(self, trn_codigo):
         tasiabonodao = TAsiAbonoDao(self.dbsession)
         abonos = tasiabonodao.listar_abonos(trn_codigo=trn_codigo)
 
@@ -52,6 +59,16 @@ class AdelantosManageUtil(BaseDao):
         items = self.all(sql, tupla_desc)
         return items
 
+    def check_saldo_adelanto_contra_total_fact(self, lecto_id, saldo_adelanto, sec_codigo, tdv_codigo):
+        lectoids = [lecto_id]
+        secdao = TSeccionDao(self.dbsession)
+        cobrodao = TagpCobroDao(self.dbsession)
+        alm_codigo = secdao.get_alm_codigo_from_sec_codigo(sec_codigo=sec_codigo)
+        datospago = cobrodao.get_calculo_pago(lectoids=lectoids, alm_codigo=alm_codigo,
+                                              tdv_codigo=tdv_codigo, sec_codigo=sec_codigo)
+
+        return numeros.roundm2(datospago['total']) <= saldo_adelanto
+
     def crear_factura(self, lecto_id, per_id, user_crea, sec_codigo, tdv_codigo):
         cobrodao = TagpCobroDao(self.dbsession)
         secdao = TSeccionDao(self.dbsession)
@@ -59,15 +76,17 @@ class AdelantosManageUtil(BaseDao):
 
         datos_lectura = lectodao.get_info_basic_lectura(lecto_id)
         form = {'referente': {'per_id': per_id},
-                'obs': 'Registro de pago automático, haciendo uso de adelanto registrado MES-{mes}'.format(
+                'obs': 'Registro de pago automático, haciendo uso de adelanto registrado AÑO:{anio}, MES:{mes}'.format(
+                    anio=datos_lectura['lmd_anio'],
                     mes=datos_lectura['mes_nombre'])}
-        lecturas = [{'lmd_id': lecto_id}]
         lectoids = [lecto_id]
         form['lecturas'] = lectoids
 
         alm_codigo = secdao.get_alm_codigo_from_sec_codigo(sec_codigo=sec_codigo)
         datospago = cobrodao.get_calculo_pago(lectoids=lectoids, alm_codigo=alm_codigo,
                                               tdv_codigo=tdv_codigo, sec_codigo=sec_codigo)
+
+        #
 
         form['montos'] = datospago
 
@@ -96,7 +115,7 @@ class AdelantosManageUtil(BaseDao):
             raise ErrorValidacionExc('Monto incorrecto, favor verificar')
 
         if monto_number <= 0:
-            raise ErrorValidacionExc('El monto no puede ser negativo')
+            raise ErrorValidacionExc('El monto no puede ser negativo ni cero')
 
         itemconfigdao = TItemConfigDao(self.dbsession)
         tasientodao = TasientoDao(self.dbsession)

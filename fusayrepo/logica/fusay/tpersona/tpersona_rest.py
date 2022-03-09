@@ -99,7 +99,7 @@ class TPersonaRest(TokenView):
         elif 'gcuentafacts' == accion:
             tpersonadao = TPersonaDao(self.dbsession)
             perid = self.get_request_param('codper')
-            totales = tpersonadao.contar_transaccs(per_codigo=perid)
+            totales = tpersonadao.contar_transaccs(per_codigo=perid, sec_codigo=self.get_sec_id())
             return self.res200({'totales': totales})
 
     def post(self):
