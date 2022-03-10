@@ -26,7 +26,7 @@ class TFuserDao(BaseDao):
 
     def autenticar(self, us_cuenta, us_clave):
         sql = """
-        select count(*) as cuenta from tfuser where us_cuenta = '{0}' and us_clave = '{1}'  
+        select count(*) as cuenta from tfuser where us_cuenta = '{0}' and us_clave = '{1}' and us_estado = 0  
         """.format(us_cuenta, us_clave)
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
@@ -155,6 +155,47 @@ class TFuserDao(BaseDao):
         sql = "select count(*) as cuenta from tfuser where us_cuenta = '{0}'".format(cadenas.strip(us_cuenta))
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
+
+    def cambiar_clave(self, form, user_cambia):
+        us_id = form['us_id']
+        us_clave = form['us_clave']
+        us_confirmclave = form['us_confirmclave']
+
+        if len(us_clave) < 4:
+            raise ErrorValidacionExc('La clave es muy corta, ingrese otra')
+
+        elif len(us_clave) > 20:
+            raise ErrorValidacionExc('La clave es muy larga, ingrese otra')
+
+        if us_clave != us_confirmclave:
+            raise ErrorValidacionExc('Las claves no coinciden, favor verifique')
+
+        tfuser = self.find_byid(us_id=us_id)
+        if tfuser is not None:
+            tfuser.us_clave = us_clave
+            tfuser.us_fechaupd = datetime.now()
+            tfuser.us_userupd = user_cambia
+
+            self.dbsession.add(tfuser)
+            return 1
+
+        return 0
+
+    def cambiar_estado(self, us_id, new_state):
+        tfuser = self.find_byid(us_id=us_id)
+        if tfuser is not None:
+            if int(tfuser.us_estado) != int(new_state):
+                tfuser.us_estado = int(new_state)
+                self.dbsession.add(tfuser)
+                return 1
+
+        return 0
+
+    def inactivar(self, us_id):
+        self.cambiar_estado(us_id=us_id, new_state=1)
+
+    def activar(self, us_id):
+        self.cambiar_estado(us_id=us_id, new_state=0)
 
     def crear(self, form, formcli):
         tpersonadao = TPersonaDao(self.dbsession)

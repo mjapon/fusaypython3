@@ -60,9 +60,6 @@ class LibroDiarioDao(BaseDao):
         order by trn_fecreg desc, trn_compro desc, dt_debito desc
         """.format(sfechas=sfechas, sec_id=sec_id)
 
-        print('sql for libro diario:')
-        print(sql)
-
         tupla_desc = (
             'trn_codigo', 'tra_codigo', 'trn_fecreg', 'fecdesc', 'trn_compro', 'trn_fecha', 'trn_valido', 'trn_docpen',
             'per_codigo', 'us_id', 'trn_observ', 'dt_debito', 'cta_codigo', 'ic_code', 'ic_nombre', 'dt_valor',

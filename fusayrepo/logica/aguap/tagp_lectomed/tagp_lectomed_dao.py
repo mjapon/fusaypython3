@@ -156,9 +156,6 @@ class LectoMedAguaDao(BaseDao):
         tupla_desc = ('lmd_id', 'lmd_mes', 'lmd_valorant', 'lmd_valor', 'lmd_fechacrea', 'lmd_usercrea', 'lmd_obs',
                       'lmd_consumo', 'usercrea', 'mes_nombre')
 
-        print('sql')
-        print(sql)
-
         return self.first(sql, tupla_desc)
 
     def get_previous_lectomed(self, mdg_num, anio, mes):

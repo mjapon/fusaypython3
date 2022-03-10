@@ -75,9 +75,6 @@ class TFuserSecDao(BaseDao):
         where sec.sec_estado = 1 order by sec.sec_nombre asc
         """.format(us_id)
 
-        print('sql:')
-        print(sql)
-
         tupla_desc = ('sec_id', 'sec_nombre', 'sec_marca', 'fus_main')
 
         return self.all(sql, tupla_desc)

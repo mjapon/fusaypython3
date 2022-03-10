@@ -110,6 +110,29 @@ class TFuserTokenRest(TokenView):
             fuserroldao = TFuserRolDao(self.dbsession)
             isuserhas = fuserroldao.user_has_permiso(user_id=self.get_user_id(), prm_abreviacion=form['rol'])
             return self.res200({'hasperm': isuserhas})
+        elif accion == 'chgstate':
+            form = self.get_json_body()
+            tfuserdao = TFuserDao(self.dbsession)
+            new_state = int(form['state'])
+            result = tfuserdao.cambiar_estado(us_id=form['user'], new_state=new_state)
+            if new_state == 1:
+                msg = 'Se desactivó exitosamente este usuario'
+            else:
+                msg = 'Se activó exitosamente este usuario'
+
+            return self.res200({'msg': msg, 'resultado': result})
+        elif accion == 'updclave':
+            fuserroldao = TFuserRolDao(self.dbsession)
+            tfuserdao = TFuserDao(self.dbsession)
+            if fuserroldao.user_has_permiso(self.user_id, prm_abreviacion='US_CHG_PASS'):
+                form = self.get_json_body()
+                res = tfuserdao.cambiar_clave(form=form, user_cambia=self.get_user_id())
+                if res == 1:
+                    return self.res200({'res': res, 'msg': 'Cambio exitoso de clave'})
+                else:
+                    return self.res200({'res': res, 'msg': 'No se pudo realizar el cambio de clave'})
+            else:
+                return self.res200({'res': 0, 'msg': 'No tiene permisos para realizar cambio de clave'})
 
     def collection_get(self):
         accion = self.get_request_param('accion')

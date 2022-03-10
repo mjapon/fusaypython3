@@ -20,6 +20,8 @@ class TFuser(Declarative, JsonAlchemy):
     per_id = Column(Integer, nullable=False)
     us_fechacrea = Column(DateTime)
     us_estado = Column(Integer, nullable=False, default=0)
+    us_fechaupd = Column(DateTime)
+    us_userupd = Column(Integer)
 
 
 class TFuserSec(Declarative, JsonAlchemy):
