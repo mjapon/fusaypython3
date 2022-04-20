@@ -10,6 +10,7 @@ from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tasicredito.tasicredito_model import TAsicredito
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
+from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.ttransaccpago.ttransaccpago_dao import TTransaccPagoDao
 from fusayrepo.logica.fusay.ttransaccpdv.ttransaccpdv_dao import TTransaccPdvDao
@@ -127,6 +128,56 @@ class TAsicreditoDao(BaseDao):
             'formtopost': {'form': form, 'formasiento': formasiento},
             'cuentasforcred': cuentasformov
         }
+
+    def create_asiento_prestamo(self, per_codigo, sec_codigo, monto, usercrea):
+
+        from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
+        tasientodao = TasientoDao(self.dbsession)
+
+        formasiento = tasientodao.get_form_asiento(sec_codigo=sec_codigo)
+
+        formasiento['formasiento']['trn_docpen'] = 'F'
+        formasiento['formref']['per_id'] = per_codigo
+
+        formdet = formasiento['formdet']
+        detalles = []
+
+        tparamsdao = TParamsDao(self.dbsession)
+
+        ctadebe = tparamsdao.get_param_value('cj_cta_presta_debe')
+        ctahaber = tparamsdao.get_param_value('cj_cta_presta_haber')
+
+        if ctadebe is None:
+            raise ErrorValidacionExc('Parámetro cj_cta_presta_debe no configurado, favor verificar')
+
+        if ctahaber is None:
+            raise ErrorValidacionExc('Parámetro cj_cta_presta_haber no configurado, favor verificar')
+
+        itemconfidao = TItemConfigDao(self.dbsession)
+        datos_cta_debe = itemconfidao.get_detalles_ctacontable_by_code(ic_code=ctadebe)
+        datos_cta_haber = itemconfidao.get_detalles_ctacontable_by_code(ic_code=ctahaber)
+
+        debedet = self.clone_formdet(formdet)
+        debedet['dt_debito'] = 1
+        debedet['dt_valor'] = numeros.roundm2(monto)
+        debedet['cta_codigo'] = datos_cta_debe['ic_id']
+        debedet['ic_clasecc'] = 'XC'
+        detalles.append(debedet)
+
+        haberdet = self.clone_formdet(formdet)
+        haberdet['dt_debito'] = -1
+        haberdet['dt_valor'] = numeros.roundm2(monto)
+        haberdet['cta_codigo'] = datos_cta_haber['ic_id']
+        haberdet['ic_clasecc'] = ''
+        detalles.append(haberdet)
+
+        formasiento['detalles'] = detalles
+
+        trn_codigo_gen = tasientodao.crear_asiento_cxcp_fromref(formcab=formasiento['formasiento'],
+                                                                formref=formasiento['formref'],
+                                                                usercrea=usercrea,
+                                                                detalles=formasiento['detalles'])
+        return trn_codigo_gen
 
     def create_from_referente(self, formtosave, usercrea):
         form = formtosave['form']

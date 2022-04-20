@@ -7,6 +7,7 @@ import decimal
 import logging
 from datetime import datetime
 
+from fusayrepo import utils
 from fusayrepo.logica.aguap.tagp_contrato.comunidad_dao import ComunidadAguaDao
 from fusayrepo.logica.aguap.tagp_contrato.tagp_medidor_dao import TagpMedidorAguaDao
 from fusayrepo.logica.aguap.tagp_models import TAgpContrato
@@ -17,7 +18,7 @@ from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.logica.public.tmes_dao import PublicTMesDao
-from fusayrepo.utils import cadenas, fechas
+from fusayrepo.utils import cadenas, fechas, sqls
 
 log = logging.getLogger(__name__)
 
@@ -400,20 +401,7 @@ class TAgpContratoDao(BaseDao):
         return where
 
     def get_filtro_nomapelcedul(self, filtro):
-        whereper = ''
-        if cadenas.es_nonulo_novacio(filtro):
-            palabras = cadenas.strip_upper(filtro).split()
-            filtromod = []
-            for cad in palabras:
-                filtromod.append(u"%{0}%".format(cad))
-
-            nombreslike = u' '.join(filtromod)
-            filtrocedulas = u" per.per_ciruc like '{0}%'".format(cadenas.strip(filtro))
-            whereper = u"""
-                     (per.per_nombres||' '||per.per_apellidos like '{nombreslike}') or ({filtrocedulas}) 
-                    """.format(nombreslike=nombreslike, filtrocedulas=filtrocedulas)
-
-        return whereper
+        return sqls.get_filtro_nomapelcedul(filtro)
 
     def get_grid_contratos(self, filtro):
         tgriddao = TGridDao(self.dbsession)

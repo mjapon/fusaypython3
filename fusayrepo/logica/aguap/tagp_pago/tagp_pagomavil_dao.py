@@ -25,6 +25,7 @@ class TagpPagoMavilDao(BaseDao):
             'pgm_anio': fechas.get_anio_actual(),
             'pgm_mes': fechas.get_mes_actual(),
             'fecha': fechas.get_str_fecha_actual(),
+            'fecha_hasta': fechas.get_str_fecha_actual(),
             'pgm_total': 0.0,
             'pgm_obs': ''
         }
@@ -106,7 +107,7 @@ class TagpPagoMavilDao(BaseDao):
                     tasiabondao.anular(abo_codigo=abonos['abo_codigo'], user_anula=useranula,
                                        obs_anula='Se anula abono de pago adelantado (BY SYS)')
 
-    def get_grid_pagos_mavil(self, anio, mes, fecha):
+    def get_grid_pagos_mavil(self, anio, mes, fecha, fecha_hasta):
         griddao = TGridDao(self.dbsession)
         # swhere = ' and extract(year from asi.trn_fecha) =  {0} and extract(month from asi.trn_fecha)  = {1} '.format(
         #    anio, mes)
@@ -114,23 +115,28 @@ class TagpPagoMavilDao(BaseDao):
         # swhere = ' and extract(year from asi.trn_fecha) = {0} and extract(month from asi.trn_fecha) = {1} '.format(anio,
         #                                                                                                           mes)
 
-        swhere = """ and date(asi.trn_fecha) >= '{0}'""".format(fechas.format_cadena_db(fecha))
+        swhere = """ and date(asi.trn_fecha) >= '{0}' and date(asi.trn_fecha) <= '{1}' """.format(
+            fechas.format_cadena_db(fecha),
+            fechas.format_cadena_db(fecha_hasta)
+        )
 
         return griddao.run_grid(grid_nombre='agp_pagosmavil', swhere=swhere)
 
-    def get_grid_newcontratosmavil(self, anio, mes, fecha):
+    def get_grid_newcontratosmavil(self, anio, mes, fecha, fecha_hasta):
         paramsdao = TParamsDao(self.dbsession)
         fechainicobro = paramsdao.get_param_value('agp_fecinicbreg')
         if cadenas.es_nonulo_novacio(fechainicobro):
             # fechainicobrodb = fechas.format_cadena_db(fechainicobro)
-            swhere = """ and date(cna_fechacrea)>={0}""".format(fechas.format_cadena_db('fecha'))
+            swhere = """ and date(cna_fechacrea)>={0} and date(cna_fechacrea)<={0}""".format(
+                fechas.format_cadena_db(fecha),
+                fechas.format_cadena_db(fecha_hasta))
             griddao = TGridDao(self.dbsession)
             return griddao.run_grid(grid_nombre='agp_newcnmavil', swhere=swhere)
         return []
 
-    def get_reporte_pagos_mavil(self, anio, mes, fecha):
-        grid_facturas = self.get_grid_pagos_mavil(anio, mes, fecha)
-        grid_newcontract = self.get_grid_newcontratosmavil(anio, mes, fecha)
+    def get_reporte_pagos_mavil(self, anio, mes, fecha, fecha_hasta):
+        grid_facturas = self.get_grid_pagos_mavil(anio, mes, fecha, fecha_hasta)
+        grid_newcontract = self.get_grid_newcontratosmavil(anio, mes, fecha, fecha_hasta)
 
         keys = {}
         totalfacturas = 0.0

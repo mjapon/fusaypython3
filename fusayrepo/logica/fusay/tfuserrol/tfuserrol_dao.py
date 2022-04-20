@@ -50,8 +50,7 @@ class TFuserRolDao(BaseDao):
         return cuenta > 0
 
     def listar_permisos(self, us_id):
-        sql = """
-        
+        sql = """        
         select per.prm_id, per.prm_abreviacion, per.prm_nombre from tpermiso per
         where per.prm_id in (
            select permrol.prm_id from tfuserrol fr

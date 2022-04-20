@@ -3,9 +3,12 @@
 Fecha de creacion '16/02/16'
 @autor: 'serviestudios'
 """
+import datetime
 import logging
 
 import jwt
+
+from fusayrepo.utils import numeros, fechas
 
 log = logging.getLogger(__name__)
 
@@ -43,13 +46,28 @@ class GeneraTokenUtil(object):
         return decoded_value
 
 
+def get_fila(saldo_ini, cuota_mensual, tasa, fecha):
+    interes = saldo_ini * tasa / 12
+    roud_interes = numeros.roundm2(interes)
+    capital = cuota_mensual - interes
+    round_capital = numeros.roundm2(capital)
+    saldo = saldo_ini - capital
+    # round_saldo = numeros.roundm2(saldo)
+    next_date = fechas.sumar_meses(fecha, 1)
+    return {
+        'capital': round_capital,
+        'interes': roud_interes,
+        'saldo': saldo,
+        'nextdate': next_date
+    }
+
+
 if __name__ == '__main__':
     print("Se ejecuta main--->")
 
-    from dateutil.relativedelta import *
-    from datetime import date
+    feca = fechas.parse_cadena('01/04/2022')
+    hoy = datetime.datetime.now()
 
-    today = date.today()
-    dob = date(1985, 1, 25)
-    age = relativedelta(today, dob)
-    print(age)
+    fecr = hoy - feca
+    # Prueba
+    print(fecr.days)

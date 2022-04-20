@@ -112,7 +112,16 @@ class DataLoggedDao(BaseDao):
                 'icon': 'fas fa-tint',
                 'route': 'aguap/home',
                 'css': 'btn-outline-secondary'
-            }]
+            }],
+            'FIN_CRED_LIST':[
+                {
+                    'label': 'Caja de Créditos',
+                    'title': 'Sistema para cajas de ahorro y crédito',
+                    'icon': 'fas fa-piggy-bank',
+                    'route': 'finan/home',
+                    'css': 'btn-outline-secondary'
+                }
+            ]
         }
 
         accesosdir = []
