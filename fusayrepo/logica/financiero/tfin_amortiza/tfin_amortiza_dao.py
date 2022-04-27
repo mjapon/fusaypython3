@@ -127,6 +127,20 @@ class TFinAmortizaDao(BaseDao):
                 tfinamortiza.pgc_id = pgc_id
                 self.dbsession.add(tfinamortiza)
 
+    def anular_tabla(self, cred_id):
+        sql = """
+        select amor.amo_id from tfin_amortiza amor where amor.amo_estado = 0
+        and amor.cre_id = {0}
+        """.format(cred_id)
+
+        lista_amortiza = self.all(sql, tupla_desc=('amo_id',))
+        if lista_amortiza is not None and len(lista_amortiza) > 0:
+            for amorti_row in lista_amortiza:
+                tfinamortiza = self.dbsession.query(TFinAmortiza) \
+                    .filter(TFinAmortiza.amo_id == amorti_row['amo_id']).first()
+                tfinamortiza.amo_estado = 1
+                self.dbsession.add(tfinamortiza)
+
     def generar_guardar_tabla(self, cred_id, monto_prestamo, tasa_interes, fecha_prestamo, ncuotas,
                               user_crea, sumancuota=0, pgc_id=None):
         tasa = tasa_interes / 100.0

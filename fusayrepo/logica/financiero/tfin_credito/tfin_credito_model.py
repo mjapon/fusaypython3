@@ -26,6 +26,7 @@ class TFinCredito(Declarative, JsonAlchemy):
     cre_cuota = Column(Numeric(15, 6), default=0.0)
     cre_totalint = Column(Numeric(15, 6), default=0.0)
     cre_saldopend = Column(Numeric(15, 6), default=0.0)
+    cre_fecaprob = Column(DateTime)
 
 
 class TFinHistoCred(Declarative, JsonAlchemy):

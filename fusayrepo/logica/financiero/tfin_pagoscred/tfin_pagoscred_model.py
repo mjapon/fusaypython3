@@ -6,6 +6,7 @@ Fecha de creacion 11/9/20
 import logging
 
 from sqlalchemy import Column, Integer, Numeric, Date, DateTime, SMALLINT, Text
+
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
 
@@ -52,3 +53,6 @@ class TFinPagosCredCab(Declarative, JsonAlchemy):
     pgc_total_capital = Column(Numeric(15, 6), default=0.0, nullable=False)
     pgc_total_interes = Column(Numeric(15, 6), default=0.0, nullable=False)
     pgc_total_intmora = Column(Numeric(15, 6), default=0.0, nullable=False)
+    pgc_trncod = Column(Integer, nullable=False, default=0)
+    pgc_valcuotantes = Column(Numeric(15, 6), default=0.0, nullable=False)
+    pgc_valcuotadesp = Column(Numeric(15, 6), default=0.0, nullable=False)

@@ -129,6 +129,107 @@ class TAsicreditoDao(BaseDao):
             'cuentasforcred': cuentasformov
         }
 
+    def create_asiento_pago(self, per_codigo, sec_codigo, total, capital, interes, mora, cta_pago, usercrea):
+
+        from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
+        tasientodao = TasientoDao(self.dbsession)
+
+        formasiento = tasientodao.get_form_asiento(sec_codigo=sec_codigo)
+
+        formasiento['formasiento']['trn_docpen'] = 'F'
+        formasiento['formasiento']['trn_observ'] = 'P/R Pago de cuota de credito'
+        formasiento['formref']['per_id'] = per_codigo
+
+        formdet = formasiento['formdet']
+        detalles = []
+
+        tparamsdao = TParamsDao(self.dbsession)
+
+        ctahaber = tparamsdao.get_param_value('cj_cta_presta_debe')
+        ctadebe = cta_pago
+
+        ctahaber_interes = tparamsdao.get_param_value('cj_cta_int')
+        ctahaber_mora = tparamsdao.get_param_value('cj_cta_mora')
+
+        if ctadebe is None:
+            raise ErrorValidacionExc('Debe seleccionar la cuenta en la que se acredita el pago')
+
+        if ctahaber is None:
+            raise ErrorValidacionExc('Parámetro cj_cta_presta_debe no configurado, favor verificar')
+
+        if ctahaber_interes is None:
+            raise ErrorValidacionExc('Parámetro ctahaber_interes no configurado, favor verificar')
+
+        if ctahaber_mora is None:
+            raise ErrorValidacionExc('Parámetro ctahaber_mora no configurado, favor verificar')
+
+        itemconfidao = TItemConfigDao(self.dbsession)
+        datos_cta_debe = itemconfidao.get_detalles_ctacontable_by_code(ic_code=ctadebe)
+        if datos_cta_debe is None:
+            raise ErrorValidacionExc('No pude recuperar la informacion de la cuenta contable {0}'.format(ctadebe))
+
+        datos_cta_haber = itemconfidao.get_detalles_ctacontable_by_code(ic_code=ctahaber)
+
+        if datos_cta_haber is None:
+            raise ErrorValidacionExc('No pude recuperar la informacion de la cuenta contable {0}'.format(ctadebe))
+
+        datos_ctahaber_int = itemconfidao.get_detalles_ctacontable_by_code(ic_code=ctahaber_interes)
+
+        if datos_ctahaber_int is None:
+            raise ErrorValidacionExc(
+                'No pude recuperar la informacion de la cuenta contable {0}'.format(datos_ctahaber_int))
+
+        datos_ctahaber_mora = itemconfidao.get_detalles_ctacontable_by_code(ic_code=ctahaber_mora)
+
+        if datos_ctahaber_mora is None:
+            raise ErrorValidacionExc(
+                'No pude recuperar la informacion de la cuenta contable {0}'.format(datos_ctahaber_mora))
+
+        debedet = self.clone_formdet(formdet)
+        debedet['dt_debito'] = 1
+        debedet['dt_valor'] = numeros.roundm2(total)
+        debedet['cta_codigo'] = datos_cta_debe['ic_id']
+        debedet['ic_clasecc'] = ''
+        detalles.append(debedet)
+
+        haberdet = self.clone_formdet(formdet)
+        haberdet['dt_debito'] = -1
+        haberdet['dt_valor'] = numeros.roundm2(capital)
+        haberdet['cta_codigo'] = datos_cta_haber['ic_id']
+        haberdet['ic_clasecc'] = ''
+        detalles.append(haberdet)
+
+        haberdet_int = self.clone_formdet(formdet)
+        haberdet_int['dt_debito'] = -1
+        haberdet_int['dt_valor'] = numeros.roundm2(interes)
+        haberdet_int['cta_codigo'] = datos_ctahaber_int['ic_id']
+        haberdet_int['ic_clasecc'] = ''
+        detalles.append(haberdet_int)
+
+        if mora > 0:
+            haberdet_mora = self.clone_formdet(formdet)
+            haberdet_mora['dt_debito'] = -1
+            haberdet_mora['dt_valor'] = numeros.roundm2(mora)
+            haberdet_mora['cta_codigo'] = datos_ctahaber_mora['ic_id']
+            haberdet_mora['ic_clasecc'] = ''
+            detalles.append(haberdet_int)
+
+        formasiento['detalles'] = detalles
+
+        trn_codigo_gen = tasientodao.crear_asiento(formcab=formasiento['formasiento'],
+                                                   formref=formasiento['formref'],
+                                                   usercrea=usercrea,
+                                                   detalles=formasiento['detalles'], update_datosref=False)
+
+        """
+        trn_codigo_gen = tasientodao.crear_asiento_cxcp_fromref(formcab=formasiento['formasiento'],
+                                                                formref=formasiento['formref'],
+                                                                usercrea=usercrea,
+                                                                detalles=formasiento['detalles'])
+        """
+
+        return trn_codigo_gen
+
     def create_asiento_prestamo(self, per_codigo, sec_codigo, monto, usercrea):
 
         from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
@@ -137,6 +238,7 @@ class TAsicreditoDao(BaseDao):
         formasiento = tasientodao.get_form_asiento(sec_codigo=sec_codigo)
 
         formasiento['formasiento']['trn_docpen'] = 'F'
+        formasiento['formasiento']['trn_observ'] = 'P/R Débito por aprobación de crédito'
         formasiento['formref']['per_id'] = per_codigo
 
         formdet = formasiento['formdet']
@@ -173,10 +275,19 @@ class TAsicreditoDao(BaseDao):
 
         formasiento['detalles'] = detalles
 
+        trn_codigo_gen = tasientodao.crear_asiento(formcab=formasiento['formasiento'],
+                                                   formref=formasiento['formref'],
+                                                   usercrea=usercrea,
+                                                   detalles=formasiento['detalles'],
+                                                   update_datosref=False
+                                                   )
+        """
         trn_codigo_gen = tasientodao.crear_asiento_cxcp_fromref(formcab=formasiento['formasiento'],
                                                                 formref=formasiento['formref'],
                                                                 usercrea=usercrea,
                                                                 detalles=formasiento['detalles'])
+        """
+
         return trn_codigo_gen
 
     def create_from_referente(self, formtosave, usercrea):

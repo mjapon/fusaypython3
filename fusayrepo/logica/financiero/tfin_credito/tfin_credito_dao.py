@@ -16,7 +16,7 @@ from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
-from fusayrepo.utils import sqls, cadenas
+from fusayrepo.utils import sqls, cadenas, fechas
 
 log = logging.getLogger(__name__)
 
@@ -25,6 +25,22 @@ class TFinCreditoDao(BaseDao):
 
     def find_by_credid(self, cre_id):
         return self.dbsession.query(TFinCredito).filter(TFinCredito.cre_id == cre_id).first()
+
+    def get_form_lista(self):
+        sqlestados = """
+        select est_id, est_nombre from tfin_estadocred 
+            union select 0,'Todos' order by est_id
+        """
+        tupla_desc = ('est_id', 'est_nombre')
+        estados = self.all(sqlestados, tupla_desc)
+        form = {
+            'filtro': '',
+            'estado': 0
+        }
+        return {
+            'form': form,
+            'estados': estados
+        }
 
     def get_form(self, per_id):
         paramsdao = TParamsDao(self.dbsession)
@@ -63,7 +79,7 @@ class TFinCreditoDao(BaseDao):
     def get_datos_credito(self, cre_id):
         sql = """
         select cre.cre_id, cre.per_id, cre.cre_monto, cre.cre_tasa, 
-        cre.cre_fechacrea, cre.cre_usercrea, 
+        cre.cre_fechacrea, cre.cre_usercrea, cre.cre_fecaprob, cre.cre_fecaprob::date as fecaprob,
         cre.cre_estado, est.est_nombre, cre.cre_obs, cre.cre_plazo,
         cre.cre_cuota, cre.cre_totalint,
         cre.cre_prod, cre.cre_tipoint, prod.prod_nombre, cre.cre_saldopend 
@@ -72,17 +88,28 @@ class TFinCreditoDao(BaseDao):
         join tfin_producto prod on cre.cre_prod = prod.prod_id
          where cre_id = {0}
         """.format(cre_id)
-        tupla_desc = ('cre_id', 'per_id', 'cre_monto', 'cre_tasa', 'cre_fechacrea', 'cre_usercrea',
-                      'cre_estado', 'est_nombre', 'cre_obs', 'cre_plazo', 'cre_cuota', 'cre_totalint',
+        tupla_desc = ('cre_id', 'per_id', 'cre_monto', 'cre_tasa', 'cre_fechacrea', 'cre_usercrea', 'cre_fecaprob',
+                      'fecaprob', 'cre_estado', 'est_nombre', 'cre_obs', 'cre_plazo', 'cre_cuota', 'cre_totalint',
                       'cre_prod', 'cre_tipoint', 'prod_nombre', 'cre_saldopend')
         return self.first(sql, tupla_desc)
 
-    def get_grid(self, filtro):
+    def get_grid(self, filtro, estado=0):
         grid_dao = TGridDao(self.dbsession)
         sqlwhere = sqls.get_filtro_nomapelcedul(filtro)
         where = ""
+        wherestado = ""
+        if int(estado) > 0:
+            wherestado = " cre.cre_estado={0}".format(estado)
+
         if cadenas.es_nonulo_novacio(sqlwhere):
-            where = " where {0}".format(sqlwhere)
+            where = " ({0}) ".format(sqlwhere)
+            if cadenas.es_nonulo_novacio(wherestado):
+                where += " and {0}".format(wherestado)
+        elif cadenas.es_nonulo_novacio(wherestado):
+            where = " {0} ".format(wherestado)
+
+        if cadenas.es_nonulo_novacio(where):
+            where = " where {0} ".format(where)
 
         grid = grid_dao.run_grid(grid_nombre='fin_creditos', where=where)
         return grid
@@ -128,14 +155,35 @@ class TFinCreditoDao(BaseDao):
                             new_state=cre_estado,
                             obs=obs)
 
-        self.dbsession.add(credito)
-
         # Si el credito cambia a estado aprobado entonces se debe generar el asiento contable
         if cre_estado == 2:
+            credito.cre_fecaprob = datetime.datetime.now()
             tasicred_dao = TAsicreditoDao(self.dbsession)
             monto_credito = credito.cre_monto
             tasicred_dao.create_asiento_prestamo(per_codigo=credito.per_id, sec_codigo=sec_codigo,
                                                  monto=monto_credito, usercrea=user_edit)
+
+            # Actualizar la tabla de amorizacion con la fecha de aprobacion
+            if fechas.es_fecha_actual_mayor_a_fecha(fecha_str=fechas.parse_fecha(credito.cre_fechacrea)):
+                # Se debe hacer la actualizacion de la tabla de amortizacion
+                amordao = TFinAmortizaDao(self.dbsession)
+                amordao.anular_tabla(cred_id=cre_id)
+
+                amortiza_dao = TFinAmortizaDao(self.dbsession)
+                result_tbl = amortiza_dao.generar_guardar_tabla(
+                    cred_id=cre_id,
+                    monto_prestamo=float(credito.cre_monto),
+                    tasa_interes=float(credito.cre_tasa),
+                    fecha_prestamo=credito.cre_fechacrea,
+                    ncuotas=credito.cre_plazo,
+                    user_crea=user_edit
+                )
+
+                if result_tbl is not None:
+                    credito.cre_totalint = result_tbl['total_int']
+                    credito.cre_cuota = result_tbl['cuota_mensual']
+
+        self.dbsession.add(credito)
 
         return msg
 

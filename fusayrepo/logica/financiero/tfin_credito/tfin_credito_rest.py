@@ -25,6 +25,9 @@ class TFinCreditoRest(TokenView):
         if accion == 'form':
             form = credito_dao.get_form(per_id=0)
             return self.res200({'form': form})
+        elif accion == 'formlista':
+            form = credito_dao.get_form_lista()
+            return self.res200({'form': form['form'], 'estados': form['estados']})
         elif accion == 'tblamor':
             amordao = TFinAmortizaDao(self.dbsession)
             cre_id = self.get_request_param('cred')
@@ -32,7 +35,8 @@ class TFinCreditoRest(TokenView):
             return self.res200('tblamor', tabla_amor)
         elif accion == 'listargrid':
             filtro = self.get_request_param('filtro')
-            grid = credito_dao.get_grid(filtro)
+            estado = self.get_request_param('estado')
+            grid = credito_dao.get_grid(filtro, estado)
             return self.res200({'grid': grid})
         elif accion == 'gdetcredfull':
             cre_id = self.get_request_param('creid')

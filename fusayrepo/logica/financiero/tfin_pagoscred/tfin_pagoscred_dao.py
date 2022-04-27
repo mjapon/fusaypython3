@@ -10,11 +10,16 @@ import logging
 from sqlalchemy import and_
 
 from fusayrepo.logica.dao.base import BaseDao
+from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.financiero.tfin_amortiza.tfin_amortiza_dao import TFinAmortizaDao
 from fusayrepo.logica.financiero.tfin_amortiza.tfin_amortiza_model import TFinAmortiza
 from fusayrepo.logica.financiero.tfin_credito.tfin_credito_dao import TFinCreditoDao
 from fusayrepo.logica.financiero.tfin_pagoscred.tfin_pagoscred_model import TFinPagosCredDet, TFinPagosCredCab
 from fusayrepo.logica.fusay.tadjunto.tadjunto_dao import TAdjuntoDao
+from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
+from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
+from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
+from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.utils import numeros, fechas, cadenas
 
 log = logging.getLogger(__name__)
@@ -33,7 +38,25 @@ class TFinPagosCredDao(BaseDao):
             'pg_fecpagocalc': '',
             'pg_amoid': 0
         }
+
         return form
+
+    def get_ctas_for_pago(self):
+        paramsdao = TParamsDao(self.dbsession)
+        cj_ctas_cont_pagos = paramsdao.get_param_value('cj_ctas_cont_pagos')
+        if cj_ctas_cont_pagos is None:
+            raise ErrorValidacionExc('El parametro cj_ctas_cont_pagos no esta configurado favor verificar')
+
+        itemconfidao = TItemConfigDao(self.dbsession)
+        datos_cta_debe = itemconfidao.get_detalles_ctacontable_by_codes(ic_codes=cj_ctas_cont_pagos)
+        cta_pago = 0
+        if datos_cta_debe is not None and len(datos_cta_debe) > 0:
+            cta_pago = datos_cta_debe[0]['ic_code']
+
+        return {
+            'cta_pago': cta_pago,
+            'cta_pagos': datos_cta_debe
+        }
 
     def calcular_cuotas(self, cuotas):
         cre_id = cuotas[0]['cre_id']
@@ -78,6 +101,8 @@ class TFinPagosCredDao(BaseDao):
             total_intmora += new_form['pg_mora']
             cuotaspagar.append(new_form)
 
+        infocontable = self.get_ctas_for_pago()
+
         return {
             'cre_id': cre_id,
             'pgc_total': numeros.roundm2(total),
@@ -87,7 +112,9 @@ class TFinPagosCredDao(BaseDao):
             'pgc_total_capital': total_capital,
             'pgc_total_interes': total_interes,
             'pgc_total_intmora': total_intmora,
-            'cuotaspagar': cuotaspagar
+            'cuotaspagar': cuotaspagar,
+            'cta_pago': infocontable['cta_pago'],
+            'cta_pagos': infocontable['cta_pagos']
         }
 
     def calcula_mora(self, fecha_pago, capital):
@@ -232,14 +259,12 @@ class TFinPagosCredDao(BaseDao):
     def anular_pago(self, pgc_id, user_anula, obs):
         pagoscredcab = self.dbsession.query(TFinPagosCredCab).filter(TFinPagosCredCab.pgc_id == pgc_id).first()
         if pagoscredcab is not None:
-            pgc_total = pagoscredcab.pgc_total
-            pgc_adelanto = pagoscredcab.pgc_total
-            pgc_total_capital = pagoscredcab.pgc_total
-
-            total_capital = pgc_total_capital + pgc_adelanto
-
+            pgc_total_capital = pagoscredcab.pgc_total_capital
+            pgc_adelanto = pagoscredcab.pgc_adelanto
             credito_dao = TFinCreditoDao(self.dbsession)
-            credito_dao.reversar_saldo_pend(cred_id=pagoscredcab.cre_id, capital=total_capital, user_reversa=user_anula)
+
+            credito_dao.reversar_saldo_pend(cred_id=pagoscredcab.cre_id, capital=pgc_total_capital + pgc_adelanto,
+                                            user_reversa=user_anula)
 
             pagoscredcab.pgc_estado = 2
             pagoscredcab.pgc_useranul = user_anula
@@ -274,8 +299,17 @@ class TFinPagosCredDao(BaseDao):
                         amort_recal_item.amo_estado = 0
                         self.dbsession.add(amort_recal_item)
 
-    def crear_pago(self, form, user_crea):
+                credito = credito_dao.find_by_credid(cre_id=pagoscredcab.cre_id)
+                if credito is not None:
+                    credito.cre_cuota = pagoscredcab.pgc_valcuotantes
+                    self.dbsession.add(credito)
 
+            tasidao = TasientoDao(self.dbsession)
+            trn_codigo_pago = pagoscredcab.pgc_trncod
+            tasidao.anular(trn_codigo=trn_codigo_pago, user_anula=user_anula,
+                           obs_anula="P/R Anulacion pago de credito")
+
+    def crear_pago(self, form, user_crea, sec_codigo):
         archivo = None
         if 'archivo' in form:
             archivo = form['archivo']
@@ -287,8 +321,25 @@ class TFinPagosCredDao(BaseDao):
             adj_id = adjuntodao.crear(formadj, user_crea=user_crea, file=archivo['archivo'])
 
         cre_id = form['cre_id']
+
+        credito_dao = TFinCreditoDao(self.dbsession)
+        # Se debe actualizar el monto de la cuota mensual
+        credito = credito_dao.find_by_credid(cre_id=cre_id)
+        cre_saldopend = decimal.Decimal(numeros.roundm2(credito.cre_saldopend))
+
         pg_adelanto = decimal.Decimal(numeros.roundm2(form['pgc_adelanto']))
+
         pgc_total = decimal.Decimal(numeros.roundm2(form['pgc_total']))
+
+        # Validar montos
+        if pg_adelanto < 0:
+            raise ErrorValidacionExc('El abono de capital no puede ser negativo')
+
+        if numeros.roundm2(pgc_total) > numeros.roundm2(cre_saldopend):
+            raise ErrorValidacionExc(
+                'El pago total:{0} sobrepasa la deuda del crédito:{1}'.format(numeros.roundm2(pgc_total),
+                                                                              numeros.roundm2(cre_saldopend)))
+
         pgc_total_capital = decimal.Decimal(numeros.roundm2(form['pgc_total_capital']))
         pgc_total_interes = decimal.Decimal(numeros.roundm2(form['pgc_total_interes']))
         pgc_total_intmora = decimal.Decimal(numeros.roundm2(form['pgc_total_intmora']))
@@ -315,8 +366,6 @@ class TFinPagosCredDao(BaseDao):
         total_capital = capital_cuotas + pg_adelanto
 
         self.dbsession.add(pagoscredcab)
-
-        credito_dao = TFinCreditoDao(self.dbsession)
         new_saldo_pend = credito_dao.update_saldo_pend(cred_id=cre_id, capital=total_capital, user_upd=user_crea)
 
         pagoscredcab.pgc_saldopend = new_saldo_pend
@@ -325,32 +374,60 @@ class TFinPagosCredDao(BaseDao):
         self.dbsession.flush()
         pgc_id = pagoscredcab.pgc_id
 
+        pg_fecpagomax = fechas.get_str_fecha_actual()
         for cuota in cuotaspagar:
+            pg_fecpagocalc_it = cuota['pg_fecpagocalc']
+            if fechas.es_fecha_a_mayor_o_igual_fecha_b(pg_fecpagocalc_it, pg_fecpagomax):
+                pg_fecpagomax = pg_fecpagocalc_it
+
             self.crear_det(form=cuota, user_crea=user_crea, pgc_id=pgc_id)
             self.dbsession.flush()
 
-        msg = 'Registro exitoso'
-        if pg_adelanto > 0:
-            datos_credito = credito_dao.get_datos_credito(cre_id=cre_id)
+        tasicred_dao = TAsicreditoDao(self.dbsession)
 
+        datos_credito = credito_dao.get_datos_credito(cre_id=cre_id)
+        trn_codigo_pago = tasicred_dao.create_asiento_pago(per_codigo=datos_credito['per_id'], sec_codigo=sec_codigo,
+                                                           total=pgc_total, capital=total_capital,
+                                                           interes=pgc_total_interes,
+                                                           mora=pgc_total_intmora, cta_pago=form['cta_pago'],
+                                                           usercrea=user_crea)
+        pagoscredcab.pgc_trncod = trn_codigo_pago
+        self.dbsession.add(pagoscredcab)
+
+        msg = 'Registro exitoso'
+
+        if pg_adelanto > 0 and new_saldo_pend > 0:
             cre_saldopend = datos_credito['cre_saldopend']
             if cre_saldopend > 0:
                 amortiza_dao = TFinAmortizaDao(self.dbsession)
                 amortiza_dao.cambia_estado_cuotas_amort_impagas(cre_id=cre_id, nuevo_estado=2, pgc_id=pgc_id)
                 ncuotas_pagadas = self.get_ncuotas_pagadas(cre_id=cre_id)
                 new_plazo = datos_credito['cre_plazo'] - ncuotas_pagadas
-
                 result_tbl = amortiza_dao.generar_guardar_tabla(
                     cred_id=cre_id,
                     monto_prestamo=cre_saldopend,
                     tasa_interes=datos_credito['cre_tasa'],
-                    fecha_prestamo=datetime.datetime.now(),
+                    fecha_prestamo=fechas.parse_cadena(pg_fecpagomax),
                     ncuotas=new_plazo,
                     user_crea=user_crea,
                     sumancuota=ncuotas_pagadas,
                     pgc_id=pgc_id
                 )
                 msg += ",se hizo una actualización de la tabla de amortización"
+
+                # credito.cre_totalint = result_tbl['total_int']
+                cre_cuota_antes = credito.cre_cuota
+                credito.cre_cuota = result_tbl['cuota_mensual']
+
+                pagoscredcab.pgc_trncod = trn_codigo_pago
+                pagoscredcab.pgc_valcuotantes = cre_cuota_antes
+                pagoscredcab.pgc_valcuotadesp = credito.cre_cuota
+                self.dbsession.add(pagoscredcab)
+                self.dbsession.add(credito)
+
+        if new_saldo_pend == 0:
+            # Se debe cambiar el stado del credito a cancelado
+            msg += ", El crédito {0} ha sido cancelado en su totalidad".format(cre_id)
 
         return {
             'pgc_id': pgc_id,

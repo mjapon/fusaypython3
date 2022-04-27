@@ -38,7 +38,8 @@ class TFinPagosCredRest(TokenView):
             return self.res200({'form': form})
         elif accion == 'savepago':
             body = self.get_json_body()
-            result = pagoscreddao.crear_pago(form=body['form'], user_crea=self.get_user_id())
+            result = pagoscreddao.crear_pago(form=body['form'], user_crea=self.get_user_id(),
+                                             sec_codigo=self.get_sec_id())
             return self.res200(result)
         elif accion == 'anulapago':
             body = self.get_json_body()['form']
