@@ -265,13 +265,21 @@ class TBilleteraMovDao(BaseDao):
         if archivo is not None:
             todrxdocsdao = TOdRxDocsDao(self.dbsession)
             thefile = archivo['archivo']
+
+            rxd_filename = ''
+            if 'rxd_filename' in archivo:
+                rxd_filename = archivo['rxd_filename']
+
+            elif 'adj_filename' in archivo:
+                rxd_filename = archivo['adj_filename']
+
             formfile = {
-                'rxd_filename': archivo['rxd_filename'],
+                'rxd_filename': rxd_filename,
                 'pac_id': -3,
                 'rxd_tipo': 3,
                 'rxd_nota': '',
                 'rxd_nropieza': 0,
-                'rxd_nombre': archivo['rxd_filename']
+                'rxd_nombre': rxd_filename
             }
 
             rxid = todrxdocsdao.crear(formfile, usercrea, thefile)

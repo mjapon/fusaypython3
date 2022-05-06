@@ -121,6 +121,15 @@ class DataLoggedDao(BaseDao):
                     'route': 'finan/home',
                     'css': 'btn-outline-secondary'
                 }
+            ],
+            'FIN_CREA_CTA': [
+                {
+                    'label': 'Apertura Cuentas',
+                    'title': 'Permite apertura una cuenta para un socio',
+                    'icon': 'fas fa-piggy-bank',
+                    'route': 'finan/aperturacta',
+                    'css': 'btn-outline-secondary'
+                }
             ]
         }
 
