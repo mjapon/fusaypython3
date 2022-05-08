@@ -22,6 +22,61 @@ class TFinCuentasDao(BaseDao):
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
 
+    def get_datos_cuenta_by_num(self, cue_id):
+        sql = """
+        
+        select cue_id,
+                cue.per_id,
+                cue.tc_id,
+                cue_fecha_apertura,
+                cue_estado,
+                cue_nombre,
+                cue_num_libreta,
+                cue_fecha_cierre,
+                cue_saldo_total,
+                cue_saldo_bloq,
+                cue_saldo_disp,
+                user_crea,
+                user_cierre,
+                per.per_nombres,
+                per.per_apellidos,
+                per.per_nombres||' '||per.per_apellidos as per_nomapel,
+                per.per_ciruc,
+                per.per_direccion,
+                per.per_telf,
+                per.per_movil,
+                per.per_email,
+                tipc.tc_nombre	
+                from tfin_cuentas cue
+                join tpersona per on cue.per_id = per.per_id
+                join tfin_tiposcuenta tipc on cue.tc_id = tipc.tc_id
+                where cue_id = {0} 
+        """.format(cue_id)
+        tupla_desc = (
+            'cue_id',
+            'per_id',
+            'tc_id',
+            'cue_fecha_apertura',
+            'cue_estado',
+            'cue_nombre',
+            'cue_num_libreta',
+            'cue_fecha_cierre',
+            'cue_saldo_total',
+            'cue_saldo_bloq',
+            'cue_saldo_disp',
+            'user_crea',
+            'user_cierre', 'per_nombres',
+            'per_apellidos',
+            'per_nomapel',
+            'per_ciruc',
+            'per_direccion',
+            'per_telf',
+            'per_movil',
+            'per_email',
+            'tc_nombre'
+        )
+        return self.first(sql, tupla_desc)
+
     def get_datos_cuenta(self, per_id, tc_id):
         sql = """
         select cue_id,

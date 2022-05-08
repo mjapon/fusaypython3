@@ -113,7 +113,7 @@ class DataLoggedDao(BaseDao):
                 'route': 'aguap/home',
                 'css': 'btn-outline-secondary'
             }],
-            'FIN_CRED_LIST':[
+            'FIN_CRED_LIST': [
                 {
                     'label': 'Caja de Créditos',
                     'title': 'Sistema para cajas de ahorro y crédito',
@@ -128,6 +128,15 @@ class DataLoggedDao(BaseDao):
                     'title': 'Permite apertura una cuenta para un socio',
                     'icon': 'fas fa-piggy-bank',
                     'route': 'finan/aperturacta',
+                    'css': 'btn-outline-secondary'
+                }
+            ],
+            'FIN_MOVS_CTA': [
+                {
+                    'label': 'Movimientos Cuentas',
+                    'title': 'Permite administrar movimientos de una cuenta',
+                    'icon': 'fas fa-piggy-bank',
+                    'route': 'finan/movscta',
                     'css': 'btn-outline-secondary'
                 }
             ]

@@ -7,7 +7,9 @@ import logging
 
 from cornice.resource import resource
 
+from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.financiero.tfin_cuentas.tfin_cuentas_dao import TFinCuentasDao
+from fusayrepo.utils import cadenas
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -31,6 +33,15 @@ class TFinCuentasRest(TokenView):
             perid = self.get_request_param('perid')
             tipo = self.get_request_param('tipo')
             datoscuenta = cuentas_dao.get_datos_cuenta(perid, tipo);
+            if datoscuenta is not None:
+                return self.res200({'datoscuenta': datoscuenta, 'existe': 1})
+            else:
+                return self.res200({'existe': 0})
+        elif accion == 'gdatctabynum':
+            numcta = self.get_request_param('numcta')
+            if not cadenas.es_nonulo_novacio(numcta):
+                raise ErrorValidacionExc('Debe ingresar el numero de la cuenta para buscar')
+            datoscuenta = cuentas_dao.get_datos_cuenta_by_num(numcta)
             if datoscuenta is not None:
                 return self.res200({'datoscuenta': datoscuenta, 'existe': 1})
             else:
