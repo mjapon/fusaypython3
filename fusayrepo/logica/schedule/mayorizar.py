@@ -13,13 +13,6 @@ from sqlalchemy.orm import sessionmaker
 
 from fusayrepo.utils import fechas, ctes
 
-logging.basicConfig(handlers=[RotatingFileHandler(filename="/var/log/mayorizamavil.log",
-                                                  mode='w', maxBytes=512000, backupCount=4)], level=logging.INFO,
-                    format='%(levelname)s %(asctime)s %(message)s',
-                    datefmt='%m/%d/%Y%I:%M:%S %p')
-
-log = logging.getLogger('my_logger')
-
 
 def get_session_factory(engine):
     factory = sessionmaker()
@@ -28,6 +21,14 @@ def get_session_factory(engine):
 
 
 if __name__ == "__main__":
+
+    logging.basicConfig(handlers=[RotatingFileHandler(filename="/var/log/mayorizamavil.log",
+                                                      mode='w', maxBytes=512000, backupCount=4)], level=logging.INFO,
+                        format='%(levelname)s %(asctime)s %(message)s',
+                        datefmt='%m/%d/%Y%I:%M:%S %p')
+
+    log = logging.getLogger('my_logger')
+
     log.info('Inicia Procesio mayorizacion--------->')
 
     dbsession = None
