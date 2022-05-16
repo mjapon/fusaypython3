@@ -27,15 +27,28 @@ class TFinPagosCredRest(TokenView):
             pago = self.get_request_param('codpago')
             datospago = pagoscreddao.get_detalles_pago(pgc_id=pago)
             return self.res200({'datospago': datospago})
+        elif accion == 'gformcalpagos':
+            form = pagoscreddao.get_form_calc_pago()
+            return self.res200({'form': form})
 
     def collection_post(self):
         accion = self.get_rqpa()
         pagoscreddao = TFinPagosCredDao(self.dbsession)
-        if accion == 'formpago':
+        if accion == 'calcuotaspago':
             body = self.get_json_body()
             cuotas = body['cuotas']
-            form = pagoscreddao.calcular_cuotas(cuotas)
+            fecha_pago = body['fecpago']
+            form = pagoscreddao.calcular_cuotas_pagar(cuotas, fecha_pago)
             return self.res200({'form': form})
+        elif accion == 'cuotasformarcapago':
+            body = self.get_json_body()
+            cuotas = body['cuotas']
+            form = pagoscreddao.calcular_cuotas_pagar(cuotas, calcular_mora=False)
+            return self.res200({'form': form})
+        elif accion == 'savemarcapag':
+            body = self.get_json_body()
+            result = pagoscreddao.marcar_como_pagado(form=body['form'], user_crea=self.get_user_id())
+            return self.res200(result)
         elif accion == 'savepago':
             body = self.get_json_body()
             result = pagoscreddao.crear_pago(form=body['form'], user_crea=self.get_user_id(),

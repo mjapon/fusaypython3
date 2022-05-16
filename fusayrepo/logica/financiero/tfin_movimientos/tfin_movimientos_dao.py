@@ -35,7 +35,7 @@ class TFinMovimientosDao(BaseDao):
         select 0 tipt_id, 'Elija uno' tipt_nombre, '' tipt_cod, 0 tipt_debcred,'Elija uno' codnombre
         union
         select
-        tipt_id, tipt_nombre, tipt_cod, tipt_debcred, tipt_cod||' - '||tipt_nombre codnombre from tfin_tipostran order by tipt_id 
+        tipt_id, tipt_nombre, tipt_cod, tipt_debcred, tipt_cod||' - '||tipt_nombre codnombre from tfin_tipostran order by tipt_nombre 
         """
         tupla_desc = ('tipt_id', 'tipt_nombre', 'tipt_cod', 'tipt_debcred', 'codnombre')
 

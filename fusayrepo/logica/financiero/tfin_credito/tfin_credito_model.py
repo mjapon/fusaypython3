@@ -3,7 +3,7 @@
 Fecha de creacion 11/9/20
 @autor: Manuel Japon
 """
-from sqlalchemy import Column, Integer, Numeric, DateTime, Text, String
+from sqlalchemy import Column, Integer, Numeric, Date, DateTime, Text, String
 
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
@@ -27,6 +27,8 @@ class TFinCredito(Declarative, JsonAlchemy):
     cre_totalint = Column(Numeric(15, 6), default=0.0)
     cre_saldopend = Column(Numeric(15, 6), default=0.0)
     cre_fecaprob = Column(DateTime)
+    cre_totalseguro = Column(Numeric(15, 6), default=0.0)
+    cre_fecprestamo = Column(Date, nullable=False)
 
 
 class TFinHistoCred(Declarative, JsonAlchemy):

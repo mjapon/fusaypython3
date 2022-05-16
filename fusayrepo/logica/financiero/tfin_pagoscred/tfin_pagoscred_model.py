@@ -20,6 +20,7 @@ class TFinPagosCredDet(Declarative, JsonAlchemy):
     pg_total = Column(Numeric(15, 6), nullable=False, default=0.0)
     pg_capital = Column(Numeric(15, 6), nullable=False, default=0.0)
     pg_interes = Column(Numeric(15, 6), nullable=False, default=0.0)
+    pg_seguro = Column(Numeric(15, 6), nullable=False, default=0.0)
     pg_mora = Column(Numeric(15, 6), nullable=False, default=0.0)
     pg_npago = Column(SMALLINT, nullable=False, default=1)
     pg_fecpagocalc = Column(Date)
@@ -56,3 +57,5 @@ class TFinPagosCredCab(Declarative, JsonAlchemy):
     pgc_trncod = Column(Integer, nullable=False, default=0)
     pgc_valcuotantes = Column(Numeric(15, 6), default=0.0, nullable=False)
     pgc_valcuotadesp = Column(Numeric(15, 6), default=0.0, nullable=False)
+    pgc_total_seguro = Column(Numeric(15, 6), default=0.0, nullable=False)
+    pgc_fechapago = Column(Date, nullable=False)

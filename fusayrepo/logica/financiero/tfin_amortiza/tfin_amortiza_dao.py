@@ -8,7 +8,8 @@ import logging
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.financiero.tfin_amortiza.tfin_amortiza_model import TFinAmortiza
-from fusayrepo.utils import numeros, fechas
+from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
+from fusayrepo.utils import numeros, fechas, cadenas
 
 log = logging.getLogger(__name__)
 
@@ -32,26 +33,28 @@ class TFinAmortizaDao(BaseDao):
     def get_tabla(self, cre_id):
         sql = """
         select amo_id, cre_id, amo_ncuota, amo_fechapago, 
-        round(amo_saldo + amo_capital +amo_interes,2) saldoini, 
-        round(amo_capital +amo_interes,2) cuota,
+        round(amo_saldo + amo_capital,2) saldoini, 
+        round(amo_capital +amo_interes+amo_seguro,2) cuota,
         round(amo_capital,2) amo_capital, 
-        round(amo_interes,2) amo_interes, 
+        round(amo_interes,2) amo_interes,
+        round(amo_seguro,2) amo_seguro, 
         round(amo_saldo,2) amo_saldo,
         amo_estado, amo_fechacrea, amo_usercrea from tfin_amortiza where cre_id = {0} and amo_estado = 0
         """.format(cre_id)
 
         tupla_desc = ('amo_id', 'cre_id', 'amo_ncuota', 'amo_fechapago', 'saldoini', 'cuota',
-                      'amo_capital', 'amo_interes', 'amo_saldo', 'amo_estado', 'amo_fechacrea',
-                      'amo_usercrea')
+                      'amo_capital', 'amo_interes', 'amo_seguro', 'amo_saldo', 'amo_estado',
+                      'amo_fechacrea', 'amo_usercrea')
 
         columnas = [
             {'label': '#', 'field': 'amo_ncuota', 'width': '5%'},
             {'label': 'Fecha Pago', 'field': 'amo_fechapago', 'width': '15%'},
-            {'label': 'Saldo Inicial', 'field': 'saldoini', 'width': '14%'},
-            {'label': 'Pago Total', 'field': 'cuota', 'width': '14%'},
-            {'label': 'Capital', 'field': 'amo_capital', 'width': '14%'},
-            {'label': 'Interes', 'field': 'amo_interes', 'width': '14%'},
-            {'label': 'Saldo', 'field': 'amo_saldo', 'width': '14%'}
+            {'label': 'Saldo Inicial', 'field': 'saldoini', 'width': '12%'},
+            {'label': 'Pago Total', 'field': 'cuota', 'width': '12%'},
+            {'label': 'Capital', 'field': 'amo_capital', 'width': '12%'},
+            {'label': 'Interes', 'field': 'amo_interes', 'width': '12%'},
+            {'label': 'Seguro', 'field': 'amo_seguro', 'width': '10%'},
+            {'label': 'Saldo', 'field': 'amo_saldo', 'width': '12%'}
         ]
 
         data = self.all(sql, tupla_desc)
@@ -71,6 +74,24 @@ class TFinAmortizaDao(BaseDao):
         tablamor = []
         total_intereses = 0.0
 
+        param_seguro = 'cj_tasa_seguro'
+        paramsdao = TParamsDao(self.dbsession)
+        cj_tasa_seguro = paramsdao.get_param_value(param_seguro)
+
+        tasa_seguro = 0.0
+        if cadenas.es_nonulo_novacio(cj_tasa_seguro):
+            tasa_seguro = float(cj_tasa_seguro)
+
+        seguro_total = 0.0
+        seguro_mensal = 0.0
+        if tasa_seguro > 0:
+            seguro_total = numeros.roundm2(monto_prestamo * tasa_seguro)
+            aux_seguro_mensal = seguro_total / ncuotas
+            seguro_mensal = numeros.roundm2(aux_seguro_mensal)
+
+        if seguro_mensal > 0:
+            pago_mensual = numeros.roundm2(pago_mensual + seguro_mensal)
+
         for i in range(1, ncuotas + 1):
             new_fila = {}
             saldo_ini = saldo_it
@@ -85,6 +106,7 @@ class TFinAmortizaDao(BaseDao):
             new_fila['cuota'] = pago_mensual
             new_fila['capital'] = numeros.roundm2(fila_tbl_amor['capital'])
             new_fila['interes'] = numeros.roundm2(fila_tbl_amor['interes'])
+            new_fila['seguro'] = seguro_mensal
             new_fila['saldo'] = numeros.roundm2(saldo_it)
 
             tablamor.append(new_fila)
@@ -93,16 +115,18 @@ class TFinAmortizaDao(BaseDao):
             {'label': '#', 'field': 'fila', 'width': '5%'},
             {'label': 'Fecha Pago', 'field': 'fecha', 'width': '15%'},
             {'label': 'Saldo Inicial', 'field': 'saldoini', 'width': '14%'},
-            {'label': 'Pago Total', 'field': 'cuota', 'width': '14%'},
-            {'label': 'Capital', 'field': 'capital', 'width': '14%'},
-            {'label': 'Interes', 'field': 'interes', 'width': '14%'},
-            {'label': 'Saldo', 'field': 'saldo', 'width': '14%'}
+            {'label': 'Pago Total', 'field': 'cuota', 'width': '12%'},
+            {'label': 'Capital', 'field': 'capital', 'width': '12%'},
+            {'label': 'Interes', 'field': 'interes', 'width': '12%'},
+            {'label': 'Seguro', 'field': 'seguro', 'width': '8%'},
+            {'label': 'Saldo', 'field': 'saldo', 'width': '12%'}
         ]
 
         return {
             'total_int': numeros.roundm2(total_intereses),
-            'total_prest': numeros.roundm2(monto_prestamo + total_intereses),
+            'total_prest': numeros.roundm2(monto_prestamo + total_intereses + seguro_total),
             'cuota_mensual': pago_mensual,
+            'total_seguro': seguro_total,
             'tabla': tablamor,
             'cols': columnas
         }
@@ -152,6 +176,24 @@ class TFinAmortizaDao(BaseDao):
         saldo_it = monto_prestamo
         fecha_it = fecha_prestamo
 
+        param_seguro = 'cj_tasa_seguro'
+        paramsdao = TParamsDao(self.dbsession)
+        cj_tasa_seguro = paramsdao.get_param_value(param_seguro)
+
+        tasa_seguro = 0.0
+        if cadenas.es_nonulo_novacio(cj_tasa_seguro):
+            tasa_seguro = float(cj_tasa_seguro)
+
+        seguro_total = 0.0
+        seguro_mensal = 0.0
+        if tasa_seguro > 0:
+            seguro_total = numeros.roundm2(monto_prestamo * tasa_seguro)
+            aux_seguro_mensal = seguro_total / ncuotas
+            seguro_mensal = numeros.roundm2(aux_seguro_mensal)
+
+        if seguro_mensal > 0:
+            pago_mensual = numeros.roundm2(pago_mensual + seguro_mensal)
+
         for i in range(1, ncuotas + 1):
             fila_tbl_amor = self.get_fila_tabla(saldo_ini=saldo_it, cuota_mensual=pago_mensual_dec, tasa=tasa,
                                                 fecha=fecha_it)
@@ -166,6 +208,7 @@ class TFinAmortizaDao(BaseDao):
             tcj_amortiza.amo_capital = fila_tbl_amor['capital']
             tcj_amortiza.amo_interes = fila_tbl_amor['interes']
             tcj_amortiza.amo_saldo = fila_tbl_amor['saldo']
+            tcj_amortiza.amo_seguro = seguro_mensal
             tcj_amortiza.amo_estado = 0
             tcj_amortiza.amo_fechacrea = datetime.datetime.now()
             tcj_amortiza.amo_usercrea = user_crea
@@ -174,6 +217,7 @@ class TFinAmortizaDao(BaseDao):
 
         return {
             'total_int': numeros.roundm2(total_intereses),
-            'total_prest': numeros.roundm2(monto_prestamo + total_intereses),
+            'total_prest': numeros.roundm2(monto_prestamo + total_intereses + seguro_total),
+            'total_seguro': seguro_total,
             'cuota_mensual': pago_mensual
         }

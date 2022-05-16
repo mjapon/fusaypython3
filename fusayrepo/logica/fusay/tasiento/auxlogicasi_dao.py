@@ -176,6 +176,10 @@ class AuxLogicAsiDao(BaseDao):
         trn_suscom = formcab['trn_suscom']
         per_codres = None
 
+        if int(formcab['tra_codigo']) == ctes.TRA_COD_ASI_CONTABLE:
+            if not cadenas.es_nonulo_novacio(trn_observ):
+                raise ErrorValidacionExc('Debe ingresar la observación del asiento contable')
+
         tasiento = TAsiento()
         tasiento.dia_codigo = formcab['dia_codigo']
         tasiento.trn_fecreg = fechas.parse_cadena(formcab['trn_fecreg'])

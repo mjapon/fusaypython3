@@ -36,10 +36,18 @@ class TFinPagosCredDao(BaseDao):
             'pg_mora': 0.0,
             'pg_npago': 1,
             'pg_fecpagocalc': '',
-            'pg_amoid': 0
+            'pg_amoid': 0,
+            'pgc_fechapago': fechas.get_str_fecha_actual()
         }
 
         return form
+
+    def get_form_calc_pago(self):
+        return {
+            'fecpago': fechas.get_str_fecha_actual(),
+            'fecpagoobj': fechas.get_str_fecha_actual(),
+            'cuotas': []
+        }
 
     def get_ctas_for_pago(self):
         paramsdao = TParamsDao(self.dbsession)
@@ -58,7 +66,7 @@ class TFinPagosCredDao(BaseDao):
             'cta_pagos': datos_cta_debe
         }
 
-    def calcular_cuotas(self, cuotas):
+    def calcular_cuotas_pagar(self, cuotas, fecha_pago=None, calcular_mora=True):
         cre_id = cuotas[0]['cre_id']
         codigospagos = []
         for cuota in cuotas:
@@ -70,35 +78,47 @@ class TFinPagosCredDao(BaseDao):
                 cre_id, 
                 amo_ncuota, amo_fechapago,
                 round(amo_saldo + amo_capital +amo_interes,2) saldoini, 
-                round(amo_capital +amo_interes,2) cuota,
+                round(amo_capital +amo_interes + amo_seguro,2) cuota,
                 round(amo_capital,2) amo_capital, 
-                round(amo_interes,2) amo_interes, 
+                round(amo_interes,2) amo_interes,
+                round(amo_seguro,2) amo_seguro, 
                 round(amo_saldo,2) amo_saldo
                 from tfin_amortiza where amo_id in ({0}) and cre_id = {1}
                 """.format(codspagoscad, cre_id)
 
-        tupla_desc = ('amo_id', 'cre_id', 'amo_ncuota', 'amo_fechapago', 'saldoini', 'cuota', 'amo_capital',
-                      'amo_interes', 'amo_saldo')
+        tupla_desc = ('amo_id', 'cre_id', 'amo_ncuota', 'amo_fechapago', 'saldoini', 'cuota',
+                      'amo_capital', 'amo_seguro', 'amo_interes', 'amo_saldo')
 
-        datos_cuotoas = self.all(sql, tupla_desc)
+        datos_cuotas = self.all(sql, tupla_desc)
+
+        sql = "select cre_tasa from tfin_credito where cre_id = {0}".format(cre_id)
+        cre_tasa = self.first_col(sql, 'cre_tasa')
+
         cuotaspagar = []
         total = 0.0
         total_capital = 0.0
         total_interes = 0.0
+        total_seguro = 0.0
         total_intmora = 0.0
-        for cuota in datos_cuotoas:
+        for cuota in datos_cuotas:
             new_form = self.get_form(cre_id)
             new_form['pg_amoid'] = cuota['amo_id']
             new_form['pg_capital'] = cuota['amo_capital']
             new_form['pg_interes'] = cuota['amo_interes']
+            new_form['pg_seguro'] = cuota['amo_seguro']
             new_form['pg_fecpagocalc'] = cuota['amo_fechapago']
             new_form['pg_npago'] = cuota['amo_ncuota']
-            new_form['pg_mora'] = self.calcula_mora(fecha_pago=cuota['amo_fechapago'], capital=cuota['amo_capital'])
-            new_form['pg_total'] = cuota['cuota'] + new_form['pg_mora']
+            new_form['pg_mora'] = 0.0
+            if calcular_mora:
+                new_form['pg_mora'] = self.calcula_mora(fecha_planif_pago=cuota['amo_fechapago'],
+                                                        capital=cuota['amo_capital'],
+                                                        tasa_prestamo=cre_tasa, fecha_pago=fecha_pago)
+            new_form['pg_total'] = numeros.roundm2(cuota['cuota'] + new_form['pg_mora'])
             total += new_form['pg_total']
             total_capital += new_form['pg_capital']
             total_interes += new_form['pg_interes']
             total_intmora += new_form['pg_mora']
+            total_seguro += new_form['pg_seguro']
             cuotaspagar.append(new_form)
 
         infocontable = self.get_ctas_for_pago()
@@ -112,26 +132,29 @@ class TFinPagosCredDao(BaseDao):
             'pgc_total_capital': total_capital,
             'pgc_total_interes': total_interes,
             'pgc_total_intmora': total_intmora,
+            'pgc_total_seguro': total_seguro,
             'cuotaspagar': cuotaspagar,
             'cta_pago': infocontable['cta_pago'],
-            'cta_pagos': infocontable['cta_pagos']
+            'cta_pagos': infocontable['cta_pagos'],
+            'pgc_fechapago': ''
         }
 
-    def calcula_mora(self, fecha_pago, capital):
-        fechapago = fechas.parse_cadena(fecha_pago)
-        hoy = datetime.datetime.now()
-        ndias = (hoy - fechapago).days
-        tasa = 0.0
+    def calcula_mora(self, fecha_planif_pago, capital, tasa_prestamo, fecha_pago):
+        fechapago = fechas.parse_cadena(fecha_planif_pago)
+        fecha_pago_obj = fechas.parse_cadena(fecha_pago)
+        ndias = (fecha_pago_obj - fechapago).days
         mora = 0.0
         if ndias > 0:
             sql = """
             select mr_tasa from tfin_tasamora where {0} between mr_rangoini and mr_rangofin             
             """.format(ndias)
-            tasa = self.first_col(sql, 'mr_tasa')
-            if tasa is None:
-                tasa = 0.0
+            tasa_mora = self.first_col(sql, 'mr_tasa')
+            if tasa_mora is None:
+                tasa_mora = 0.0
 
-            mora = float(capital) * tasa * (ndias / 360)
+            tasa_mora_efectiva = float(tasa_prestamo) * float(tasa_mora)
+
+            mora = numeros.roundm2(float(capital) * float(tasa_mora_efectiva) * (ndias / 360))
 
         return mora
 
@@ -172,9 +195,10 @@ class TFinPagosCredDao(BaseDao):
         sql = """
         select amor.amo_id, amor.cre_id, amo_ncuota, amo_fechapago, 
         round(amo_saldo + amo_capital +amo_interes,2) saldoini, 
-        round(amo_capital +amo_interes,2) cuota,
+        round(amo_capital +amo_interes+amo_seguro,2) cuota,
         round(amo_capital,2) amo_capital, 
-        round(amo_interes,2) amo_interes, 
+        round(amo_interes,2) amo_interes,
+        round(amo_seguro,2) amo_seguro, 
         round(amo_saldo,2) amo_saldo,
         amo_estado, amo_fechacrea, amo_usercrea,
         coalesce(pgd.pg_id,0) pg_id,
@@ -202,6 +226,7 @@ class TFinPagosCredDao(BaseDao):
             'cuota',
             'amo_capital',
             'amo_interes',
+            'amo_seguro',
             'amo_saldo',
             'amo_estado',
             'amo_fechacrea',
@@ -223,11 +248,12 @@ class TFinPagosCredDao(BaseDao):
         columnas = [
             {'label': '#', 'field': 'amo_ncuota', 'width': '5%'},
             {'label': 'Fecha Pago', 'field': 'amo_fechapago', 'width': '15%'},
-            {'label': 'Pago Total', 'field': 'cuota', 'width': '14%'},
-            {'label': 'Capital', 'field': 'amo_capital', 'width': '14%'},
-            {'label': 'Interes', 'field': 'amo_interes', 'width': '14%'},
-            {'label': 'Saldo', 'field': 'amo_saldo', 'width': '14%'},
-            {'label': 'Estado', 'field': 'estado', 'width': '14%'}
+            {'label': 'Pago Total', 'field': 'cuota', 'width': '12%'},
+            {'label': 'Capital', 'field': 'amo_capital', 'width': '12%'},
+            {'label': 'Interes', 'field': 'amo_interes', 'width': '12%'},
+            {'label': 'Seguro', 'field': 'amo_seguro', 'width': '12%'},
+            {'label': 'Saldo', 'field': 'amo_saldo', 'width': '10%'},
+            {'label': 'Estado', 'field': 'estado', 'width': '12%'}
         ]
 
         data = self.all(sql, tupla_desc)
@@ -309,6 +335,87 @@ class TFinPagosCredDao(BaseDao):
             tasidao.anular(trn_codigo=trn_codigo_pago, user_anula=user_anula,
                            obs_anula="P/R Anulacion pago de credito")
 
+    def marcar_como_pagado(self, form, user_crea):
+        archivo = None
+        if 'archivo' in form:
+            archivo = form['archivo']
+
+        adj_id = 0
+        if archivo is not None:
+            adjuntodao = TAdjuntoDao(self.dbsession)
+            formadj = {'adj_filename': archivo['adj_filename']}
+            adj_id = adjuntodao.crear(formadj, user_crea=user_crea, file=archivo['archivo'])
+
+        cre_id = form['cre_id']
+
+        credito_dao = TFinCreditoDao(self.dbsession)
+
+        credito = credito_dao.find_by_credid(cre_id=cre_id)
+        cre_saldopend = decimal.Decimal(numeros.roundm2(credito.cre_saldopend))
+
+        pg_adelanto = 0.0
+
+        pgc_total = decimal.Decimal(numeros.roundm2(form['pgc_total']))
+
+        if numeros.roundm2(pgc_total) > numeros.roundm2(cre_saldopend):
+            raise ErrorValidacionExc(
+                'El pago total:{0} sobrepasa la deuda del crédito:{1}'.format(numeros.roundm2(pgc_total),
+                                                                              numeros.roundm2(cre_saldopend)))
+
+        pgc_total_capital = decimal.Decimal(numeros.roundm2(form['pgc_total_capital']))
+        pgc_total_interes = decimal.Decimal(numeros.roundm2(form['pgc_total_interes']))
+        pgc_total_intmora = decimal.Decimal(numeros.roundm2(form['pgc_total_intmora']))
+        pgc_total_seguro = decimal.Decimal(numeros.roundm2(form['pgc_total_seguro']))
+        pagoscredcab = TFinPagosCredCab()
+        pagoscredcab.cre_id = cre_id
+        pagoscredcab.pgc_usercrea = user_crea
+        pagoscredcab.pgc_total = pgc_total
+        pagoscredcab.pgc_adj = 0
+        pagoscredcab.pgc_obs = cadenas.strip(form['pgc_obs'])
+        pagoscredcab.pgc_adelanto = pg_adelanto
+        pagoscredcab.pgc_fechacrea = datetime.datetime.now()
+        pagoscredcab.pgc_estado = 1
+        pagoscredcab.pgc_total_capital = pgc_total_capital
+        pagoscredcab.pgc_total_interes = pgc_total_interes
+        pagoscredcab.pgc_total_intmora = pgc_total_intmora
+        pagoscredcab.pgc_total_seguro = pgc_total_seguro
+        pagoscredcab.pgc_adj = adj_id
+        pagoscredcab.pgc_fechapago = fechas.parse_cadena(form['pgc_fechapago'])
+
+        cuotaspagar = form['cuotaspagar']
+
+        capital_cuotas = decimal.Decimal(0.0)
+        for cuota in cuotaspagar:
+            capital_cuotas += decimal.Decimal(numeros.roundm2(cuota['pg_capital']))
+
+        total_capital = capital_cuotas
+
+        self.dbsession.add(pagoscredcab)
+        new_saldo_pend = credito_dao.update_saldo_pend(cred_id=cre_id, capital=total_capital, user_upd=user_crea)
+
+        pagoscredcab.pgc_saldopend = new_saldo_pend
+        self.dbsession.add(pagoscredcab)
+
+        self.dbsession.flush()
+        pgc_id = pagoscredcab.pgc_id
+
+        for cuota in cuotaspagar:
+            self.crear_det(form=cuota, user_crea=user_crea, pgc_id=pgc_id)
+            self.dbsession.flush()
+
+        pagoscredcab.pgc_trncod = 0
+        self.dbsession.add(pagoscredcab)
+
+        msg = 'Registro exitoso'
+
+        if new_saldo_pend == 0:
+            msg += ", El crédito {0} ha sido cancelado en su totalidad".format(cre_id)
+
+        return {
+            'pgc_id': pgc_id,
+            'msg': msg
+        }
+
     def crear_pago(self, form, user_crea, sec_codigo):
         archivo = None
         if 'archivo' in form:
@@ -343,6 +450,7 @@ class TFinPagosCredDao(BaseDao):
         pgc_total_capital = decimal.Decimal(numeros.roundm2(form['pgc_total_capital']))
         pgc_total_interes = decimal.Decimal(numeros.roundm2(form['pgc_total_interes']))
         pgc_total_intmora = decimal.Decimal(numeros.roundm2(form['pgc_total_intmora']))
+        pgc_total_seguro = decimal.Decimal(numeros.roundm2(form['pgc_total_seguro']))
         pagoscredcab = TFinPagosCredCab()
         pagoscredcab.cre_id = cre_id
         pagoscredcab.pgc_usercrea = user_crea
@@ -355,7 +463,9 @@ class TFinPagosCredDao(BaseDao):
         pagoscredcab.pgc_total_capital = pgc_total_capital
         pagoscredcab.pgc_total_interes = pgc_total_interes
         pagoscredcab.pgc_total_intmora = pgc_total_intmora
+        pagoscredcab.pgc_total_seguro = pgc_total_seguro
         pagoscredcab.pgc_adj = adj_id
+        pagoscredcab.pgc_fechapago = fechas.parse_cadena(form['pgc_fechapago'])
 
         cuotaspagar = form['cuotaspagar']
 
@@ -390,7 +500,7 @@ class TFinPagosCredDao(BaseDao):
                                                            total=pgc_total, capital=total_capital,
                                                            interes=pgc_total_interes,
                                                            mora=pgc_total_intmora, cta_pago=form['cta_pago'],
-                                                           usercrea=user_crea)
+                                                           usercrea=user_crea, seguro=pgc_total_seguro)
         pagoscredcab.pgc_trncod = trn_codigo_pago
         self.dbsession.add(pagoscredcab)
 
@@ -441,6 +551,7 @@ class TFinPagosCredDao(BaseDao):
 
         pg_mora = form['pg_mora']
         pg_npago = form['pg_npago']
+        pg_seguro = form['pg_seguro']
         pg_fecpagocalc = form['pg_fecpagocalc']
         pg_amoid = form['pg_amoid']
 
@@ -456,6 +567,7 @@ class TFinPagosCredDao(BaseDao):
         pago.pg_estado = 1
         pago.pg_amoid = pg_amoid
         pago.pg_fechacrea = datetime.datetime.now()
+        pago.pg_seguro = pg_seguro
 
         self.dbsession.add(pago)
 
@@ -463,8 +575,8 @@ class TFinPagosCredDao(BaseDao):
         sql = """
         select pgc_id, cre_id, pgc_usercrea, pgc_total, pgc_adj, pgc_obs, 
         pgc_adelanto, pgc_fechacrea, pgc_estado, pgc_useranul, pgc_fechanul,
-        pgc_obsanul, pgc_saldopend, pgc_total_capital, pgc_total_interes, pgc_total_intmora,
-        adj.adj_filename, vu.referente as user
+        pgc_obsanul, pgc_saldopend, pgc_total_capital, pgc_total_interes, pgc_total_interes, pgc_total_intmora,
+        pgc_total_seguro, adj.adj_filename, vu.referente as user, pgc_fechapago
         from tfin_pagoscredcab cab
         left join vusers vu on cab.pgc_usercrea = vu.us_id
         left join tadjunto adj on cab.pgc_adj = adj.adj_id
@@ -474,7 +586,7 @@ class TFinPagosCredDao(BaseDao):
         tupla_desc = (
             'pgc_id', 'cre_id', 'pgc_usercrea', 'pgc_total', 'pgc_adj', 'pgc_obs', 'pgc_adelanto', 'pgc_fechacrea',
             'pgc_estado', 'pgc_useranul', 'pgc_fechanul', 'pgc_obsanul', 'pgc_saldopend', 'pgc_total_capital',
-            'pgc_total_interes', 'pgc_total_intmora', 'adj_filename', 'user')
+            'pgc_total_interes', 'pgc_total_intmora', 'pgc_total_seguro', 'adj_filename', 'user', 'pgc_fechapago')
 
         datos_pago = self.first(sql, tupla_desc)
         return datos_pago

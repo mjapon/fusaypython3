@@ -63,11 +63,8 @@ def get_fila(saldo_ini, cuota_mensual, tasa, fecha):
 
 
 if __name__ == '__main__':
+
     print("Se ejecuta main--->")
-
-    feca = fechas.parse_cadena('01/04/2022')
-    hoy = datetime.datetime.now()
-
-    fecr = hoy - feca
-    # Prueba
-    print(fecr.days)
+    feca = '05/04/2022'
+    fecb = '02/04/2022'
+    print(fechas.son_fechas_iguales(feca, fecb))

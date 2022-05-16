@@ -830,7 +830,14 @@ class TasientoDao(AuxLogicAsiDao):
         else:
             raise ErrorValidacionExc('Esta transacción ya ha sido anulada, favor verificar')
 
+    def is_asiento_mayorizado(self, trn_codigo):
+        sql = "select trn_mayorizado from tasiento where trn_codigo = {0}".format(trn_codigo)
+        trn_mayorizado = self.first_col(sql, 'trn_mayorizado')
+        return trn_mayorizado is not None and trn_mayorizado
+
     def anular(self, trn_codigo, user_anula, obs_anula):
+        if self.is_asiento_mayorizado(trn_codigo):
+            raise ErrorValidacionExc('No es posible anular esta transacción ya ha sido mayorizada')
         self.aux_anular_errar(trn_codigo, user_anula, obs_anula, new_state=1)
 
     def marcar_errado(self, trn_codigo, user_do):

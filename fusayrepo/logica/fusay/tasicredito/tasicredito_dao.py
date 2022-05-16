@@ -129,7 +129,7 @@ class TAsicreditoDao(BaseDao):
             'cuentasforcred': cuentasformov
         }
 
-    def create_asiento_pago(self, per_codigo, sec_codigo, total, capital, interes, mora, cta_pago, usercrea):
+    def create_asiento_pago(self, per_codigo, sec_codigo, total, capital, interes, mora, cta_pago, usercrea, seguro):
 
         from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
         tasientodao = TasientoDao(self.dbsession)
@@ -150,6 +150,7 @@ class TAsicreditoDao(BaseDao):
 
         ctahaber_interes = tparamsdao.get_param_value('cj_cta_int')
         ctahaber_mora = tparamsdao.get_param_value('cj_cta_mora')
+        ctahaber_seguro = tparamsdao.get_param_value('cj_cta_seguro')
 
         if ctadebe is None:
             raise ErrorValidacionExc('Debe seleccionar la cuenta en la que se acredita el pago')
@@ -158,10 +159,13 @@ class TAsicreditoDao(BaseDao):
             raise ErrorValidacionExc('Parámetro cj_cta_presta_debe no configurado, favor verificar')
 
         if ctahaber_interes is None:
-            raise ErrorValidacionExc('Parámetro ctahaber_interes no configurado, favor verificar')
+            raise ErrorValidacionExc('Parámetro cj_cta_int no configurado, favor verificar')
 
         if ctahaber_mora is None:
-            raise ErrorValidacionExc('Parámetro ctahaber_mora no configurado, favor verificar')
+            raise ErrorValidacionExc('Parámetro cj_cta_mora no configurado, favor verificar')
+
+        if ctahaber_seguro is None:
+            raise ErrorValidacionExc('Parámetro cj_cta_seguro no configurado, favor verificar')
 
         itemconfidao = TItemConfigDao(self.dbsession)
         datos_cta_debe = itemconfidao.get_detalles_ctacontable_by_code(ic_code=ctadebe)
@@ -180,10 +184,14 @@ class TAsicreditoDao(BaseDao):
                 'No pude recuperar la informacion de la cuenta contable {0}'.format(datos_ctahaber_int))
 
         datos_ctahaber_mora = itemconfidao.get_detalles_ctacontable_by_code(ic_code=ctahaber_mora)
-
         if datos_ctahaber_mora is None:
             raise ErrorValidacionExc(
                 'No pude recuperar la informacion de la cuenta contable {0}'.format(datos_ctahaber_mora))
+
+        datos_ctahaber_seguro = itemconfidao.get_detalles_ctacontable_by_code(ic_code=ctahaber_seguro)
+        if datos_ctahaber_seguro is None:
+            raise ErrorValidacionExc(
+                'No pude recuperar la informacion de la cuenta contable {0}'.format(datos_ctahaber_seguro))
 
         debedet = self.clone_formdet(formdet)
         debedet['dt_debito'] = 1
@@ -212,7 +220,14 @@ class TAsicreditoDao(BaseDao):
             haberdet_mora['dt_valor'] = numeros.roundm2(mora)
             haberdet_mora['cta_codigo'] = datos_ctahaber_mora['ic_id']
             haberdet_mora['ic_clasecc'] = ''
-            detalles.append(haberdet_int)
+            detalles.append(haberdet_mora)
+        if seguro > 0:
+            haberdet_seguro = self.clone_formdet(formdet)
+            haberdet_seguro['dt_debito'] = -1
+            haberdet_seguro['dt_valor'] = numeros.roundm2(seguro)
+            haberdet_seguro['cta_codigo'] = datos_ctahaber_seguro['ic_id']
+            haberdet_seguro['ic_clasecc'] = ''
+            detalles.append(haberdet_seguro)
 
         formasiento['detalles'] = detalles
 
@@ -220,13 +235,6 @@ class TAsicreditoDao(BaseDao):
                                                    formref=formasiento['formref'],
                                                    usercrea=usercrea,
                                                    detalles=formasiento['detalles'], update_datosref=False)
-
-        """
-        trn_codigo_gen = tasientodao.crear_asiento_cxcp_fromref(formcab=formasiento['formasiento'],
-                                                                formref=formasiento['formref'],
-                                                                usercrea=usercrea,
-                                                                detalles=formasiento['detalles'])
-        """
 
         return trn_codigo_gen
 

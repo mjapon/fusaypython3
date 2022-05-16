@@ -46,6 +46,10 @@ class TFinCuentasRest(TokenView):
                 return self.res200({'datoscuenta': datoscuenta, 'existe': 1})
             else:
                 return self.res200({'existe': 0})
+        elif accion == 'listctasbysocio':
+            codsocio = self.get_request_param('socio')
+            cuentas = cuentas_dao.listar_cuentas_socio(codsocio)
+            return self.res200({'cuentas': cuentas})
 
     def collection_post(self):
         accion = self.get_rqpa()

@@ -22,6 +22,30 @@ class TFinCuentasDao(BaseDao):
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
 
+    def listar_cuentas_socio(self, per_id):
+        sql = """
+         select cue_id,
+                cue.per_id,
+                cue.tc_id,
+                cue_fecha_apertura,
+                cue_estado,
+                cue_nombre,
+                tipc.tc_nombre,
+                cue_id||' - '||tc_nombre labelcta
+                from tfin_cuentas cue                
+                join tfin_tiposcuenta tipc on cue.tc_id = tipc.tc_id
+                where cue.per_id = {0} and cue_estado not in (4,5) order by cue.tc_id 
+        """.format(per_id)
+        tupla_desc = ('cue_id',
+                      'per_id',
+                      'tc_id',
+                      'cue_fecha_apertura',
+                      'cue_estado',
+                      'cue_nombre',
+                      'tc_nombre',
+                      'labelcta')
+        return self.all(sql, tupla_desc)
+
     def get_datos_cuenta_by_num(self, cue_id):
         sql = """
         

@@ -3,7 +3,6 @@
 Fecha de creacion 11/9/20
 @autor: Manuel Japon
 """
-import datetime
 import logging
 
 from cornice.resource import resource
@@ -11,6 +10,7 @@ from cornice.resource import resource
 from fusayrepo.logica.financiero.tfin_amortiza.tfin_amortiza_dao import TFinAmortizaDao
 from fusayrepo.logica.financiero.tfin_credito.tfin_adjunto_cred_dao import TFinAdjuntoCredDao
 from fusayrepo.logica.financiero.tfin_credito.tfin_credito_dao import TFinCreditoDao
+from fusayrepo.utils import fechas
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ class TFinCreditoRest(TokenView):
             amordao = TFinAmortizaDao(self.dbsession)
             form = self.get_json_body()
             result = amordao.calcular_tabla(monto_prestamo=float(form['cre_monto']), tasa_interes=form['cre_tasa'],
-                                            fecha_prestamo=datetime.datetime.now(),
+                                            fecha_prestamo=fechas.parse_cadena(form['cre_fecprestamo']),
                                             ncuotas=int(form['cre_plazo']))
             return self.res200({
                 'tabla': result

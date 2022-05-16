@@ -746,7 +746,7 @@ class TItemConfigDao(BaseDao):
         return self.aux_get_detalles_ctacontable(colnamewhere="ic_code", colvalue="'{0}'".format(ic_code))
 
     def get_detalles_ctacontable_by_codes(self, ic_codes):
-        return self.aux_get_detalles_ctacontable(colnamewhere="ic_code", colvalue="{0}".format(ic_codes),
+        return self.aux_get_detalles_ctacontable(colnamewhere="ic_code", colvalue="({0})".format(ic_codes),
                                                  coleq="in", singlerow=False)
 
     def aux_listar_plan_cuentas(self, where, sec_id):

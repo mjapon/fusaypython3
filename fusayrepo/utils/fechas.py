@@ -245,6 +245,12 @@ def es_fecha_a_mayor_fecha_b(fecha_str_a, fecha_str_b):
     return fechaa.date() > parse_cadena(fecha_str_b, ctes.APP_FMT_FECHA).date()
 
 
+def son_fechas_iguales(fecha_str_a, fecha_str_b):
+    fechaa = parse_cadena(fecha_str_a, ctes.APP_FMT_FECHA)
+    fechab = parse_cadena(fecha_str_b, ctes.APP_FMT_FECHA)
+    return fechaa.date() == fechab.date()
+
+
 def es_fecha_a_mayor_o_igual_fecha_b(fecha_str_a, fecha_str_b):
     fechaa = parse_cadena(fecha_str_a, ctes.APP_FMT_FECHA)
     return fechaa.date() >= parse_cadena(fecha_str_b, ctes.APP_FMT_FECHA).date()

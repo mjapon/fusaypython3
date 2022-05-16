@@ -58,7 +58,9 @@ class TFinCreditoDao(BaseDao):
             'cre_obs': '',
             'cre_plazo': 12,
             'cre_tipoint': 1,
-            'cre_prod': 1
+            'cre_prod': 1,
+            'cre_fecprestamo': fechas.get_str_fecha_actual(),
+            'marca_aprobado': False
         }
 
         sqlprod = """
@@ -81,8 +83,8 @@ class TFinCreditoDao(BaseDao):
         select cre.cre_id, cre.per_id, cre.cre_monto, cre.cre_tasa, 
         cre.cre_fechacrea, cre.cre_usercrea, cre.cre_fecaprob, cre.cre_fecaprob::date as fecaprob,
         cre.cre_estado, est.est_nombre, cre.cre_obs, cre.cre_plazo,
-        cre.cre_cuota, cre.cre_totalint,
-        cre.cre_prod, cre.cre_tipoint, prod.prod_nombre, cre.cre_saldopend 
+        cre.cre_cuota, cre.cre_totalint, cre.cre_totalseguro,
+        cre.cre_prod, cre.cre_tipoint, prod.prod_nombre, cre.cre_saldopend , cre.cre_fecprestamo
         from tfin_credito cre
         join tfin_estadocred est on cre.cre_estado = est.est_id
         join tfin_producto prod on cre.cre_prod = prod.prod_id
@@ -90,7 +92,7 @@ class TFinCreditoDao(BaseDao):
         """.format(cre_id)
         tupla_desc = ('cre_id', 'per_id', 'cre_monto', 'cre_tasa', 'cre_fechacrea', 'cre_usercrea', 'cre_fecaprob',
                       'fecaprob', 'cre_estado', 'est_nombre', 'cre_obs', 'cre_plazo', 'cre_cuota', 'cre_totalint',
-                      'cre_prod', 'cre_tipoint', 'prod_nombre', 'cre_saldopend')
+                      'cre_totalseguro', 'cre_prod', 'cre_tipoint', 'prod_nombre', 'cre_saldopend', 'cre_fecprestamo')
         return self.first(sql, tupla_desc)
 
     def get_grid(self, filtro, estado=0):
@@ -163,9 +165,8 @@ class TFinCreditoDao(BaseDao):
             tasicred_dao.create_asiento_prestamo(per_codigo=credito.per_id, sec_codigo=sec_codigo,
                                                  monto=monto_credito, usercrea=user_edit)
 
-            # Actualizar la tabla de amorizacion con la fecha de aprobacion
-            if fechas.es_fecha_actual_mayor_a_fecha(fecha_str=fechas.parse_fecha(credito.cre_fechacrea)):
-                # Se debe hacer la actualizacion de la tabla de amortizacion
+            # En el caso en que la fecha de aprobacion sea distinta a la fecha de creacion, se actualiza tabla amortiza
+            if credito.cre_fecaprob.date() != credito.cre_fechacrea.date():
                 amordao = TFinAmortizaDao(self.dbsession)
                 amordao.anular_tabla(cred_id=cre_id)
 
@@ -174,7 +175,7 @@ class TFinCreditoDao(BaseDao):
                     cred_id=cre_id,
                     monto_prestamo=float(credito.cre_monto),
                     tasa_interes=float(credito.cre_tasa),
-                    fecha_prestamo=credito.cre_fechacrea,
+                    fecha_prestamo=credito.cre_fecaprob,
                     ncuotas=credito.cre_plazo,
                     user_crea=user_edit
                 )
@@ -182,6 +183,7 @@ class TFinCreditoDao(BaseDao):
                 if result_tbl is not None:
                     credito.cre_totalint = result_tbl['total_int']
                     credito.cre_cuota = result_tbl['cuota_mensual']
+                    credito.cre_totalseguro = result_tbl['total_seguro']
 
         self.dbsession.add(credito)
 
@@ -267,6 +269,10 @@ class TFinCreditoDao(BaseDao):
             raise ErrorValidacionExc(
                 'El plazo  ingresado es incorrecto debe estar entre 1 y {0}'.format(param_plazo_max_value))
 
+        cre_fecprestamo = form['cre_fecprestamo']
+        if not cadenas.es_nonulo_novacio(cre_fecprestamo):
+            raise ErrorValidacionExc('Debe ingresar la fecha de emisión del préstamo')
+
         credito = TFinCredito()
         credito.per_id = per_id
         credito.cre_monto = cre_monto
@@ -281,6 +287,11 @@ class TFinCreditoDao(BaseDao):
         credito.cre_cuota = 0.0
         credito.cre_totalint = 0.0
         credito.cre_saldopend = cre_monto
+        credito.cre_fecprestamo = fechas.parse_cadena(cre_fecprestamo)
+
+        marca_aprobado = form['marca_aprobado']
+        if marca_aprobado:
+            credito.cre_estado = 2
 
         self.dbsession.add(credito)
         self.dbsession.flush()
@@ -292,7 +303,7 @@ class TFinCreditoDao(BaseDao):
             cred_id=cre_id,
             monto_prestamo=float(cre_monto),
             tasa_interes=float(cre_tasa),
-            fecha_prestamo=credito.cre_fechacrea,
+            fecha_prestamo=credito.cre_fecprestamo,
             ncuotas=cre_plazo,
             user_crea=user_crea
         )
@@ -301,6 +312,8 @@ class TFinCreditoDao(BaseDao):
             credito = self.find_by_credid(cre_id=cre_id)
             credito.cre_totalint = result_tbl['total_int']
             credito.cre_cuota = result_tbl['cuota_mensual']
+            credito.cre_totalseguro = result_tbl['total_seguro']
+
             self.dbsession.add(credito)
 
         return cre_id

@@ -150,6 +150,15 @@ class TFuserRolDao(BaseDao):
              'routerLink': ['/reportes']},
         ]
 
+        caja_list = [
+            {'label': 'Crédito', 'icon': '', 'cicon': '',
+             'routerLink': ['/finan/home']},
+            {'label': 'Cuentas', 'icon': '',
+             'routerLink': ['/finan/aperturacta']},
+            {'label': 'Movimientos', 'icon': '',
+             'routerLink': ['/finan/movscta']}
+        ]
+
         all_menu = {
             '*': {'label': 'Inicio', 'icon': 'pi pi-fw pi-home', 'cicon': 'fas fa-home', 'routerLink': ['/lghome']},
             'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-ticket', 'cicon': 'fas fa-ticket-alt',
@@ -177,6 +186,8 @@ class TFuserRolDao(BaseDao):
                         'items': cbr_agua},
             'REP_ADM': {'label': 'Reportes', 'icon': 'pi pi-fw pi-chart-bar', 'cicon': 'fas fa-tint',
                         'items': adm_reps},
+            'FIN_CRED_LIST':{'label': 'Caja de Crédito', 'icon': 'pi pi-fw pi-folder', 'cicon': 'fas fa-tint',
+                        'items': caja_list}
         }
 
         menu = []

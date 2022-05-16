@@ -6,6 +6,7 @@ Fecha de creacion 11/9/20
 import logging
 
 from sqlalchemy import Column, Integer, Numeric, Date, DateTime
+
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
 
@@ -22,7 +23,8 @@ class TFinAmortiza(Declarative, JsonAlchemy):
     amo_capital = Column(Numeric(15, 6), default=0.0, nullable=False)
     amo_interes = Column(Numeric(15, 6), default=0.0, nullable=False)
     amo_saldo = Column(Numeric(15, 6), default=0.0, nullable=False)
-    amo_estado = Column(Integer, default=0, nullable=False) #1-
+    amo_estado = Column(Integer, default=0, nullable=False)
+    amo_seguro = Column(Numeric(15, 6), default=0.0, nullable=False)
     amo_fechacrea = Column(DateTime, nullable=False)
     amo_usercrea = Column(Integer, default=0, nullable=False)
     pgc_id = Column(Integer)  # Reprsenta el pago con el que se crean una nueva tabla de amortizacion (x abonos capital)
