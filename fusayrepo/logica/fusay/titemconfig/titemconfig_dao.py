@@ -817,14 +817,16 @@ class TItemConfigDao(BaseDao):
                 padresdict[padre['ic_id']] = padre
 
         for item in planctaslist:
-            expanded = False
+            expanded = True
+            """
             if item['ic_id'] in padresdict.keys():
                 expanded = True
+            """
 
             label = '{0} {1}'.format(item['ic_code'], item['ic_nombre'])
             data = label
-            expandedicon = 'pi pi-folder-open',
-            collapseicon = 'pi pi-folder',
+            expandedicon = 'pi pi-folder-open'
+            collapseicon = 'pi pi-folder'
             hijos = self.listar_hijos_plancuentas(padre=item['ic_id'], sec_id=sec_id)
             children = None
             if hijos is not None and len(hijos) > 0:

@@ -43,7 +43,7 @@ class TReporteDao(BaseDao):
             'usuarios': usuarios
         }
 
-    def listar(self, sec_id):
+    def listar(self, sec_id=0):
         sql = """
         select rep_id, rep_nombre, rep_detalle, rep_params, rep_cat from treporte
         order by rep_nombre asc

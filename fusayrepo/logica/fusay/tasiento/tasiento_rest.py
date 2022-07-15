@@ -10,6 +10,7 @@ from cornice.resource import resource
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.tasiento.auxlogicchangesec import AuxLogigChangeSeccion
 from fusayrepo.logica.fusay.tasiento.librodiario_dao import LibroDiarioDao
+from fusayrepo.logica.fusay.tasiento.reportescontables import ReportesContablesDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
@@ -114,25 +115,24 @@ class TAsientoRest(TokenView):
             res = tasientodao.get_datos_asientocontable(trn_codigo=trn_codigo)
             return self.res200({'datoasi': res})
         elif accion == 'getbalancegeneral':
-            desde = self.get_request_param('desde')
+            # desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
-            wherecodparents = "ic_code like '1%' or ic_code like '2%' or ic_code like '3%'"
-            balancegen, parents, parentestres, restulttree = tasientodao.buid_rep_conta(desde, hasta,
-                                                                                        wherecodparents,
-                                                                                        sec_id=self.get_sec_id())
+            reportes_cont_dao = ReportesContablesDao(self.dbsession)
+            datos_balance = reportes_cont_dao.build_balance_gen_mayorizado(hasta=hasta, sec_id=self.get_sec_id())
+
             return self.res200(
-                {'balance': balancegen, 'parents': parents,
-                 'parentres': parentestres, 'balancetree': restulttree}
+                {'balance': datos_balance['balance_list'],
+                 'balancetree': datos_balance['balance_tree'],
+                 'total_grupos': datos_balance['total_grupos'],
+                 'resultado_ejercicio': datos_balance['resultado_ejercicio']}
             )
         elif accion == 'getestadoresultados':
-            desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
-            wherecodparents = "ic_code like '4%' or ic_code like '5%'"
-            balancegen, parents, parentestres, restulttree = tasientodao.buid_rep_conta(desde, hasta,
-                                                                                        wherecodparents,
-                                                                                        sec_id=self.get_sec_id(),
-                                                                                        isestadores=True)
-            return self.res200({'balance': balancegen, 'parents': parents, 'balancetree': restulttree})
+            reportes_cont_dao = ReportesContablesDao(self.dbsession)
+            estado_resultados = reportes_cont_dao.get_resultado_ejercicio_mayorizado(hasta=hasta,
+                                                                                     sec_id=self.get_sec_id())
+
+            return self.res200(estado_resultados)
         elif accion == 'gettransaccs':
             tipo = self.get_request_param('tipo')
             items = tasientodao.listar_transacc_min(tipo)

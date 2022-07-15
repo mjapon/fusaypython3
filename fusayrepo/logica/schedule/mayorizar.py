@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     log = logging.getLogger('my_logger')
 
-    log.info('Inicia Procesio mayorizacion--------->')
+    log.info('Inicia Proceso mayorizacion--------->')
 
     dbsession = None
     engine = None
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         dbsession = session_factory()
 
         esquemas_procesar = [
-            'cajademo', 'cajaruna'
+            'cajademo', 'cajaruna', 'cajainti'
         ]
 
         for esquema in esquemas_procesar:
@@ -52,7 +52,7 @@ if __name__ == "__main__":
                 log.info('Fecha proceso:{0}'.format(fecha_actual))
 
                 sqlcount = """select count(*) as cuenta from tasiento where trn_valido = 0 
-                and date(trn_fecha) = '{0}' and trn_mayorizado = false""".format(fecha_actual)
+                and trn_mayorizado = false""".format(fecha_actual)
                 tupla_res = dbsession.query('cuenta').from_statement(text(sqlcount)).first()
 
                 tot_pendientes = 0
@@ -63,7 +63,7 @@ if __name__ == "__main__":
                     log.info('Se procesaran {0} registros pendientes de mayorizacion'.format(tot_pendientes))
                     sql = """
                     select trn_codigo, trn_mayorizado, public.fn_mayorizar_asiento(trn_codigo) as mayor_res from tasiento
-                    where trn_valido = 0 and date(trn_fecha) = '{0}' order by trn_fecha asc;
+                    where trn_valido = 0 and trn_mayorizado = false order by trn_fecha asc;
                     """.format(fecha_actual)
 
                     tupla_desc = ('trn_codigo', 'trn_mayorizado', 'mayor_res')
