@@ -72,7 +72,7 @@ class TFuserRest(DbComunView):
                 tdv_codigo = ttpdvs[0]['tdv_codigo']
                 token = genera_token_util.gen_token(us_id=user['us_id'], emp_codigo=empresa['emp_codigo'],
                                                     emp_esquema=empresa['emp_esquema'], sec_id=sec_id,
-                                                    tdv_codigo=tdv_codigo)
+                                                    tdv_codigo=tdv_codigo, emp_id=empresa['emp_id'])
                 return {'autenticado': autenticado,
                         'userinfo': user,
                         'seccion': defaultsec,

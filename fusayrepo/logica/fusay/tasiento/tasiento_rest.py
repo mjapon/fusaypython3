@@ -7,6 +7,8 @@ import logging
 
 from cornice.resource import resource
 
+from fusayrepo.logica.compele.compele_util import CompeleUtilDao
+from fusayrepo.logica.fusay.talmacen.talmacen_dao import TAlmacenDao
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.tasiento.auxlogicchangesec import AuxLogigChangeSeccion
 from fusayrepo.logica.fusay.tasiento.librodiario_dao import LibroDiarioDao
@@ -115,7 +117,6 @@ class TAsientoRest(TokenView):
             res = tasientodao.get_datos_asientocontable(trn_codigo=trn_codigo)
             return self.res200({'datoasi': res})
         elif accion == 'getbalancegeneral':
-            # desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
             reportes_cont_dao = ReportesContablesDao(self.dbsession)
             datos_balance = reportes_cont_dao.build_balance_gen_mayorizado(hasta=hasta, sec_id=self.get_sec_id())
@@ -155,7 +156,9 @@ class TAsientoRest(TokenView):
         if accion == 'creadoc':
             form = self.get_json_body()
             formcab = form['form_cab']
+            tra_codigo = int(formcab['tra_codigo'])
             trn_codigo = int(formcab['trn_codigo'])
+            creando = False
             if trn_codigo > 0:
                 tasientodao.editar(trn_codigo=trn_codigo, user_edita=self.get_user_id(), sec_codigo=self.get_sec_id(),
                                    detalles=form['detalles'], pagos=form['pagos'],
@@ -166,8 +169,27 @@ class TAsientoRest(TokenView):
                                                user_crea=self.get_user_id(),
                                                detalles=form['detalles'], pagos=form['pagos'],
                                                totales=form['totales'])
+                creando = True
             msg = 'Registro exitoso'
-            return self.res200({'trn_codigo': trn_codigo, 'msg': msg})
+
+            almdao = TAlmacenDao(self.dbsession)
+            alm_tipoamb = almdao.get_alm_tipoamb()
+            compelenviado = False
+            time_check_compele = (1000 * 10) * 1  # 1 minutos
+            estado_envio = 0
+            is_cons_final = False
+            if alm_tipoamb > 0 and creando and tra_codigo == ctes.TRA_COD_FACT_VENTA:
+                log.info("Configurado facturacion se envia su generacion--trn_codigo:{0}".format(trn_codigo))
+                compelutil = CompeleUtilDao(self.dbsession)
+                response_compele = compelutil.enviar(trn_codigo=trn_codigo)
+                compelenviado = response_compele['enviado']
+                estado_envio = response_compele['estado_envio']
+                is_cons_final = int(form['form_persona']['per_id']) < 0
+
+            return self.res200(
+                {'trn_codigo': trn_codigo, 'msg': msg, 'alm_tipoamb': alm_tipoamb,
+                 'compelenviado': compelenviado, 'time_check_compele': time_check_compele,
+                 'estado_envio': estado_envio, 'is_cons_final': is_cons_final})
         elif accion == 'anular':
             form = self.get_json_body()
             tasientodao.anular(trn_codigo=form['trncod'], user_anula=self.get_user_id(), obs_anula=form['obs'])

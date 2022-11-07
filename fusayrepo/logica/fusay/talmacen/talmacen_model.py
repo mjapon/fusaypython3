@@ -5,7 +5,7 @@ Fecha de creacion 11/9/20
 """
 import logging
 
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, BOOLEAN
 
 from fusayrepo.models.conf import Declarative
 from fusayrepo.utils.jsonutil import JsonAlchemy
@@ -35,3 +35,4 @@ class TAlmacen(Declarative, JsonAlchemy):
     cnt_codigo = Column(Integer, default=0)
     alm_matriz = Column(Integer, default=0)
     alm_tipoamb = Column(Integer, default=0)
+    alm_contab = Column(BOOLEAN, default=False)

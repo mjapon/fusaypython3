@@ -438,19 +438,27 @@ class TFinPagosCredDao(BaseDao):
 
         pgc_total = decimal.Decimal(numeros.roundm2(form['pgc_total']))
 
-        # Validar montos
-        if pg_adelanto < 0:
-            raise ErrorValidacionExc('El abono de capital no puede ser negativo')
-
-        if numeros.roundm2(pgc_total) > numeros.roundm2(cre_saldopend):
-            raise ErrorValidacionExc(
-                'El pago total:{0} sobrepasa la deuda del crédito:{1}'.format(numeros.roundm2(pgc_total),
-                                                                              numeros.roundm2(cre_saldopend)))
-
         pgc_total_capital = decimal.Decimal(numeros.roundm2(form['pgc_total_capital']))
         pgc_total_interes = decimal.Decimal(numeros.roundm2(form['pgc_total_interes']))
         pgc_total_intmora = decimal.Decimal(numeros.roundm2(form['pgc_total_intmora']))
         pgc_total_seguro = decimal.Decimal(numeros.roundm2(form['pgc_total_seguro']))
+
+        pgc_total_capital_adelanto = numeros.roundm2(decimal.Decimal(form['pgc_adelanto'])
+                                                     + decimal.Decimal(form['pgc_total_capital']))
+        # Validar montos
+        if pg_adelanto < 0:
+            raise ErrorValidacionExc('El abono de capital no puede ser negativo')
+
+        if numeros.roundm2(pgc_total_capital_adelanto) > numeros.roundm2(cre_saldopend):
+            raise ErrorValidacionExc(
+                'El pago total de capital:{0} sobrepasa la deuda del crédito:{1} (adelanto + capital:{2}, adelanto: {3})'.format(
+                    numeros.roundm2(pgc_total_capital),
+                    numeros.roundm2(cre_saldopend),
+                    pgc_total_capital_adelanto,
+                    pg_adelanto
+                )
+            )
+
         pagoscredcab = TFinPagosCredCab()
         pagoscredcab.cre_id = cre_id
         pagoscredcab.pgc_usercrea = user_crea

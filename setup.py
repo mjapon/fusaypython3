@@ -24,7 +24,10 @@ requires = [
     'psycopg2-binary',
     'simplejson',
     'PyJWT',
-    'cornice'
+    'cornice',
+    'suds',
+    'requests',
+    'redis'
 ]
 
 tests_require = [

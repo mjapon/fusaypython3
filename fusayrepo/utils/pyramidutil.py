@@ -7,6 +7,7 @@ import logging
 
 from pyramid.httpexceptions import HTTPFound
 
+from fusayrepo.logica.compele import ctes_facte
 from fusayrepo.logica.excepciones.validacion import UnauthorizedExc
 from fusayrepo.utils.generatokenutil import GeneraTokenUtil
 from fusayrepo.utils.jsonutil import SimpleJsonUtil
@@ -143,6 +144,38 @@ class DbComunView(PyramidView):
         return None
 
 
+class FacteView(PyramidView):
+    """
+    Clase para gestionar apis para revisar los comprobantes electronicos
+    """
+
+    def init(self):
+        if self.request.method == 'OPTIONS':
+            # Http OPTIONS parsed avoid this request
+            pass
+        else:
+            self.conf_dbsession()
+
+    def change_dbschema(self, emp_esquema):
+        self.request.dbsession.execute("SET search_path TO {0}".format(emp_esquema))
+
+    def conf_dbsession(self):
+        if 'x-authtoken' not in self.request.headers:
+            raise UnauthorizedExc("No autenticado")
+
+        auth_token = self.request.headers['x-authtoken']
+        genera_token_util = GeneraTokenUtil()
+        datostoken = genera_token_util.get_datos_fron_token_facte(auth_token)
+        self.cnt_id = datostoken['cnt_id']
+        self.change_dbschema(ctes_facte.ESQUEMA_FACTE_COMPROBANTES)
+
+    def res200(self, res):
+        return {'status': 200, **res}
+
+    def get_user_id(self):
+        return self.cnt_id
+
+
 class TokenView(PyramidView):
     """
     Clase para implementar autenticacion basada en token, en la cabecera de la peticion debe venir
@@ -184,6 +217,11 @@ class TokenView(PyramidView):
         else:
             self.tdv_codigo = 1  # TODO: Este caso no deberia darse
 
+        if 'emp_id' in datostoken:
+            self.emp_id = datostoken['emp_id']
+        else:
+            self.emp_id = 0
+
         self.change_dbschema(self.emp_esquema)
 
     """
@@ -208,6 +246,9 @@ class TokenView(PyramidView):
 
     def get_emp_codigo(self):
         return self.emp_codigo
+
+    def get_emp_id(self):
+        return self.emp_id
 
     def get_emp_esquema(self):
         return self.emp_esquema

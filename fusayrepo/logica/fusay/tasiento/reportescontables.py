@@ -9,6 +9,7 @@ from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
+from fusayrepo.logica.fusay.tperiodocontable.tperiodo_dao import TPeriodoContableDao
 from fusayrepo.utils import numeros, fechas, ctes
 
 log = logging.getLogger(__name__)
@@ -42,11 +43,6 @@ class ReportesContablesDao(BaseDao):
         if 'children' in nodo and len(nodo['children']) > 0:
             for hijonodo in nodo['children']:
                 self.aux_tree_to_list(hijonodo, alllist, acpasress)
-
-    def get_datos_periodo_contable(self):
-        sql = "select pc_id, pc_desde, pc_hasta, pc_fechacrea from tperiodocontable where pc_activo = true"
-        tupla_desc = ('pc_id', 'pc_desde', 'pc_hasta', 'pc_fechacrea')
-        return self.first(sql, tupla_desc)
 
     def add_total_to_list(self, the_tree, the_list):
         ctas_dict = {}
@@ -96,7 +92,8 @@ class ReportesContablesDao(BaseDao):
         return result_dict
 
     def build_balance_gen_mayorizado(self, hasta, sec_id):
-        periodo_contable = self.get_datos_periodo_contable()
+        periododao = TPeriodoContableDao(self.dbsession)
+        periodo_contable = periododao.get_datos_periodo_contable()
         if periodo_contable is None:
             raise ErrorValidacionExc('No existe un periodo contable activo registrado, favor verificar')
 
@@ -154,7 +151,8 @@ class ReportesContablesDao(BaseDao):
         }
 
     def get_resultado_ejercicio_mayorizado(self, hasta, sec_id):
-        periodo_contable = self.get_datos_periodo_contable()
+        periododao = TPeriodoContableDao(self.dbsession)
+        periodo_contable = periododao.get_datos_periodo_contable()
         if periodo_contable is None:
             raise ErrorValidacionExc('No existe un periodo contable activo registrado, favor verificar')
 

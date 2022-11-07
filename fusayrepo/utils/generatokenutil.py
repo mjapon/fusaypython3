@@ -3,7 +3,6 @@
 Fecha de creacion '16/02/16'
 @autor: 'serviestudios'
 """
-import datetime
 import logging
 
 import jwt
@@ -18,11 +17,22 @@ class GeneraTokenUtil(object):
     def get_token(self, clave='sosecret'):
         return jwt.encode({'some': 'payload'}, clave, algorithm='HS256')
 
-    def gen_token(self, us_id, emp_codigo, emp_esquema, sec_id, clave="fusay4793", tdv_codigo=1):
+    def gen_token(self, us_id, emp_codigo, emp_esquema, sec_id, clave="fusay4793", tdv_codigo=1, emp_id=0):
         data = {'us_id': us_id, 'emp_codigo': emp_codigo, 'emp_esquema': emp_esquema,
-                'sec_id': sec_id, 'tdv_codigo': tdv_codigo}
+                'sec_id': sec_id, 'tdv_codigo': tdv_codigo, 'emp_id': emp_id}
         encoded_jwt = jwt.encode(data, clave, algorithm='HS256')
         return encoded_jwt
+
+    def get_token_facte(self, cnt_ciruc, cnt_email, cnt_id, clave="mavilfacte4793"):
+        data = {'cnt_ciruc': cnt_ciruc,
+                'cnt_email': cnt_email,
+                'cnt_id': cnt_id}
+        encoded_jwt = jwt.encode(data, clave, algorithm='HS256')
+        return encoded_jwt
+
+    def get_datos_fron_token_facte(self, token, clave="mavilfacte4793"):
+        decoded_value = jwt.decode(token, clave, algorithms=['HS256'])
+        return decoded_value
 
     def gen_token_pixel(self, us_id, clave="fusay4793"):
         data = {'us_id': us_id, 'emp_codigo': 1, 'emp_esquema': 'fusay', 'sec_id': 1}
@@ -63,7 +73,6 @@ def get_fila(saldo_ini, cuota_mensual, tasa, fecha):
 
 
 if __name__ == '__main__':
-
     print("Se ejecuta main--->")
     feca = '05/04/2022'
     fecb = '02/04/2022'
