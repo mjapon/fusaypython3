@@ -12,10 +12,10 @@ from sqlalchemy.orm import sessionmaker
 
 from fusayrepo.logica.compele.compele_util import CompeleUtilDao
 
-ruta_logs = "/var/log/chkfacte.log"
+# ruta_logs = "/var/log/chkfacte.log"
 
 
-# ruta_logs = "/Users/manueljapon/Documents/dev/logs/chkfacte.log"
+ruta_logs = "/Users/manueljapon/Documents/dev/logs/chkfacte.log"
 
 
 def get_session_factory(engine):
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         dbsession = session_factory()
 
         esquemas_procesar = [
-            'fusay'
+            'fusay', 'achel'
         ]
 
         compeleutildao = CompeleUtilDao(dbsession)

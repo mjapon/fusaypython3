@@ -9,6 +9,11 @@ import redis
 
 log = logging.getLogger(__name__)
 
+"""
+PASS_REDIS_PROD = "Hart$$471"
+myredis = redis.StrictRedis('localhost', 6379, charset="utf-8", decode_responses=True, password=PASS_REDIS_PROD)
+"""
+
 myredis = redis.StrictRedis('localhost', 6379, charset="utf-8", decode_responses=True)
 
 

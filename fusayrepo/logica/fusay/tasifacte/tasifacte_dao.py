@@ -68,6 +68,14 @@ class TasiFacteDao(BaseDao):
                 "estado": 0}
         return form
 
+    def es_compro_elec(self, trn_codigo):
+        sql = """
+        select count(*) as cuenta from tasifacte where trn_codigo = {0}
+        """.format(trn_codigo)
+        cuenta = self.first_col(sql, 'cuenta')
+
+        return cuenta > 0
+
     def buscar_comprobantes(self, form):
         estado = form['estado']
         desde = form['desde']

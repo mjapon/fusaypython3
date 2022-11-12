@@ -17,7 +17,7 @@ class ProxyClient(BaseDao):
 
     def get_soap_client(self):
         client = Client(self.url_proxy_client)
-        print(client)
+        # print(client)
         return client
 
     def enviar_comprobante(self, claveacceso, comprobante, ambiente, info_adicional="", reenvio=0,
@@ -30,7 +30,7 @@ class ProxyClient(BaseDao):
     def consulta_autorizacion(self, claveacceso, ambiente, info_adicional="", ruc_empresa=""):
         client = self.get_soap_client()
         res = client.service.autorizarComprobante(claveacceso, ambiente, info_adicional, ruc_empresa)
-        print(res)
-        print(type(res))
+        # print(res)
+        # print(type(res))
 
         return res

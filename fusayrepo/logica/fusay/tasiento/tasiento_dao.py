@@ -16,6 +16,7 @@ from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.tasiento.auxlogicasi_dao import AuxLogicAsiDao
 from fusayrepo.logica.fusay.tasiento.tasiento_model import TAsiento
 from fusayrepo.logica.fusay.tasiento.tasientoaud_dao import TAsientoAudDao
+from fusayrepo.logica.fusay.tasifacte.tasifacte_dao import TasiFacteDao
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.timpuesto.timpuesto_dao import TImpuestoDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
@@ -502,6 +503,9 @@ class TasientoDao(AuxLogicAsiDao):
             tpersondao = TPersonaDao(self.dbsession)
             datosref = tpersondao.buscar_porperid_full(per_id=per_codigo)
 
+        asifacte = TasiFacteDao(self.dbsession)
+        is_compele = asifacte.es_compro_elec(trn_codigo=trn_codigo)
+
         return {
             'tasiento': tasiento,
             'detalles': detalles,
@@ -510,7 +514,8 @@ class TasientoDao(AuxLogicAsiDao):
             'pagosobj': pagosobj,
             'pagosdoc': pagosdoc,
             'impuestos': impuestos,
-            'totales': totales
+            'totales': totales,
+            'isCompele': is_compele
         }
 
     @staticmethod
