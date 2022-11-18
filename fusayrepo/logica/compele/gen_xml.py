@@ -174,24 +174,27 @@ class GeneraFacturaCompEle(BaseDao):
         propina = et.SubElement(info_factura, "propina")
         propina.text = str(numeros.roundm2(datos_factura['propina']))
 
+        importe_total_value = numeros.roundm2(totales['total'])
         importe_total = et.SubElement(info_factura, "importeTotal")
-        importe_total.text = str(numeros.roundm2(totales['total']))
+        importe_total.text = str(importe_total_value)
 
         moneda = et.SubElement(info_factura, "moneda")
         moneda.text = ctes_facte.MONEDA
 
         pagos = et.SubElement(info_factura, "pagos")
 
-        total_pago_efectivo_value = numeros.roundm2(totales['pago_efectivo'])
-        total_pago_credito_value = numeros.roundm2(totales['pago_credito'])
+        # total_pago_efectivo_value = numeros.roundm2(totales['pago_efectivo'])
+        # total_pago_credito_value = numeros.roundm2(totales['pago_credito'])
 
         pago_efectivo = et.SubElement(pagos, "pago")
         codigo_forma_pago_efec = et.SubElement(pago_efectivo, "formaPago")
         codigo_forma_pago_efec.text = ctes_facte.PAGO_SIN_UTILIZACION_SIS_FINANCIERO
 
         total_forma_pago_efec = et.SubElement(pago_efectivo, "total")
-        total_forma_pago_efec.text = str(total_pago_efectivo_value)
+        total_forma_pago_efec.text = str(importe_total_value)
 
+        #TODO: En esta caso se debe agregar tambien las etiquetes de plazo y unidad de tiempo, por el momento solo se deja el pago sin utilizacion del sistema financiero
+        """
         if total_pago_credito_value > 0:
             pago_credito = et.SubElement(pagos, "pago")
             codigo_forma_pago_cre = et.SubElement(pago_credito, "formaPago")
@@ -199,6 +202,7 @@ class GeneraFacturaCompEle(BaseDao):
 
             total_forma_pago_cre = et.SubElement(pago_credito, "total")
             total_forma_pago_cre.text = str(total_pago_credito_value)
+        """
 
         detalles = et.SubElement(root, "detalles")
 
