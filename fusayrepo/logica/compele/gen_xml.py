@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 class GeneraFacturaCompEle(BaseDao):
 
-    def get_clave_acceso(self, datos_factura, tipo_ambiente=ctes_facte.AMBIENTE_PRUEBAS):
+    def get_clave_acceso(self, datos_factura, tipo_ambiente):
         trn_fecreg = datos_factura['trn_fecreg']
 
         fechafact = fechas.format_cadena(trn_fecreg, ctes.APP_FMT_FECHA, ctes_facte.APP_FMT_FECHA_SRI)
@@ -93,7 +93,7 @@ class GeneraFacturaCompEle(BaseDao):
         ruc = et.SubElement(info_tributaria, "ruc")
         ruc.text = cadenas.strip((datos_factura['alm_ruc']))
 
-        clave_acceso_value = self.get_clave_acceso(datos_factura=datos_factura, tipo_ambiente=tipo_ambiente)
+        clave_acceso_value = self.get_clave_acceso(datos_factura=datos_factura, tipo_ambiente=str(ambiente_value))
         clave_acceso = et.SubElement(info_tributaria, "claveAcceso")
         clave_acceso.text = clave_acceso_value
 
