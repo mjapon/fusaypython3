@@ -38,7 +38,8 @@ class GenDataForFacte(BaseDao):
                 per.per_telf,
                 per.per_movil,
                 per.per_email,
-                asi.trn_compro 
+                asi.trn_compro,
+                asi.sec_codigo 
                 from tasiento asi
                 join ttpdv on asi.tdv_codigo =   ttpdv.tdv_codigo
                 join talmacen talm on ttpdv.alm_codigo = talm.alm_codigo
@@ -64,7 +65,8 @@ class GenDataForFacte(BaseDao):
                       'per_telf',
                       'per_movil',
                       'per_email',
-                      'trn_compro'
+                      'trn_compro',
+                      'sec_codigo'
                       )
 
         datos_factura = self.first(sql, tupla_desc)
@@ -89,9 +91,9 @@ class GenDataForFacte(BaseDao):
                 'pagos': pagos,
                 'totales': totales_facte}
 
-    def get_datos_alm_matriz(self):
-        sql = """
-        select alm_codigo,
+    def get_datos_alm_matriz(self, sec_codigo):
+        sqlbase = """
+        select  alm.alm_codigo,
                 alm_numest,
                 alm_razsoc,
                 alm_descri,
@@ -110,8 +112,17 @@ class GenDataForFacte(BaseDao):
                 alm_matriz,
                 alm_tipoamb,
                 alm_nomcomercial,
-                alm_contab from talmacen where alm_matriz = 1
+                alm_contab from talmacen alm
         """
+
+        where = " where alm_matriz = 1 "
+        if int(sec_codigo) > 1:
+            where = """
+            join tseccion sec on alm.alm_codigo = sec.alm_codigo 
+            where sec.sec_id = {0}
+            """.format(sec_codigo)
+
+        sql = "{0} {1}".format(sqlbase, where)
 
         tupla_desc = (
             'alm_codigo',

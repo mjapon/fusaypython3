@@ -122,11 +122,11 @@ class AuxLogicAsiDao(BaseDao):
         self.dbsession.flush()
         return detasiento.dt_codigo
 
-    def existe_doc_valido(self, trn_compro, tra_codigo):
+    def existe_doc_valido(self, trn_compro, tra_codigo, sec_codigo):
         sql = """
-        select count(*) as cuenta from tasiento where trn_compro = '{0}' and tra_codigo = {1} 
-        and trn_docpen = 'F' and trn_valido = 0
-        """.format(cadenas.strip(trn_compro), tra_codigo)
+        select count(*) as cuenta from tasiento where trn_compro = '{0}' and tra_codigo = {1}         
+        and trn_docpen = 'F' and trn_valido = 0 and sec_codigo = {2}
+        """.format(cadenas.strip(trn_compro), tra_codigo, sec_codigo)
         return self.first_col(sql, 'cuenta') > 0
 
     @staticmethod
@@ -135,7 +135,7 @@ class AuxLogicAsiDao(BaseDao):
 
     def aux_chk_existe_doc_valid(self, formcab, trn_compro, tra_codigo):
         if formcab['trn_docpen'] == 'F':
-            if self.existe_doc_valido(trn_compro, tra_codigo=tra_codigo):
+            if self.existe_doc_valido(trn_compro, tra_codigo=tra_codigo, sec_codigo=formcab['sec_codigo']):
                 raise ErrorValidacionExc('Ya existe un comprobante registrado con el número: {0}'.format(trn_compro))
 
     def aux_chk_existe_doc_valid_ref(self, formcab, trn_compro, tra_codigo, per_ciruc):
@@ -157,6 +157,7 @@ class AuxLogicAsiDao(BaseDao):
     def aux_set_datos_tasiento(self, usercrea, per_codigo, formcab, per_ciruc=''):
         secuencia = formcab['secuencia']
         tra_codigo = formcab['tra_codigo']
+        sec_codigo = formcab['sec_codigo']
 
         if int(tra_codigo) == ctes.TRA_COD_FACT_COMPRA:
             trn_compro = secuencia
@@ -168,7 +169,6 @@ class AuxLogicAsiDao(BaseDao):
         secuencia = formcab['secuencia']
         trn_docpen = formcab['trn_docpen']
         trn_pagpen = formcab['trn_pagpen']
-        sec_codigo = formcab['sec_codigo']
         trn_observ = formcab['trn_observ']
         tdv_codigo = formcab['tdv_codigo']
         fol_codigo = int(formcab['fol_codigo'])

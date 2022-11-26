@@ -28,3 +28,7 @@ class TSeccionDao(BaseDao):
         sql = "select alm_codigo from tseccion where sec_id = {0}".format(sec_codigo)
         alm_codigo = self.first_col(sql, 'alm_codigo')
         return alm_codigo
+
+    def get_sec_tipoamb(self, sec_id):
+        sql = "select sec_tipoamb from tseccion where sec_id = {0}".format(sec_id)
+        return self.first_col(sql, 'sec_tipoamb')

@@ -42,11 +42,11 @@ class CompeleUtilDao(BaseDao):
         except Exception as ex:
             log.error("Error al tratar de enviar mensaje a la cola de comprobantes electronicos", ex)
 
-    def registra_comprob_contrib(self, trn_codigo, emp_codigo, estado_envio):
+    def registra_comprob_contrib(self, trn_codigo, emp_codigo, estado_envio, sec_id):
         gen_fact = GeneraFacturaCompEle(self.dbsession)
         gen_data = GenDataForFacte(self.dbsession)
         datos_fact = gen_data.get_factura_data(trn_codigo=trn_codigo)
-        datos_alm_matriz = gen_data.get_datos_alm_matriz()
+        datos_alm_matriz = gen_data.get_datos_alm_matriz(sec_codigo=sec_id)
         ambiente_facte = datos_alm_matriz['alm_tipoamb']
 
         claveacceso = gen_fact.get_clave_acceso(datos_factura=datos_fact['cabecera'], tipo_ambiente=ambiente_facte)
@@ -60,12 +60,12 @@ class CompeleUtilDao(BaseDao):
                                          ambiente=ambiente_facte)
         return {'status': 200, 'exito': True}
 
-    def enviar(self, trn_codigo):
+    def enviar(self, trn_codigo, sec_codigo):
         gen_fact = GeneraFacturaCompEle(self.dbsession)
 
         gen_data = GenDataForFacte(self.dbsession)
         datos_fact = gen_data.get_factura_data(trn_codigo=trn_codigo)
-        datos_alm_matriz = gen_data.get_datos_alm_matriz()
+        datos_alm_matriz = gen_data.get_datos_alm_matriz(sec_codigo=sec_codigo)
 
         ambiente_facte = datos_alm_matriz['alm_tipoamb']
 

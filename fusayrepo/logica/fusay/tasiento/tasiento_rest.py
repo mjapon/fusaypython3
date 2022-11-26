@@ -14,6 +14,7 @@ from fusayrepo.logica.fusay.tasiento.auxlogicchangesec import AuxLogigChangeSecc
 from fusayrepo.logica.fusay.tasiento.librodiario_dao import LibroDiarioDao
 from fusayrepo.logica.fusay.tasiento.reportescontables import ReportesContablesDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
+from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
 from fusayrepo.logica.fusay.ttransaccpago.ttransaccpago_dao import TTransaccPagoDao
@@ -153,6 +154,7 @@ class TAsientoRest(TokenView):
     def collection_post(self):
         accion = self.get_request_param('accion')
         tasientodao = TasientoDao(self.dbsession)
+        tsecciondao = TSeccionDao(self.dbsession)
         if accion == 'creadoc':
             form = self.get_json_body()
             formcab = form['form_cab']
@@ -173,23 +175,33 @@ class TAsientoRest(TokenView):
             msg = 'Registro exitoso'
 
             almdao = TAlmacenDao(self.dbsession)
-            alm_tipoamb = almdao.get_alm_tipoamb()
+
+            # Check multiple secciones
+            sec_id = self.get_sec_id()
+            sec_tipoamb = 0
+            aplica_facte_por_seccion = False
+            if sec_id is not None and int(sec_id) > 1:
+                sec_tipoamb = tsecciondao.get_sec_tipoamb(sec_id=sec_id)
+                aplica_facte_por_seccion = sec_tipoamb > 0
+
+            alm_tipoamb = 0
+            if not aplica_facte_por_seccion:
+                alm_tipoamb = almdao.get_alm_tipoamb()
+
             compelenviado = False
-            time_check_compele = (1000 * 10) * 1  # 1 minutos
             estado_envio = 0
             is_cons_final = False
-            if alm_tipoamb > 0 and creando and tra_codigo == ctes.TRA_COD_FACT_VENTA:
+            if (alm_tipoamb > 0 or sec_tipoamb > 0) and creando and tra_codigo == ctes.TRA_COD_FACT_VENTA:
                 log.info("Configurado facturacion se envia su generacion--trn_codigo:{0}".format(trn_codigo))
                 compelutil = CompeleUtilDao(self.dbsession)
-                response_compele = compelutil.enviar(trn_codigo=trn_codigo)
+                response_compele = compelutil.enviar(trn_codigo=trn_codigo, sec_codigo=sec_id)
                 compelenviado = response_compele['enviado']
                 estado_envio = response_compele['estado_envio']
                 is_cons_final = int(form['form_persona']['per_id']) < 0
 
             return self.res200(
                 {'trn_codigo': trn_codigo, 'msg': msg, 'alm_tipoamb': alm_tipoamb,
-                 'compelenviado': compelenviado, 'time_check_compele': time_check_compele,
-                 'estado_envio': estado_envio, 'is_cons_final': is_cons_final})
+                 'compelenviado': compelenviado, 'estado_envio': estado_envio, 'is_cons_final': is_cons_final})
         elif accion == 'anular':
             form = self.get_json_body()
             tasientodao.anular(trn_codigo=form['trncod'], user_anula=self.get_user_id(), obs_anula=form['obs'])

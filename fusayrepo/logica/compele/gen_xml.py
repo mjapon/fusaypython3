@@ -23,12 +23,12 @@ class GeneraFacturaCompEle(BaseDao):
         tipo_comprobante = '01'
         num_ruc = datos_factura['alm_ruc']
 
-        # serie = '{0}{1}'.format(datos_factura['alm_numest'], datos_factura['tdv_numero'])
-
         trn_compro = datos_factura['trn_compro']
         serie_secuencial = trn_compro
 
-        codigo_numerico = "00000000"  # potestad del contribuyente
+        sec_id = datos_factura['sec_codigo']
+
+        codigo_numerico = "0000000{0}".format(sec_id)  # potestad del contribuyente
 
         tipo_emision = "1"
 
@@ -38,6 +38,7 @@ class GeneraFacturaCompEle(BaseDao):
         digito = self.get_digito_verificador(pre_clave_acceso)
 
         clave_acceso = '{0}{1}'.format(pre_clave_acceso, digito)
+
         return clave_acceso
 
     def get_digito_verificador(self, clave_acceso):
@@ -70,7 +71,6 @@ class GeneraFacturaCompEle(BaseDao):
 
     def generar_factura(self, ambiente_value, datos_factura, datos_alm_matriz,
                         totales, detalles_db,
-                        tipo_ambiente=ctes_facte.AMBIENTE_PRUEBAS,
                         tipo_emision_value=1):
 
         root = et.Element('factura')
@@ -193,7 +193,7 @@ class GeneraFacturaCompEle(BaseDao):
         total_forma_pago_efec = et.SubElement(pago_efectivo, "total")
         total_forma_pago_efec.text = str(importe_total_value)
 
-        #TODO: En esta caso se debe agregar tambien las etiquetes de plazo y unidad de tiempo, por el momento solo se deja el pago sin utilizacion del sistema financiero
+        # TODO: En esta caso se debe agregar tambien las etiquetes de plazo y unidad de tiempo, por el momento solo se deja el pago sin utilizacion del sistema financiero
         """
         if total_pago_credito_value > 0:
             pago_credito = et.SubElement(pagos, "pago")
