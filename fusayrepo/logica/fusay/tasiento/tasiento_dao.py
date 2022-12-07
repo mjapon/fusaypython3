@@ -505,6 +505,7 @@ class TasientoDao(AuxLogicAsiDao):
 
         asifacte = TasiFacteDao(self.dbsession)
         is_compele = asifacte.es_compro_elec(trn_codigo=trn_codigo)
+        factele_info = asifacte.get_datos_facte(trn_codigo=trn_codigo)
 
         return {
             'tasiento': tasiento,
@@ -515,7 +516,8 @@ class TasientoDao(AuxLogicAsiDao):
             'pagosdoc': pagosdoc,
             'impuestos': impuestos,
             'totales': totales,
-            'isCompele': is_compele
+            'isCompele': is_compele,
+            'facteleinfo': factele_info
         }
 
     @staticmethod
@@ -910,7 +912,8 @@ class TasientoDao(AuxLogicAsiDao):
 
         return per_codigo, per_ciruc
 
-    def crear(self, form, form_persona, user_crea, detalles, pagos, totales, creaupdpac=True, creabono=False):
+    def crear(self, form, form_persona, user_crea, detalles, pagos, totales, creaupdpac=True, creabono=False,
+              gen_secuencia=True):
         """
         creabono: True indica que se debe registrar un abono de una cuenta por pagar asociado
         """
@@ -918,7 +921,7 @@ class TasientoDao(AuxLogicAsiDao):
         per_codigo, per_ciruc = self.aux_save_datos_ref(formref=form_persona, creaupdref=creaupdpac)
 
         tasiento = self.aux_set_datos_tasiento(usercrea=user_crea, per_codigo=per_codigo,
-                                               formcab=form, per_ciruc=per_ciruc)
+                                               formcab=form, per_ciruc=per_ciruc, gen_secuencia=gen_secuencia)
         trn_codigo = tasiento.trn_codigo
         valdebehaber = []
         self.save_dets_imps_fact(detalles=detalles, tasiento=tasiento, totales=totales,
@@ -970,5 +973,6 @@ class TasientoDao(AuxLogicAsiDao):
 
             trn_compro_rel = self._get_trn_compro('000000', resestabsec['secuencia'])
             transaccpdv_dao.gen_secuencia(tps_codigo=resestabsec['tps_codigo'], secuencia=resestabsec['secuencia'])
+
             tasiento.trn_compro_rel = trn_compro_rel
         return trn_codigo

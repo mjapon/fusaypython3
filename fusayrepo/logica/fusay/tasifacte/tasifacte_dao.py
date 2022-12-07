@@ -76,6 +76,15 @@ class TasiFacteDao(BaseDao):
 
         return cuenta > 0
 
+    def get_datos_facte(self, trn_codigo):
+        sql = """
+        select tfe_estado, tfe_estadosri, tfe_fecautoriza, tfe_claveacceso from tasifacte where trn_codigo = {0}
+        order by tfe_codigo desc limit 1 
+        """.format(trn_codigo)
+
+        tupla_desc = ('tfe_estado', 'tfe_estadosri', 'tfe_fecautoriza', 'tfe_claveacceso')
+        return self.first(sql, tupla_desc)
+
     def buscar_comprobantes(self, form):
         estado = form['estado']
         desde = form['desde']

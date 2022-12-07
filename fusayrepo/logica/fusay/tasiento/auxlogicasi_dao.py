@@ -154,7 +154,24 @@ class AuxLogicAsiDao(BaseDao):
                 """.format(cadenas.strip(trn_compro), tra_codigo, cadenas.strip_upper(per_ciruc))
         return self.first_col(sql, 'cuenta') > 0
 
-    def aux_set_datos_tasiento(self, usercrea, per_codigo, formcab, per_ciruc=''):
+    def aux_set_datos_secuencia(self, tasiento, formcab, per_codigo, sec_codigo):
+        tps_codigo = formcab['tps_codigo']
+        secuencia = formcab['secuencia']
+        trn_compro = self._get_trn_compro(formcab['estabptoemi'], secuencia)
+        self.aux_chk_existe_doc_valid(formcab, trn_compro, tasiento.tra_codigo)
+        tasiento.trn_compro = trn_compro
+        tasiento.tra_codigo = formcab['tra_codigo']
+        tasiento.trn_docpen = 'F'
+        tasiento.per_codigo = per_codigo
+        tasiento.sec_codigo = sec_codigo
+
+        if tps_codigo is not None and tps_codigo > 0:
+            transaccpdv_dao = TTransaccPdvDao(self.dbsession)
+            transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
+
+        self.dbsession.add(tasiento)
+
+    def aux_set_datos_tasiento(self, usercrea, per_codigo, formcab, per_ciruc='', gen_secuencia=True):
         secuencia = formcab['secuencia']
         tra_codigo = formcab['tra_codigo']
         sec_codigo = formcab['sec_codigo']
@@ -201,7 +218,7 @@ class AuxLogicAsiDao(BaseDao):
         tasiento.trn_impref = formcab['trn_impref']
 
         tps_codigo = formcab['tps_codigo']
-        if tps_codigo is not None and tps_codigo > 0:
+        if tps_codigo is not None and tps_codigo > 0 and gen_secuencia:
             transaccpdv_dao = TTransaccPdvDao(self.dbsession)
             transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
 

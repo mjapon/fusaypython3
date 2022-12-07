@@ -6,11 +6,14 @@ Fecha de creacion 1/7/21
 import datetime
 import logging
 
+from fusayrepo.logica.compele.compele_util import CompeleUtilDao
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.dental.todplntratamiento.todplntrtmto_model import TOdPlnTrtmto
+from fusayrepo.logica.fusay.tasiento.auxlogicasi_dao import AuxLogicAsiDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.tmodelocontab.tmodelocontab_dao import TModelocontabDao
+from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.utils import cadenas
 
 log = logging.getLogger(__name__)
@@ -70,7 +73,7 @@ class TOdPlanTratamientoDao(BaseDao):
         tsientodao = TasientoDao(self.dbsession)
         formcab['trn_observ'] = cadenas.strip(formplan['pnt_obs'])
         trn_codigo = tsientodao.crear(form=formcab, form_persona=form_persona, user_crea=user_crea, detalles=detalles,
-                                      pagos=pagos, creaupdpac=False, totales=form['totales'])
+                                      pagos=pagos, creaupdpac=False, totales=form['totales'], gen_secuencia=False)
         tplantratamiento.trn_codigo = trn_codigo
 
         self.dbsession.add(tplantratamiento)
@@ -120,28 +123,57 @@ class TOdPlanTratamientoDao(BaseDao):
             'pnt_obs')
         return self.all(sql, tupla_desc)
 
-    def cambiar_estado(self, pnt_id, nuevo_estado, user_upd):
+    def cambiar_estado(self, pnt_id, nuevo_estado, user_upd,
+                       cod_tipo_doc=0, alm_codigo=0, sec_id=0, tdv_codigo=0, formreferente=None):
         todplantratamiento = self.dbsession.query(TOdPlnTrtmto).filter(TOdPlnTrtmto.pnt_id == pnt_id).first()
+        response_logica_facte = None
+        tasientodao = TasientoDao(self.dbsession)
         if todplantratamiento is not None:
             todplantratamiento.user_upd = user_upd
             todplantratamiento.fecha_upd = datetime.datetime.now()
             todplantratamiento.pnt_estado = nuevo_estado
 
             if int(nuevo_estado) == 5:  # Se anula el plan, se debe anular tambien la factura
-                tasientodao = TasientoDao(self.dbsession)
                 tasiento = tasientodao.find_entity_byid(trn_codigo=todplantratamiento.trn_codigo)
                 if tasiento is not None:
                     tasiento.trn_valido = 2
                     self.dbsession.add(tasiento)
+
             elif int(nuevo_estado) == 2:
                 # Cuaando el estado es aprobado entonces se quita la marca de factura pendiente
                 tasientodao = TasientoDao(self.dbsession)
                 tasiento = tasientodao.find_entity_byid(trn_codigo=todplantratamiento.trn_codigo)
+                compeleutil = CompeleUtilDao(self.dbsession)
                 if tasiento is not None:
                     tasiento.trn_docpen = 'F'
+                    if int(cod_tipo_doc) > 0:
+                        aulogicasidao = AuxLogicAsiDao(self.dbsession)
+                        form_cab = tasientodao.get_form_cabecera(cod_tipo_doc,
+                                                                 alm_codigo, sec_id, tdv_codigo, tra_emite=1)
+
+                        if formreferente is not None:
+                            personadao = TPersonaDao(self.dbsession)
+                            per_codigo = formreferente['per_id']
+                            per_ciruc = formreferente['per_ciruc']
+                            if per_codigo is not None and per_codigo > 0:
+                                personadao.actualizar(per_id=per_codigo, form=formreferente)
+                            else:
+                                persona = personadao.buscar_porciruc(per_ciruc=per_ciruc)
+                                if persona is not None:
+                                    per_codigo = persona[0]['per_id']
+                                    personadao.actualizar(per_id=per_codigo, form=formreferente)
+                                else:
+                                    per_codigo = personadao.crear(form=formreferente)
+
+                        aulogicasidao.aux_set_datos_secuencia(tasiento=tasiento, formcab=form_cab,
+                                                              per_codigo=per_codigo, sec_codigo=sec_id)
+                        response_logica_facte = compeleutil.logica_check_envio_factura(trn_codigo=tasiento.trn_codigo)
+
                     self.dbsession.add(tasiento)
 
             self.dbsession.add(todplantratamiento)
+
+        return response_logica_facte
 
     def get_detalles(self, pnt_id):
         sql = """

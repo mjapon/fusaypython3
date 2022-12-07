@@ -26,7 +26,10 @@ class GenCompeleRest(TokenView):
         compeledao = CompeleUtilDao(self.dbsession)
 
         if accion == 'validar':
-            compeledao.enviar(trn_codigo=trncod, sec_codigo=self.get_sec_id())
+            responseenvio = compeledao.enviar(trn_codigo=trncod, sec_codigo=self.get_sec_id())
+            response = {'exito': True, 'enviado': responseenvio['enviado'],
+                        'estado_envio': responseenvio['estado_envio']}
+            return self.res200(response)
 
         if accion == 'autoriza':
             compeledao.autorizar(trn_codigo=trncod, emp_codigo=self.get_emp_codigo(),

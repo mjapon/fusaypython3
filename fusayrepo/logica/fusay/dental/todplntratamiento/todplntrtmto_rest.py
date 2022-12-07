@@ -30,7 +30,7 @@ class TodPlanTrantamientoRest(TokenView):
 
         if accion == 'form':
             formplan = plantrata_dao.get_form(pac_id=self.get_request_param('pac'))
-            tra_codigo = self.get_request_param('tra_cod')
+            tra_codigo = 2
             tdv_codigo = self.get_tdv_codigo()
             ttpdvdao = TtpdvDao(self.dbsession)
             sec_id = self.get_sec_id()
@@ -75,10 +75,18 @@ class TodPlanTrantamientoRest(TokenView):
         elif accion == 'chgestado':
             jbody = self.get_json_body()
             nuevo_estado = jbody['nv_estado']
-            plantratadao.cambiar_estado(pnt_id=jbody['pnt_id'], nuevo_estado=nuevo_estado,
-                                        user_upd=self.get_user_id())
+            jbody = self.get_json_body()
+            ttpdvdao = TtpdvDao(self.dbsession)
+            sec_id = self.get_sec_id()
+            alm_codigo = ttpdvdao.get_alm_codigo_from_sec_codigo(sec_id)
+            response_logica_facte = plantratadao.cambiar_estado(pnt_id=jbody['pnt_id'], nuevo_estado=nuevo_estado,
+                                                                user_upd=self.get_user_id(),
+                                                                cod_tipo_doc=jbody['tipo_comprob'],
+                                                                alm_codigo=alm_codigo, sec_id=sec_id,
+                                                                tdv_codigo=self.get_tdv_codigo(),
+                                                                formreferente=jbody['formref'])
             msg = 'Cambio de estado exitoso'
             if int(nuevo_estado) == 5:
                 msg = 'Registro anulado exitosamente'
 
-            return self.res200({'msg': msg})
+            return self.res200({'msg': msg, 'compele': response_logica_facte})
