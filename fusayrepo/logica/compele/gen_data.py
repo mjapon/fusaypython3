@@ -77,7 +77,7 @@ class GenDataForFacte(BaseDao):
         totales = tasidao.calcular_totales(detalles)
 
         totales_facte = {
-            'total_sin_impuesto': totales['subtotal'],
+            'total_sin_impuesto': totales['subtotal'] - totales['descuentos'],
             'total_descuentos': totales['descuentos'],
             'base_imp_iva_12': totales['subtotal12'],
             'impuesto_iva_12': totales['iva'],

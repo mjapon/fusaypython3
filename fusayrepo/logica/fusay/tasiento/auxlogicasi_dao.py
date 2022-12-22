@@ -8,7 +8,7 @@ from datetime import datetime
 from functools import reduce
 
 from fusayrepo.logica.dao.base import BaseDao
-from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
+from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc, SecuenciaEnUsoExc
 from fusayrepo.logica.fusay.tasidetalle.tasidetalle_model import TAsidetalle
 from fusayrepo.logica.fusay.tasidetimp.tasidetimp_model import TAsidetimp
 from fusayrepo.logica.fusay.tasiento.tasiento_model import TAsiento
@@ -136,7 +136,7 @@ class AuxLogicAsiDao(BaseDao):
     def aux_chk_existe_doc_valid(self, formcab, trn_compro, tra_codigo):
         if formcab['trn_docpen'] == 'F':
             if self.existe_doc_valido(trn_compro, tra_codigo=tra_codigo, sec_codigo=formcab['sec_codigo']):
-                raise ErrorValidacionExc('Ya existe un comprobante registrado con el número: {0}'.format(trn_compro))
+                raise SecuenciaEnUsoExc('Ya existe un comprobante registrado con el número: {0}'.format(trn_compro))
 
     def aux_chk_existe_doc_valid_ref(self, formcab, trn_compro, tra_codigo, per_ciruc):
         if formcab['trn_docpen'] == 'F':
@@ -154,11 +154,23 @@ class AuxLogicAsiDao(BaseDao):
                 """.format(cadenas.strip(trn_compro), tra_codigo, cadenas.strip_upper(per_ciruc))
         return self.first_col(sql, 'cuenta') > 0
 
+    def aux_gen_trn_compro(self, formcab, tps_codigo, secuencia, tra_codigo):
+        transaccpdv_dao = TTransaccPdvDao(self.dbsession)
+        estabptoemi = formcab['estabptoemi']
+        trn_compro = self._get_trn_compro(estabptoemi, secuencia)
+        try:
+            self.aux_chk_existe_doc_valid(formcab, trn_compro, tra_codigo)
+        except SecuenciaEnUsoExc as ex:
+            transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
+            return self.aux_gen_trn_compro(formcab, estabptoemi, tps_codigo, int(secuencia)+1, tra_codigo)
+
+        return trn_compro
+
     def aux_set_datos_secuencia(self, tasiento, formcab, per_codigo, sec_codigo):
+        transaccpdv_dao = TTransaccPdvDao(self.dbsession)
         tps_codigo = formcab['tps_codigo']
         secuencia = formcab['secuencia']
-        trn_compro = self._get_trn_compro(formcab['estabptoemi'], secuencia)
-        self.aux_chk_existe_doc_valid(formcab, trn_compro, tasiento.tra_codigo)
+        trn_compro = self.aux_gen_trn_compro(formcab, tps_codigo, secuencia, tasiento.tra_codigo)
         tasiento.trn_compro = trn_compro
         tasiento.tra_codigo = formcab['tra_codigo']
         tasiento.trn_docpen = 'F'
@@ -166,7 +178,6 @@ class AuxLogicAsiDao(BaseDao):
         tasiento.sec_codigo = sec_codigo
 
         if tps_codigo is not None and tps_codigo > 0:
-            transaccpdv_dao = TTransaccPdvDao(self.dbsession)
             transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
 
         self.dbsession.add(tasiento)

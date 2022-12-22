@@ -221,11 +221,16 @@ class GeneraFacturaCompEle(BaseDao):
             precio_unitario_item = et.SubElement(detalle_item, "precioUnitario")
             precio_unitario_item.text = str(numeros.roundm2(detalle_db['dt_precio']))
 
+            descuento_fila_val = detalle_db['dt_decto']+detalle_db['dt_dectogen']
+            descuento_fila_round = numeros.roundm2(descuento_fila_val)
+
             descuento_item = et.SubElement(detalle_item, "descuento")
-            descuento_item.text = str(numeros.roundm2(detalle_db['dt_decto']))
+            descuento_item.text = str(descuento_fila_round)
+
+            precio_total_sin_impuesto_val = detalle_db['subtotal'] - descuento_fila_val
 
             precio_total_sin_impuesto_item = et.SubElement(detalle_item, "precioTotalSinImpuesto")
-            precio_total_sin_impuesto_item.text = str(numeros.roundm2(detalle_db['subtotal']))
+            precio_total_sin_impuesto_item.text = str(numeros.roundm2(precio_total_sin_impuesto_val))
 
             impuestos = et.SubElement(detalle_item, "impuestos")
             impuesto_item = et.SubElement(impuestos, "impuesto")

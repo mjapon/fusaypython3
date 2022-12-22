@@ -12,7 +12,15 @@ class ErrorValidacionExc(Exception):
     """Excepcion generadad cuando se produce un error de validadicon"""
     def __init__(self, message, inputid=""):
         Exception.__init__(self, message)
-        self.inputid=inputid
+        self.inputid = inputid
+
+
+class SecuenciaEnUsoExc(Exception):
+    """Excepcion generada cuando una secuencia ya existe para un tipo de trasaccion"""
+    def __init__(self, message, inputid=""):
+        Exception.__init__(self, message)
+        self.inputid = inputid
+
 
 class PixelUsadoExc(Exception):
     """Excepcion generadad cuando se desea comprar un pixel y este ya fue comprado"""

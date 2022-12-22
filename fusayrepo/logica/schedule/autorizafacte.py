@@ -46,7 +46,7 @@ if __name__ == "__main__":
         dbsession = session_factory()
 
         esquemas_procesar = [
-            'fusay', 'achel', 'vguaman', 'yolanda'
+            'fusay', 'achel', 'vguaman', 'yolanda', 'ana', 'endodental'
         ]
 
         compeleutildao = CompeleUtilDao(dbsession)
