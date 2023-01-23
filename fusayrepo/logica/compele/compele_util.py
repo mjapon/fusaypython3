@@ -5,11 +5,13 @@ Fecha de creacion 11/9/20
 """
 import logging
 
+from fusayrepo.logica.compele import ctes_facte
 from fusayrepo.logica.compele.gen_data import GenDataForFacte
 from fusayrepo.logica.compele.gen_xml import GeneraFacturaCompEle
 from fusayrepo.logica.compele.proxy import ProxyClient
 from fusayrepo.logica.compele.redisclient import RedisPublisher
 from fusayrepo.logica.dao.base import BaseDao
+from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.talmacen.talmacen_dao import TAlmacenDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.utils import ctes
@@ -109,6 +111,17 @@ class CompeleUtilDao(BaseDao):
         gen_data = GenDataForFacte(self.dbsession)
         datos_fact = gen_data.get_factura_data(trn_codigo=trn_codigo)
         datos_alm_matriz = gen_data.get_datos_alm_matriz(sec_codigo=sec_codigo)
+
+        # Procedimento para verificar si monto supera 50 dolares no se puede emitir factura electronica a cons final
+        totales_fact = datos_fact['totales']
+        total_fact = totales_fact['total']
+        datos_factura = datos_fact['cabecera']
+        per_codigo_factura = datos_factura['per_codigo']
+        if per_codigo_factura == -1 and total_fact > ctes_facte.MONTO_MAXIMO_CONS_FINAL:
+            raise ErrorValidacionExc(
+                "No se puede emitir una factura electrónica a consumidor final si el monto supera los ${0}, "
+                "para registrar esta factura, por favor ingrese los datos del cliente".format(
+                    ctes_facte.MONTO_MAXIMO_CONS_FINAL))
 
         ambiente_facte = datos_alm_matriz['alm_tipoamb']
 
