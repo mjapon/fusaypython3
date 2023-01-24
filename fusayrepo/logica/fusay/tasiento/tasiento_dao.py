@@ -247,7 +247,9 @@ class TasientoDao(AuxLogicAsiDao):
             'dt_debito': 0,
             'dt_preref': 0.0,
             'dt_decto': 0.0,
+            'dt_dectotipo': '1',#1-valor, 2-porcentaje
             'dt_dectoin': 0.0,
+            'dt_dectoporcin': 0.0,
             'dt_valor': 0.0,
             'dt_dectogen': 0.0,
             'dt_tipoitem': 1,
@@ -565,7 +567,8 @@ class TasientoDao(AuxLogicAsiDao):
             'descuentos': numeros.roundm2(gdescuentos),
             'total': numeros.roundm2(gtotal),
             'descglobalin': numeros.roundm2(descglobal),
-            'descglobal': numeros.roundm2(descglobal)
+            'descglobal': numeros.roundm2(descglobal),
+            'descglobaltipo': '1'
         }
 
     @staticmethod

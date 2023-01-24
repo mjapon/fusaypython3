@@ -45,13 +45,13 @@ if __name__ == "__main__":
         session_factory = get_session_factory(engine)
         dbsession = session_factory()
 
-        esquemas_procesar = [
-            'fusay', 'achel', 'vguaman', 'yolanda', 'ana', 'endodental'
-        ]
+        sql = "select distinct emp_esquemadb  from comprobantes.tempresa"
+        esquemas_procesar = dbsession.query('emp_esquemadb').from_statement(text(sql)).all()
 
         compeleutildao = CompeleUtilDao(dbsession)
 
-        for esquema in esquemas_procesar:
+        for esquema_tupla in esquemas_procesar:
+            esquema = esquema_tupla[0]
             log.info('--Inicia proceso para esquema:{0}'.format(esquema))
             try:
                 dbsession.execute("SET search_path TO {0}".format(esquema))

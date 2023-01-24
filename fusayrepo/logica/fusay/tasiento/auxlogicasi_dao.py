@@ -162,7 +162,7 @@ class AuxLogicAsiDao(BaseDao):
             self.aux_chk_existe_doc_valid(formcab, trn_compro, tra_codigo)
         except SecuenciaEnUsoExc as ex:
             transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
-            return self.aux_gen_trn_compro(formcab, estabptoemi, tps_codigo, int(secuencia)+1, tra_codigo)
+            return self.aux_gen_trn_compro(formcab, tps_codigo, int(secuencia)+1, tra_codigo)
 
         return trn_compro
 

@@ -332,6 +332,7 @@ class TFinPagosCredDao(BaseDao):
 
             tasidao = TasientoDao(self.dbsession)
             trn_codigo_pago = pagoscredcab.pgc_trncod
+
             tasidao.anular(trn_codigo=trn_codigo_pago, user_anula=user_anula,
                            obs_anula="P/R Anulacion pago de credito")
 

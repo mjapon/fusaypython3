@@ -141,14 +141,14 @@ class GeneraFacturaCompEle(BaseDao):
         tipo_ident_comprador.text = str(tipoidentcomprador_value)
 
         razon_social_comprador = et.SubElement(info_factura, "razonSocialComprador")
-        razon_social_comprador.text = cadenas.strip_upper(datos_factura['per_nomapel'])
+        razon_social_comprador.text = cadenas.clean_for_rentas(cadenas.strip_upper(datos_factura['per_nomapel']))[0:300]
 
         identificacion_comprador = et.SubElement(info_factura, "identificacionComprador")
-        identificacion_comprador.text = cadenas.strip(datos_factura['per_ciruc'])
+        identificacion_comprador.text = cadenas.strip(datos_factura['per_ciruc'])[0:20]
 
         if cadenas.es_nonulo_novacio(datos_factura['per_direccion']):
             direccion_comprador = et.SubElement(info_factura, "direccionComprador")
-            direccion_comprador.text = cadenas.strip(datos_factura['per_direccion'])
+            direccion_comprador.text = cadenas.clean_for_rentas(cadenas.strip(datos_factura['per_direccion']))[0:300]
 
         total_sin_impuestos = et.SubElement(info_factura, "totalSinImpuestos")
         total_sin_impuestos.text = str(numeros.roundm2(totales['total_sin_impuesto']))
@@ -210,10 +210,10 @@ class GeneraFacturaCompEle(BaseDao):
             detalle_item = et.SubElement(detalles, "detalle")
 
             codigo_principal_item = et.SubElement(detalle_item, "codigoPrincipal")
-            codigo_principal_item.text = cadenas.strip(detalle_db['ic_code'])
+            codigo_principal_item.text = cadenas.clean_for_rentas(cadenas.strip(detalle_db['ic_code']))[0:25]
 
             descripcion_item = et.SubElement(detalle_item, "descripcion")
-            descripcion_item.text = cadenas.strip_upper(detalle_db['ic_nombre'])
+            descripcion_item.text = cadenas.clean_for_rentas(cadenas.strip_upper(detalle_db['ic_nombre']))[0:300]
 
             cantidad_item = et.SubElement(detalle_item, "cantidad")
             cantidad_item.text = str(numeros.roundm2(detalle_db['dt_cant']))
