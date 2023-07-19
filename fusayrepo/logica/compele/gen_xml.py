@@ -221,7 +221,7 @@ class GeneraFacturaCompEle(BaseDao):
             precio_unitario_item = et.SubElement(detalle_item, "precioUnitario")
             precio_unitario_item.text = str(numeros.roundm2(detalle_db['dt_precio']))
 
-            descuento_fila_val = detalle_db['dt_decto']+detalle_db['dt_dectogen']
+            descuento_fila_val = (detalle_db['dt_decto']*detalle_db['dt_cant'])+detalle_db['dt_dectogen']
             descuento_fila_round = numeros.roundm2(descuento_fila_val)
 
             descuento_item = et.SubElement(detalle_item, "descuento")

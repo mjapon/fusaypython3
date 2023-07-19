@@ -730,8 +730,6 @@ class TItemConfigDao(BaseDao):
                             from titemconfig a left join titemconfig b on a.ic_padre = b.ic_id where a.{0} {2} {1}
                     """.format(colnamewhere, colvalue, coleq)
 
-        print(sql)
-
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'ic_padre', 'tipic_id',
                       'ic_fechacrea', 'ic_estado', 'clsic_id', 'ic_clasecc', 'ic_alias', 'padre', 'ic_nota')
         if singlerow:

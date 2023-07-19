@@ -148,6 +148,9 @@ class TOdPlanTratamientoDao(BaseDao):
                     tasiento.trn_docpen = 'F'
                     if int(cod_tipo_doc) > 0:
                         aulogicasidao = AuxLogicAsiDao(self.dbsession)
+                        log.error('ODONTO MJ--> tipodoc:{0}, alm_codigo:{1}, sec_id:{2}, tdv_codigo:{3}'.format(
+                                 cod_tipo_doc,
+                                 alm_codigo, sec_id, tdv_codigo))
                         form_cab = tasientodao.get_form_cabecera(cod_tipo_doc,
                                                                  alm_codigo, sec_id, tdv_codigo, tra_emite=1)
 

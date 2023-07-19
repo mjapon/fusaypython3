@@ -40,6 +40,7 @@ class TasiFacteDao(BaseDao):
                 tasifacte.tfe_mensajes = tfe_mensajes
                 tasifacte.tfe_numautoriza = tfe_numautoriza
                 tasifacte.tfe_estadosri = tfe_estadosri
+                tasifacte.tfe_claveacceso = tfe_claveacceso
 
                 self.dbsession.add(tasifacte)
         else:

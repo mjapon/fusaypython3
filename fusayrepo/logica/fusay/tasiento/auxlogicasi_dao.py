@@ -170,9 +170,9 @@ class AuxLogicAsiDao(BaseDao):
         transaccpdv_dao = TTransaccPdvDao(self.dbsession)
         tps_codigo = formcab['tps_codigo']
         secuencia = formcab['secuencia']
+        tasiento.tra_codigo = formcab['tra_codigo']
         trn_compro = self.aux_gen_trn_compro(formcab, tps_codigo, secuencia, tasiento.tra_codigo)
         tasiento.trn_compro = trn_compro
-        tasiento.tra_codigo = formcab['tra_codigo']
         tasiento.trn_docpen = 'F'
         tasiento.per_codigo = per_codigo
         tasiento.sec_codigo = sec_codigo
