@@ -31,6 +31,50 @@ class CompeleUtilDao(BaseDao):
         almdao = TAlmacenDao(self.dbsession)
         return almdao.get_alm_tipoamb()
 
+    def redis_enviar(self, trn_codigo, emp_codigo, emp_esquema):
+        gen_data = GenDataForFacte(self.dbsession)
+        datos_fact = gen_data.get_factura_data(trn_codigo=trn_codigo)
+
+        # Procedimento para verificar si monto supera 50 dolares no se puede emitir factura electronica a cons final
+        totales_fact = datos_fact['totales']
+        total_fact = totales_fact['total']
+        datos_factura = datos_fact['cabecera']
+        per_codigo_factura = datos_factura['per_codigo']
+        if per_codigo_factura == -1 and total_fact > ctes_facte.MONTO_MAXIMO_CONS_FINAL:
+            raise ErrorValidacionExc(
+                "No se puede emitir una factura electrónica a consumidor final si el monto supera los ${0}, "
+                "para registrar esta factura, por favor ingrese los datos del cliente".format(
+                    ctes_facte.MONTO_MAXIMO_CONS_FINAL))
+
+        sec_codigo = datos_factura['sec_codigo']
+        datos_alm_matriz = gen_data.get_datos_alm_matriz(sec_codigo=sec_codigo)
+        ambiente_facte = datos_alm_matriz['alm_tipoamb']
+
+        try:
+            gen_data.save_proxy_send_response(trn_codigo=trn_codigo, ambiente=ambiente_facte,
+                                              proxy_response={
+                                                  'estado': 0,
+                                                  'estadoSRI': '',
+                                                  'fechaAutorizacion': '',
+                                                  'mensajes': '',
+                                                  'numeroAutorizacion': '',
+                                                  'claveAcceso': ''
+                                              })
+
+            message = {
+                "emp_codigo": emp_codigo,
+                "emp_esquema": emp_esquema,
+                "trn_codigo": trn_codigo,
+                "accion": "enviar"
+            }
+
+            str_message = self.myjsonutil.dumps(message)
+            self.redispublis.publish_message(str_message)
+
+
+        except Exception as ex:
+            log.error("Error al tratar de enviar mensaje (para envio) a la cola de comprobantes electronicos", ex)
+
     def autorizar(self, trn_codigo, emp_codigo, emp_esquema):
         try:
             message = {

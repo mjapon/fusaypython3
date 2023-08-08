@@ -84,6 +84,26 @@ if __name__ == "__main__":
             except Exception as exs:
                 log.error('Error al procesar esquema:{0}'.format(exs))
 
+            try:
+                #dbsession.execute("SET search_path TO {0}".format(esquema))
+                sql = """
+                        select distinct asifacte.trn_codigo, asi.trn_fecha, asifacte.tfe_estado from tasifacte asifacte 
+                        join tasiento asi on asi.trn_codigo =asifacte.trn_codigo and asi.trn_valido =0 and asi.trn_docpen ='F'
+                        where asifacte.tfe_estado =0 order by asi.trn_fecha asc
+                        """
+
+                tupla_desc = ('trn_codigo', 'trn_fecha', 'tfe_estado')
+                result = dbsession.query(*tupla_desc).from_statement(text(sql)).all()
+                for item in result:
+                    log.info('trn_codigo {0} tfe_estado:{1} emp_codigo:{2}'.format(item[0], item[2], ''))
+
+                    compeleutildao.redis_enviar(trn_codigo=item[0],
+                                                emp_codigo=0,
+                                                emp_esquema=esquema)
+            except Exception as exs:
+                log.error('Error al procesar esquema:{0}'.format(exs))
+
+
     except Exception as ex:
         log.error('Ucurrio un error al mayorizar {0}'.format(ex))
     finally:

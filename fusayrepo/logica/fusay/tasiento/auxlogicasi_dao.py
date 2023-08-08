@@ -127,6 +127,7 @@ class AuxLogicAsiDao(BaseDao):
         select count(*) as cuenta from tasiento where trn_compro = '{0}' and tra_codigo = {1}         
         and trn_docpen = 'F' and trn_valido = 0 and sec_codigo = {2}
         """.format(cadenas.strip(trn_compro), tra_codigo, sec_codigo)
+
         return self.first_col(sql, 'cuenta') > 0
 
     @staticmethod

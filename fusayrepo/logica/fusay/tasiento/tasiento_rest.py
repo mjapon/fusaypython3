@@ -194,10 +194,16 @@ class TAsientoRest(TokenView):
             if (alm_tipoamb > 0 or sec_tipoamb > 0) and creando and tra_codigo == ctes.TRA_COD_FACT_VENTA:
                 log.info("Configurado facturacion se envia su generacion--trn_codigo:{0}".format(trn_codigo))
                 compelutil = CompeleUtilDao(self.dbsession)
+                """compelutil = CompeleUtilDao(self.dbsession)
                 response_compele = compelutil.enviar(trn_codigo=trn_codigo, sec_codigo=sec_id)
                 compelenviado = response_compele['enviado']
                 estado_envio = response_compele['estado_envio']
+                """
                 is_cons_final = int(form['form_persona']['per_id']) < 0
+                compelutil.redis_enviar(trn_codigo=trn_codigo, emp_codigo=self.get_emp_codigo(),
+                                        emp_esquema=self.get_emp_esquema())
+                compelenviado = True
+                estado_envio = 0
 
             return self.res200(
                 {'trn_codigo': trn_codigo, 'msg': msg, 'alm_tipoamb': alm_tipoamb,

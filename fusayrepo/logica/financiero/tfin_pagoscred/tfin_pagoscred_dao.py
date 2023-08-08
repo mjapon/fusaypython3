@@ -456,7 +456,7 @@ class TFinPagosCredDao(BaseDao):
                     numeros.roundm2(pgc_total_capital),
                     numeros.roundm2(cre_saldopend),
                     pgc_total_capital_adelanto,
-                    pg_adelanto
+                    numeros.roundm2(pg_adelanto)
                 )
             )
 
