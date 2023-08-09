@@ -107,7 +107,7 @@ class ReportesContablesDao(BaseDao):
                                                        hasta=fechas.format_cadena_db(hasta),
                                                        sec_id=sec_id)
         resultado_ejercicio = numeros.roundm2(abs(total_grupos_dict[5]) - abs(total_grupos_dict[4]))
-        total_grupos_dict[3] += resultado_ejercicio
+        total_grupos_dict[3] += (resultado_ejercicio * -1)
 
         paramsdao = TParamsDao(self.dbsession)
         cta_contab_result = paramsdao.get_param_value('cta_contab_resultado')
