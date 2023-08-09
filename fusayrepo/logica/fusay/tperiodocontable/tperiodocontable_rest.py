@@ -14,7 +14,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path="/api/tperiodocontable")
+@resource(collection_path="/api/tperiodocontable", path='/api/tperiodocontable/{per_id}', cors_origins=('*',))
 class TPeriodoContableRest(TokenView):
 
     def collection_get(self):

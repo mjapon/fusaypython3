@@ -89,6 +89,10 @@ class ReportesContablesDao(BaseDao):
         for item in totales:
             result_dict[int(item['grupo'])] = item['total']
 
+        for i in range(5):
+            if i + 1 not in result_dict:
+                result_dict[i + 1] = 0.0
+
         return result_dict
 
     def build_balance_gen_mayorizado(self, hasta, sec_id):

@@ -34,22 +34,20 @@ class DataLoggedDao(BaseDao):
                 'route': 'vtickets',
                 'css': 'btn-outline-secondary'
             }],
-            'VN_LISTAR': [
-                {
-                    'label': 'Ventas',
-                    'title': 'Listado de ventas',
-                    'icon': 'fas fa-store-alt',
-                    'route': 'trndocs/1',
-                    'css': 'btn-outline-secondary'
-                },
-                {
-                    'label': 'Cuentas por cobrar',
-                    'title': 'Listado de cuentas por cobrar',
-                    'icon': 'fas fa-hand-holding-usd',
-                    'route': 'cuentasxcp/1',
-                    'css': 'btn-outline-secondary'
-                }
-            ],
+            'VN_LISTAR': [{
+                'label': 'Ventas',
+                'title': 'Listado de ventas',
+                'icon': 'fas fa-store-alt',
+                'route': 'trndocs/1',
+                'css': 'btn-outline-secondary'
+            }],
+            'CXC_LISTAR': [{
+                'label': 'Cuentas por cobrar',
+                'title': 'Listado de cuentas por cobrar',
+                'icon': 'fas fa-hand-holding-usd',
+                'route': 'cuentasxcp/1',
+                'css': 'btn-outline-secondary'
+            }],
             'PRODS_LISTAR': [{
                 'label': 'Inventarios',
                 'title': 'Administración de productos y servicios',
@@ -76,15 +74,14 @@ class DataLoggedDao(BaseDao):
                 'title': 'Listado de compras',
                 'icon': 'fas fa-shopping-cart',
                 'route': 'trndocs/2',
-                'css': 'btn-outline-secondary'},
-                {
-                    'label': 'Cuentas por pagar',
-                    'title': 'Listado de cuentas por pagar',
-                    'icon': 'fas fa-hand-holding-usd fa-flip-horizontal',
-                    'route': 'cuentasxcp/2',
-                    'css': 'btn-outline-secondary'
-                }
-            ],
+                'css': 'btn-outline-secondary'}],
+            'CXP_LISTAR': [{
+                'label': 'Cuentas por pagar',
+                'title': 'Listado de cuentas por pagar',
+                'icon': 'fas fa-hand-holding-usd fa-flip-horizontal',
+                'route': 'cuentasxcp/2',
+                'css': 'btn-outline-secondary'
+            }],
             'HIST_LISTAR': [{
                 'label': 'Atención Médica',
                 'title': 'Registrar atención médica',

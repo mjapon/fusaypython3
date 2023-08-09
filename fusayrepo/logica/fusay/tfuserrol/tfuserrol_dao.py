@@ -113,8 +113,6 @@ class TFuserRolDao(BaseDao):
              'routerLink': ['/trndocform/1/c']},
             {'label': 'Emitir nota de venta', 'icon': '',
              'routerLink': ['/trndocform/2/c']},
-            {'label': 'Cuentas por cobrar', 'icon': '',
-             'routerLink': ['/cuentasxcp/1']},
             {'label': 'Utilidades', 'icon': '',
              'routerLink': ['/utilventas']},
             {'label': 'Cierre Caja', 'icon': '',
@@ -125,9 +123,7 @@ class TFuserRolDao(BaseDao):
             {'label': 'Movimientos', 'icon': '', 'cicon': 'fas fa-shopping-basket',
              'routerLink': ['/trndocs/2']},
             {'label': 'Registrar factura', 'icon': '',
-             'routerLink': ['/trndocform/7/c']},
-            {'label': 'Cuentas por pagar', 'icon': '',
-             'routerLink': ['/cuentasxcp/2']}
+             'routerLink': ['/trndocform/7/c']}
         ]
 
         refs_list = [
@@ -186,8 +182,8 @@ class TFuserRolDao(BaseDao):
                         'items': cbr_agua},
             'REP_ADM': {'label': 'Reportes', 'icon': 'pi pi-fw pi-chart-bar', 'cicon': 'fas fa-tint',
                         'items': adm_reps},
-            'FIN_CRED_LIST':{'label': 'Caja de Crédito', 'icon': 'pi pi-fw pi-folder', 'cicon': 'fas fa-tint',
-                        'items': caja_list}
+            'FIN_CRED_LIST': {'label': 'Caja de Crédito', 'icon': 'pi pi-fw pi-folder', 'cicon': 'fas fa-tint',
+                              'items': caja_list}
         }
 
         menu = []
@@ -196,6 +192,13 @@ class TFuserRolDao(BaseDao):
         for perm in permisos:
             abrperm = perm['prm_abreviacion']
             permisosSet.add(abrperm)
+
+        if 'CXC_LISTAR' in permisosSet:
+            ventas_list.append({'label': 'Cuentas por cobrar', 'icon': '',
+                                'routerLink': ['/cuentasxcp/1']})
+        if 'CXP_LISTAR' in permisosSet:
+            compras_list.append({'label': 'Cuentas por pagar', 'icon': '',
+                                 'routerLink': ['/cuentasxcp/2']})
 
         for key in all_menu.keys():
             if key in permisosSet:
