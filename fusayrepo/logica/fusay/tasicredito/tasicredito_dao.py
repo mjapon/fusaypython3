@@ -129,7 +129,8 @@ class TAsicreditoDao(BaseDao):
             'cuentasforcred': cuentasformov
         }
 
-    def create_asiento_pago(self, per_codigo, sec_codigo, total, capital, interes, mora, cta_pago, usercrea, seguro):
+    def create_asiento_pago(self, per_codigo, sec_codigo, total, capital, interes, mora, cta_pago, usercrea, seguro,
+                            observacion):
 
         from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
         tasientodao = TasientoDao(self.dbsession)
@@ -137,7 +138,7 @@ class TAsicreditoDao(BaseDao):
         formasiento = tasientodao.get_form_asiento(sec_codigo=sec_codigo)
 
         formasiento['formasiento']['trn_docpen'] = 'F'
-        formasiento['formasiento']['trn_observ'] = 'P/R Pago de cuota de credito'
+        formasiento['formasiento']['trn_observ'] = observacion
         formasiento['formref']['per_id'] = per_codigo
 
         formdet = formasiento['formdet']

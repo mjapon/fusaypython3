@@ -20,6 +20,7 @@ from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
+from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.utils import numeros, fechas, cadenas
 
 log = logging.getLogger(__name__)
@@ -208,6 +209,7 @@ class TFinPagosCredDao(BaseDao):
         pgd.pg_usercrea,
         pgd.pg_interes,
         coalesce(pgcab.pgc_id,0) as pgc_id,
+        coalesce(pgcab.pgc_trncod,0) as trncod,        
         now()::date>((amo_fechapago - interval '68 day')::date) as enablepago
         from tfin_amortiza amor
         left join tfin_pagoscreddet pgd on pgd.pg_amoid = amor.amo_id and pgd.pg_estado = 1
@@ -242,6 +244,7 @@ class TFinPagosCredDao(BaseDao):
             'pg_usercrea',
             'pg_interes',
             'pgc_id',
+            'trncod',
             'enablepago'
         )
 
@@ -455,7 +458,7 @@ class TFinPagosCredDao(BaseDao):
                 'El pago total de capital:{0} sobrepasa la deuda del crédito:{1} (adelanto + capital:{2}, adelanto: {3})'.format(
                     numeros.roundm2(pgc_total_capital),
                     numeros.roundm2(cre_saldopend),
-                    pgc_total_capital_adelanto,
+                    numeros.roundm2(pgc_total_capital_adelanto),
                     numeros.roundm2(pg_adelanto)
                 )
             )
@@ -503,13 +506,24 @@ class TFinPagosCredDao(BaseDao):
             self.dbsession.flush()
 
         tasicred_dao = TAsicreditoDao(self.dbsession)
-
         datos_credito = credito_dao.get_datos_credito(cre_id=cre_id)
+
+        npagos_str = ','.join(list(map(lambda x: str(x['pg_npago']), cuotaspagar)))
+        personadao = TPersonaDao(self.dbsession)
+        datospersona = personadao.buscar_porcodigo(per_id=datos_credito['per_id'])
+        observ_asiento = 'P/R Pago de cuota de crédito'
+        if datospersona is not None:
+            observ_asiento = 'P/R Pago de cuota de crédito #:{0}, Referente:{1}, CI:{2}' \
+                .format(npagos_str,
+                        datospersona['nomapel'],
+                        datospersona['per_ciruc'])
+
         trn_codigo_pago = tasicred_dao.create_asiento_pago(per_codigo=datos_credito['per_id'], sec_codigo=sec_codigo,
                                                            total=pgc_total, capital=total_capital,
                                                            interes=pgc_total_interes,
                                                            mora=pgc_total_intmora, cta_pago=form['cta_pago'],
-                                                           usercrea=user_crea, seguro=pgc_total_seguro)
+                                                           usercrea=user_crea, seguro=pgc_total_seguro,
+                                                           observacion=observ_asiento)
         pagoscredcab.pgc_trncod = trn_codigo_pago
         self.dbsession.add(pagoscredcab)
 
