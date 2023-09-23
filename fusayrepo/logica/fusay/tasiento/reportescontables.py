@@ -11,6 +11,7 @@ from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tperiodocontable.tperiodo_dao import TPeriodoContableDao
 from fusayrepo.utils import numeros, fechas, ctes
+from fusayrepo.utils.numeros import roundm2
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ class ReportesContablesDao(BaseDao):
         """
 
         for item in the_tree:
-            item['total'] = abs(self.aux_totalizar_nodo(item, planctasdict))
+            item['total'] = roundm2(abs(self.aux_totalizar_nodo(item, planctasdict)))
 
         return the_tree
 
@@ -87,7 +88,7 @@ class ReportesContablesDao(BaseDao):
         totales = self.all(sql, tupla_desc)
         result_dict = {}
         for item in totales:
-            result_dict[int(item['grupo'])] = item['total']
+            result_dict[int(item['grupo'])] = roundm2(item['total'])
 
         for i in range(5):
             if i + 1 not in result_dict:
@@ -95,15 +96,15 @@ class ReportesContablesDao(BaseDao):
 
         return result_dict
 
-    def build_balance_gen_mayorizado(self, hasta, sec_id):
+    def build_balance_gen_mayorizado(self, desde, hasta, sec_id):
         periododao = TPeriodoContableDao(self.dbsession)
         periodo_contable = periododao.get_datos_periodo_contable()
         if periodo_contable is None:
             raise ErrorValidacionExc('No existe un periodo contable activo registrado, favor verificar')
 
-        pc_desde = periodo_contable['pc_desde']
+        # pc_desde = periodo_contable['pc_desde']
 
-        total_grupos_dict = self.get_total_grupos_dict(desde=fechas.format_cadena_db(pc_desde),
+        total_grupos_dict = self.get_total_grupos_dict(desde=fechas.format_cadena_db(desde),
                                                        hasta=fechas.format_cadena_db(hasta),
                                                        sec_id=sec_id)
         resultado_ejercicio = numeros.roundm2(abs(total_grupos_dict[5]) - abs(total_grupos_dict[4]))
@@ -136,7 +137,7 @@ class ReportesContablesDao(BaseDao):
                     (ic_code like '1%' or ic_code like '2%' or ic_code like '3%')
                     order by ic_code asc  
         """.format(sql_cta_result=sql_union_cta_result,
-                   desde=fechas.format_cadena_db(pc_desde),
+                   desde=fechas.format_cadena_db(desde),
                    hasta=fechas.format_cadena_db(hasta),
                    sec_id=sec_id)
         tupla_desc = ('ic_id', 'ic_code', 'ic_nombre', 'codenombre', 'ic_padre', 'ic_haschild', 'total')
@@ -154,13 +155,13 @@ class ReportesContablesDao(BaseDao):
             'resultado_ejercicio': resultado_ejercicio
         }
 
-    def get_resultado_ejercicio_mayorizado(self, hasta, sec_id):
+    def get_resultado_ejercicio_mayorizado(self, desde, hasta, sec_id):
         periododao = TPeriodoContableDao(self.dbsession)
         periodo_contable = periododao.get_datos_periodo_contable()
         if periodo_contable is None:
             raise ErrorValidacionExc('No existe un periodo contable activo registrado, favor verificar')
 
-        pc_desde = periodo_contable['pc_desde']
+        #pc_desde = periodo_contable['pc_desde']
         sql = """
                     with data as (
                         select scd.cta_id, round(sum(scd.scd_saldo),2) as total 
@@ -175,7 +176,7 @@ class ReportesContablesDao(BaseDao):
                             where ic.tipic_id = 3 and ic.ic_estado = 1 and ics.sec_id = {sec_id} and 
                             (ic_code like '4%' or ic_code like '5%')
                             order by ic_code asc  
-                """.format(desde=fechas.format_cadena_db(pc_desde),
+                """.format(desde=fechas.format_cadena_db(desde),
                            hasta=fechas.format_cadena_db(hasta),
                            sec_id=sec_id)
         tupla_desc = ('ic_id', 'ic_code', 'ic_nombre', 'ic_padre', 'ic_haschild', 'total')
@@ -186,7 +187,7 @@ class ReportesContablesDao(BaseDao):
         treebg = self.aux_build_tree_from_list(the_list=result,
                                                the_tree=itemconfigdao.build_tree_estado_resultados(sec_id=sec_id))
 
-        total_grupos_dict = self.get_total_grupos_dict(desde=fechas.format_cadena_db(pc_desde),
+        total_grupos_dict = self.get_total_grupos_dict(desde=fechas.format_cadena_db(desde),
                                                        hasta=fechas.format_cadena_db(hasta),
                                                        sec_id=sec_id)
 

@@ -118,9 +118,10 @@ class TAsientoRest(TokenView):
             res = tasientodao.get_datos_asientocontable(trn_codigo=trn_codigo)
             return self.res200({'datoasi': res})
         elif accion == 'getbalancegeneral':
+            desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
             reportes_cont_dao = ReportesContablesDao(self.dbsession)
-            datos_balance = reportes_cont_dao.build_balance_gen_mayorizado(hasta=hasta, sec_id=self.get_sec_id())
+            datos_balance = reportes_cont_dao.build_balance_gen_mayorizado(desde=desde,hasta=hasta, sec_id=self.get_sec_id())
 
             return self.res200(
                 {'balance': datos_balance['balance_list'],
@@ -129,9 +130,10 @@ class TAsientoRest(TokenView):
                  'resultado_ejercicio': datos_balance['resultado_ejercicio']}
             )
         elif accion == 'getestadoresultados':
+            desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
             reportes_cont_dao = ReportesContablesDao(self.dbsession)
-            estado_resultados = reportes_cont_dao.get_resultado_ejercicio_mayorizado(hasta=hasta,
+            estado_resultados = reportes_cont_dao.get_resultado_ejercicio_mayorizado(desde=desde,hasta=hasta,
                                                                                      sec_id=self.get_sec_id())
 
             return self.res200(estado_resultados)

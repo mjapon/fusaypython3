@@ -65,7 +65,7 @@ if __name__ == "__main__":
                 tupla_desc = ('trn_codigo', 'trn_fecha', 'tfe_estado')
                 result = dbsession.query(*tupla_desc).from_statement(text(sql)).all()
                 for item in result:
-                    log.info('trn_codigo {0} tfe_estado:{1} emp_codigo:{2}'.format(item[0], item[2], ''))
+                    log.info('envio autorizar: trn_codigo {0} tfe_estado:{1} emp_codigo:{2}'.format(item[0], item[2], ''))
 
                     compeleutildao.autorizar(trn_codigo=item[0],
                                              emp_codigo=0,
@@ -95,7 +95,7 @@ if __name__ == "__main__":
                 tupla_desc = ('trn_codigo', 'trn_fecha', 'tfe_estado')
                 result = dbsession.query(*tupla_desc).from_statement(text(sql)).all()
                 for item in result:
-                    log.info('trn_codigo {0} tfe_estado:{1} emp_codigo:{2}'.format(item[0], item[2], ''))
+                    log.info('envio validar trn_codigo {0} tfe_estado:{1} emp_codigo:{2}'.format(item[0], item[2], ''))
 
                     compeleutildao.redis_enviar(trn_codigo=item[0],
                                                 emp_codigo=0,

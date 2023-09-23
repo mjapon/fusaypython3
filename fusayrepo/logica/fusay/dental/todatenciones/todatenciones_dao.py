@@ -95,7 +95,7 @@ class TOdAtencionesDao(BaseDao):
         sql = """
         select a.ate_id, a.ate_fechacrea, a.user_crea, a.med_id, a.ate_diagnostico, a.ate_procedimiento, a.cta_id, 
         a.pnt_id, a.ate_nro from todatenciones a          
-        where a.pac_id = {0} and a.ate_estado = 1 order by a.ate_nro asc
+        where a.pac_id = {0} and a.ate_estado = 1 order by a.ate_nro desc
         """.format(pac_id)
 
         tupla_desc = (

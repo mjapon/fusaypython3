@@ -62,7 +62,7 @@ if __name__ == "__main__":
                 if tot_pendientes > 0:
                     log.info('Se procesaran {0} registros pendientes de mayorizacion'.format(tot_pendientes))
                     sql = """
-                    select trn_codigo, trn_mayorizado, public.fn_mayorizar_asiento(trn_codigo) as mayor_res from tasiento
+                        select trn_codigo, trn_mayorizado, public.fn_mayorizar_asiento(trn_codigo) as mayor_res from tasiento
                     where trn_valido = 0 and trn_mayorizado = false order by trn_fecha asc;
                     """.format(fecha_actual)
 
