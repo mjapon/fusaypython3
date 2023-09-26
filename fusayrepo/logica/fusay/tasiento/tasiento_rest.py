@@ -100,8 +100,10 @@ class TAsientoRest(TokenView):
         elif accion == 'getasientos':
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
+            cta_codigo = self.get_request_param('cta')
             librodiariodao = LibroDiarioDao(self.dbsession)
-            items, totales = librodiariodao.listar_asientos(desde, hasta, sec_id=self.get_sec_id())
+            items, totales = librodiariodao.listar_asientos(desde, hasta, sec_id=self.get_sec_id(),
+                                                            cta_codigo=cta_codigo)
             return self.res200({'items': items, 'totales': totales})
         elif accion == 'getmovscta':
             cta_codigo = self.get_request_param('cta')
@@ -121,7 +123,8 @@ class TAsientoRest(TokenView):
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
             reportes_cont_dao = ReportesContablesDao(self.dbsession)
-            datos_balance = reportes_cont_dao.build_balance_gen_mayorizado(desde=desde,hasta=hasta, sec_id=self.get_sec_id())
+            datos_balance = reportes_cont_dao.build_balance_gen_mayorizado(desde=desde, hasta=hasta,
+                                                                           sec_id=self.get_sec_id())
 
             return self.res200(
                 {'balance': datos_balance['balance_list'],
@@ -133,7 +136,7 @@ class TAsientoRest(TokenView):
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
             reportes_cont_dao = ReportesContablesDao(self.dbsession)
-            estado_resultados = reportes_cont_dao.get_resultado_ejercicio_mayorizado(desde=desde,hasta=hasta,
+            estado_resultados = reportes_cont_dao.get_resultado_ejercicio_mayorizado(desde=desde, hasta=hasta,
                                                                                      sec_id=self.get_sec_id())
 
             return self.res200(estado_resultados)

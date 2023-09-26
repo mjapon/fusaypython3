@@ -137,14 +137,12 @@ class CompeleUtilDao(BaseDao):
         per_id_asiento = datosfact['per_codigo']
         if (alm_tipoamb > 0 or sec_tipoamb > 0) and creando and tra_codigo == ctes.TRA_COD_FACT_VENTA:
             log.info("Configurado facturacion se envia su generacion--trn_codigo:{0}".format(trn_codigo))
-            response_compele = {'enviado': False, 'estado_envio': 4}
-            try:
-                response_compele = self.enviar(trn_codigo=trn_codigo, sec_codigo=sec_id)
-            except Exception as ex:
-                log.error("Error al tratar de enviar el comprobante al sri", ex)
-            compelenviado = response_compele['enviado']
-            estado_envio = response_compele['estado_envio']
             is_cons_final = per_id_asiento < 0
+            compelutil = CompeleUtilDao(self.dbsession)
+            compelutil.redis_enviar(trn_codigo=trn_codigo, emp_codigo=self.get_emp_codigo(),
+                                    emp_esquema=self.get_emp_esquema())
+            compelenviado = True
+            estado_envio = 0
 
         return {'is_cons_final': is_cons_final, 'compelenviado': compelenviado, 'estado_envio': estado_envio,
                 'trn_codigo': trn_codigo}
