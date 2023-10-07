@@ -182,6 +182,7 @@ class AuxLogicAsiDao(BaseDao):
             transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
 
         self.dbsession.add(tasiento)
+        self.dbsession.flush()
 
     def aux_set_datos_tasiento(self, usercrea, per_codigo, formcab, per_ciruc='', gen_secuencia=True):
         secuencia = formcab['secuencia']

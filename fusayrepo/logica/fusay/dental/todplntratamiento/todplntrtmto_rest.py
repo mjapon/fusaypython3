@@ -84,7 +84,9 @@ class TodPlanTrantamientoRest(TokenView):
                                                                 cod_tipo_doc=jbody['tipo_comprob'],
                                                                 alm_codigo=alm_codigo, sec_id=sec_id,
                                                                 tdv_codigo=self.get_tdv_codigo(),
-                                                                formreferente=jbody['formref'])
+                                                                formreferente=jbody['formref'],
+                                                                emp_codigo=self.get_emp_codigo(),
+                                                                emp_esquema=self.get_emp_esquema())
             msg = 'Cambio de estado exitoso'
             if int(nuevo_estado) == 5:
                 msg = 'Registro anulado exitosamente'

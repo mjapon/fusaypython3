@@ -108,7 +108,7 @@ class CompeleUtilDao(BaseDao):
                                          ambiente=ambiente_facte)
         return {'status': 200, 'exito': True}
 
-    def logica_check_envio_factura(self, trn_codigo):
+    def logica_check_envio_factura(self, trn_codigo, emp_codigo, emp_esquema):
         sql = """
         select per_codigo, sec_codigo, tra_codigo from tasiento where trn_codigo = {0}
         """.format(trn_codigo)
@@ -139,8 +139,8 @@ class CompeleUtilDao(BaseDao):
             log.info("Configurado facturacion se envia su generacion--trn_codigo:{0}".format(trn_codigo))
             is_cons_final = per_id_asiento < 0
             compelutil = CompeleUtilDao(self.dbsession)
-            compelutil.redis_enviar(trn_codigo=trn_codigo, emp_codigo=self.get_emp_codigo(),
-                                    emp_esquema=self.get_emp_esquema())
+            compelutil.redis_enviar(trn_codigo=trn_codigo, emp_codigo=emp_codigo,
+                                    emp_esquema=emp_esquema)
             compelenviado = True
             estado_envio = 0
 

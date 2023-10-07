@@ -124,7 +124,8 @@ class TOdPlanTratamientoDao(BaseDao):
         return self.all(sql, tupla_desc)
 
     def cambiar_estado(self, pnt_id, nuevo_estado, user_upd,
-                       cod_tipo_doc=0, alm_codigo=0, sec_id=0, tdv_codigo=0, formreferente=None):
+                       cod_tipo_doc=0, alm_codigo=0, sec_id=0, tdv_codigo=0, formreferente=None,
+                       emp_codigo=None, emp_esquema=None):
         todplantratamiento = self.dbsession.query(TOdPlnTrtmto).filter(TOdPlnTrtmto.pnt_id == pnt_id).first()
         response_logica_facte = None
         tasientodao = TasientoDao(self.dbsession)
@@ -145,12 +146,12 @@ class TOdPlanTratamientoDao(BaseDao):
                 tasiento = tasientodao.find_entity_byid(trn_codigo=todplantratamiento.trn_codigo)
                 compeleutil = CompeleUtilDao(self.dbsession)
                 if tasiento is not None:
-                    tasiento.trn_docpen = 'F'
+                    #tasiento.trn_docpen = 'F'
                     if int(cod_tipo_doc) > 0:
                         aulogicasidao = AuxLogicAsiDao(self.dbsession)
                         log.error('ODONTO MJ--> tipodoc:{0}, alm_codigo:{1}, sec_id:{2}, tdv_codigo:{3}'.format(
-                                 cod_tipo_doc,
-                                 alm_codigo, sec_id, tdv_codigo))
+                            cod_tipo_doc,
+                            alm_codigo, sec_id, tdv_codigo))
                         form_cab = tasientodao.get_form_cabecera(cod_tipo_doc,
                                                                  alm_codigo, sec_id, tdv_codigo, tra_emite=1)
 
@@ -170,9 +171,11 @@ class TOdPlanTratamientoDao(BaseDao):
 
                         aulogicasidao.aux_set_datos_secuencia(tasiento=tasiento, formcab=form_cab,
                                                               per_codigo=per_codigo, sec_codigo=sec_id)
-                        response_logica_facte = compeleutil.logica_check_envio_factura(trn_codigo=tasiento.trn_codigo)
+                        response_logica_facte = compeleutil.logica_check_envio_factura(trn_codigo=tasiento.trn_codigo,
+                                                                                       emp_codigo=emp_codigo,
+                                                                                       emp_esquema=emp_esquema)
 
-                    self.dbsession.add(tasiento)
+                    #self.dbsession.add(tasiento)
 
             self.dbsession.add(todplantratamiento)
 
