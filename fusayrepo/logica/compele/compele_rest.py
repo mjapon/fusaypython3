@@ -46,3 +46,9 @@ class GenCompeleRest(TokenView):
             )
 
             return self.res200({'exito': True})
+
+        elif accion == 'redis_enviar':
+            compelutil = CompeleUtilDao(self.dbsession)
+            compelutil.redis_enviar(trn_codigo=trncod, emp_codigo=self.get_emp_codigo(),
+                                    emp_esquema=self.get_emp_esquema())
+            return self.res200({'mensajeenviado': True})

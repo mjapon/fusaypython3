@@ -146,7 +146,6 @@ class TOdPlanTratamientoDao(BaseDao):
                 tasiento = tasientodao.find_entity_byid(trn_codigo=todplantratamiento.trn_codigo)
                 compeleutil = CompeleUtilDao(self.dbsession)
                 if tasiento is not None:
-                    #tasiento.trn_docpen = 'F'
                     if int(cod_tipo_doc) > 0:
                         aulogicasidao = AuxLogicAsiDao(self.dbsession)
                         log.error('ODONTO MJ--> tipodoc:{0}, alm_codigo:{1}, sec_id:{2}, tdv_codigo:{3}'.format(
@@ -171,11 +170,8 @@ class TOdPlanTratamientoDao(BaseDao):
 
                         aulogicasidao.aux_set_datos_secuencia(tasiento=tasiento, formcab=form_cab,
                                                               per_codigo=per_codigo, sec_codigo=sec_id)
-                        response_logica_facte = compeleutil.logica_check_envio_factura(trn_codigo=tasiento.trn_codigo,
-                                                                                       emp_codigo=emp_codigo,
-                                                                                       emp_esquema=emp_esquema)
-
-                    #self.dbsession.add(tasiento)
+                        response_logica_facte = compeleutil.logica_check_envio_factura_dental(
+                            trn_codigo=tasiento.trn_codigo)
 
             self.dbsession.add(todplantratamiento)
 

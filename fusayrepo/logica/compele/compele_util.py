@@ -108,7 +108,7 @@ class CompeleUtilDao(BaseDao):
                                          ambiente=ambiente_facte)
         return {'status': 200, 'exito': True}
 
-    def logica_check_envio_factura(self, trn_codigo, emp_codigo, emp_esquema):
+    def logica_check_envio_factura_dental(self, trn_codigo):
         sql = """
         select per_codigo, sec_codigo, tra_codigo from tasiento where trn_codigo = {0}
         """.format(trn_codigo)
@@ -138,14 +138,24 @@ class CompeleUtilDao(BaseDao):
         if (alm_tipoamb > 0 or sec_tipoamb > 0) and creando and tra_codigo == ctes.TRA_COD_FACT_VENTA:
             log.info("Configurado facturacion se envia su generacion--trn_codigo:{0}".format(trn_codigo))
             is_cons_final = per_id_asiento < 0
-            compelutil = CompeleUtilDao(self.dbsession)
-            compelutil.redis_enviar(trn_codigo=trn_codigo, emp_codigo=emp_codigo,
-                                    emp_esquema=emp_esquema)
+
+            gen_data = GenDataForFacte(self.dbsession)
+            datos_alm_matriz = gen_data.get_datos_alm_matriz(sec_codigo=sec_id)
+            ambiente_facte = datos_alm_matriz['alm_tipoamb']
+            gen_data.save_proxy_send_response(trn_codigo=trn_codigo, ambiente=ambiente_facte,
+                                              proxy_response={
+                                                  'estado': 0,
+                                                  'estadoSRI': '',
+                                                  'fechaAutorizacion': '',
+                                                  'mensajes': '',
+                                                  'numeroAutorizacion': '',
+                                                  'claveAcceso': ''
+                                              })
             compelenviado = True
             estado_envio = 0
 
         return {'is_cons_final': is_cons_final, 'compelenviado': compelenviado, 'estado_envio': estado_envio,
-                'trn_codigo': trn_codigo}
+                'trn_codigo': trn_codigo, 'validarcompro':True}
 
     def enviar(self, trn_codigo, sec_codigo):
         gen_fact = GeneraFacturaCompEle(self.dbsession)
