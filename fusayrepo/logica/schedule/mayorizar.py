@@ -22,7 +22,7 @@ def get_session_factory(engine):
 
 if __name__ == "__main__":
 
-    logging.basicConfig(handlers=[RotatingFileHandler(filename="/var/log/mayorizamavil.log",
+    logging.basicConfig(handlers=[RotatingFileHandler(filename="mayorizamavil.log",
                                                       mode='w', maxBytes=512000, backupCount=4)], level=logging.INFO,
                         format='%(levelname)s %(asctime)s %(message)s',
                         datefmt='%m/%d/%Y%I:%M:%S %p')
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         dbsession = session_factory()
 
         esquemas_procesar = [
-            'cajademo', 'cajaruna', 'cajainti'
+            'fusay'
         ]
 
         for esquema in esquemas_procesar:
@@ -52,7 +52,7 @@ if __name__ == "__main__":
                 log.info('Fecha proceso:{0}'.format(fecha_actual))
 
                 sqlcount = """select count(*) as cuenta from tasiento where trn_valido = 0 
-                and trn_mayorizado = false""".format(fecha_actual)
+                and trn_mayorizado = false and trn_docpen='F'""".format(fecha_actual)
                 tupla_res = dbsession.query('cuenta').from_statement(text(sqlcount)).first()
 
                 tot_pendientes = 0
@@ -63,7 +63,7 @@ if __name__ == "__main__":
                     log.info('Se procesaran {0} registros pendientes de mayorizacion'.format(tot_pendientes))
                     sql = """
                         select trn_codigo, trn_mayorizado, public.fn_mayorizar_asiento(trn_codigo) as mayor_res from tasiento
-                    where trn_valido = 0 and trn_mayorizado = false order by trn_fecha asc;
+                    where trn_valido = 0 and trn_mayorizado = false and trn_docpen='F' order by trn_fecha asc;
                     """.format(fecha_actual)
 
                     tupla_desc = ('trn_codigo', 'trn_mayorizado', 'mayor_res')
@@ -76,6 +76,22 @@ if __name__ == "__main__":
                     log.info('No hay asientos pendientes de mayorizacion')
             except Exception as exs:
                 log.error('Error al procesar esquema:{0}'.format(exs))
+
+            # Totalizar
+            try:
+                sqlctas = """
+                select distinct cta_id,public.fn_mayorizar_saldos(cta_id) as tot_res from tsaldos_ctas_diario tcd order by cta_id;
+                """
+                tupla_desc_ctas = ('cta_id', 'tot_res')
+                result = dbsession.query(*tupla_desc_ctas).from_statement(text(sqlctas)).all()
+                for item in result:
+                    log.info('cta_id {0} totalizado:{1}'.format(item[0], item[1]))
+
+                dbsession.commit()
+
+            except Exception as ext:
+                log.error('Error al totalizar esquema:{0}'.format(exs))
+
 
     except Exception as ex:
         log.error('Ucurrio un error al mayorizar {0}'.format(ex))
