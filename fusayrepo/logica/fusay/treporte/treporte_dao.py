@@ -36,8 +36,11 @@ class TReporteDao(BaseDao):
 
         usuarios.append({'us_id': 0, 'nomapel': 'Todos'})
 
+        # formatos = [{'label': 'PDF', 'value': 1}, {'label': 'Excel', 'value': 2}, {'label': 'HTML', 'value': 3}]
+        formatos = [{'label': 'PDF', 'value': 1}]
+
         return {
-            'formatos': [{'label': 'PDF', 'value': 1}, {'label': 'Excel', 'value': 2}, {'label': 'HTML', 'value': 3}],
+            'formatos': formatos,
             'form': form,
             'secciones': secciones,
             'usuarios': usuarios

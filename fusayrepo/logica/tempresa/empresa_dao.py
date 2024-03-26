@@ -21,6 +21,27 @@ class TEmpresaDao(BaseDao):
                                                'emp_razonsocial', 'emp_nombrecomercial',
                                                'emp_nroautorizacion', 'emp_fechaautorizacion'))
 
+    def get_info_by_schema(self, emp_esquema):
+        sql = """select emp_id,          
+                        emp_ruc,
+                        emp_razonsocial,
+                        emp_nombrecomercial,
+                        emp_nroautorizacion,
+                        emp_fechaautorizacion,
+                        emp_esquema,          
+                        emp_codigo,           
+                        emp_menu from public.tempresa where emp_esquema = '{0}'""".format(emp_esquema)
+        tupla_desc = ('emp_id',
+                      'emp_ruc',
+                      'emp_razonsocial',
+                      'emp_nombrecomercial',
+                      'emp_nroautorizacion',
+                      'emp_fechaautorizacion',
+                      'emp_esquema',
+                      'emp_codigo',
+                      'emp_menu')
+        return self.first(sql, tupla_desc)
+
     def get_datos_emp_public(self, emp_codigo):
         sql = """
         select emp_ruc, emp_razonsocial, emp_nombrecomercial, 

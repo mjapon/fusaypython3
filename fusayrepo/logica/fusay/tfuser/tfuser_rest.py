@@ -78,6 +78,7 @@ class TFuserRest(DbComunView):
                         'seccion': defaultsec,
                         'token': token,
                         'tdv_codigo': tdv_codigo,
+                        'emp': empresa['emp_id'],
                         'menu': empresa['emp_menu'],
                         'sqm': empresa['emp_esquema'],
                         'empNombreComercial': empresa['emp_nombrecomercial']}
@@ -116,9 +117,9 @@ class TFuserTokenRest(TokenView):
             new_state = int(form['state'])
             result = tfuserdao.cambiar_estado(us_id=form['user'], new_state=new_state)
             if new_state == 1:
-                msg = 'Se desactivó exitosamente este usuario'
+                msg = 'Se desactivó exitósamente este usuario'
             else:
-                msg = 'Se activó exitosamente este usuario'
+                msg = 'Se activó exitósamente este usuario'
 
             return self.res200({'msg': msg, 'resultado': result})
         elif accion == 'updclave':

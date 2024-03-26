@@ -143,7 +143,7 @@ class DataLoggedDao(BaseDao):
 
         menu = fuserroldao.build_menu(permisos)
         tempresadao = TEmpresaDao(self.dbsession)
-        datosemp = tempresadao.get_datos_emp_public(emp_codigo=emp_codigo)
+        datosemp = tempresadao.get_info_by_schema(emp_codigo)
 
         version = ctes.VERSION_APP
 
@@ -160,5 +160,6 @@ class DataLoggedDao(BaseDao):
             'accesosdir': accesosdir,
             'menu': menu,
             'datosemp': datosemp,
-            'vapp': version
+            'vapp': version,
+            'emp': datosemp['emp_id']
         }

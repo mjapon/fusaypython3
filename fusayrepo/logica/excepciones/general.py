@@ -25,7 +25,8 @@ def procesar_excepcion(exc, request):
     log.error(' Exception capturada: ', exc_info=True)
     log.error(' Empresa donde se genera el error es: {0} '.format(emp_codigo))
 
-    msg = str(exc)
+    #msg = str(exc)
+    msg = "Ha ocurrido un error"
     msg = procesar_msg_postgres(msg)
     log.error('Valor de mensaje enviado es:')
     log.error(msg)
