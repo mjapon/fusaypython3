@@ -24,6 +24,10 @@ class TAlmacenDao(BaseDao):
 
         self.first(sql, tupla_desc)
 
+    def get_nombre_comercial(self):
+        sql = "select alm_nomcomercial from talmacen where alm_matriz = 1"
+        return self.first_col(sql, 'alm_nomcomercial')
+
     def get_alm_tipoamb(self):
         sql = """
         select alm_tipoamb from talmacen where alm_matriz = 1

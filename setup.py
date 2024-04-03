@@ -27,7 +27,8 @@ requires = [
     'cornice',
     'suds',
     'requests',
-    'redis'
+    'redis',
+    'twilio'
 ]
 
 tests_require = [

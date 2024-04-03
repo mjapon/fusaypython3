@@ -6,6 +6,7 @@ Fecha de creacion 11/9/20
 import datetime
 import decimal
 import logging
+from datetime import timedelta
 
 from sqlalchemy import and_
 
@@ -16,12 +17,13 @@ from fusayrepo.logica.financiero.tfin_amortiza.tfin_amortiza_model import TFinAm
 from fusayrepo.logica.financiero.tfin_credito.tfin_credito_dao import TFinCreditoDao
 from fusayrepo.logica.financiero.tfin_pagoscred.tfin_pagoscred_model import TFinPagosCredDet, TFinPagosCredCab
 from fusayrepo.logica.fusay.tadjunto.tadjunto_dao import TAdjuntoDao
+from fusayrepo.logica.fusay.talmacen.talmacen_dao import TAlmacenDao
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
-from fusayrepo.utils import numeros, fechas, cadenas
+from fusayrepo.utils import numeros, fechas, cadenas, ctes
 
 log = logging.getLogger(__name__)
 
@@ -613,3 +615,78 @@ class TFinPagosCredDao(BaseDao):
 
         datos_pago = self.first(sql, tupla_desc)
         return datos_pago
+
+    def get_cuotas_pendientes(self, cre_id, fecha):
+        sql = """
+        select amor.amo_id, amor.cre_id
+        from tfin_amortiza amor
+        left join tfin_pagoscreddet pgd on pgd.pg_amoid = amor.amo_id and pgd.pg_estado = 1
+        left join tfin_pagoscredcab pgcab on pgd.pgc_id = pgcab.pgc_id 
+        join tfin_credito cred on amor.cre_id = cred.cre_id	
+        where cred.cre_estado  = 2 and  amor.amo_estado = 0  and cred.cre_id = {0} and amo_fechapago <='{1}' 
+        and coalesce(pgd.pg_id,0) = 0 order by cre_id, amo_ncuota 
+        """.format(cre_id, fechas.parse_fecha(fecha, ctes.APP_FMT_FECHA_DB))
+
+        tupla = ('amo_id', 'cre_id')
+        cuotas_pendientes = self.all(sql, tupla)
+        if len(cuotas_pendientes) > 0:
+            return self.calcular_cuotas_pagar(cuotas=cuotas_pendientes,
+                                              fecha_pago=fechas.parse_fecha(fecha, ctes.APP_FMT_FECHA))
+        return None
+
+    def get_sms_credito(self, datospago, fechapago):
+        pgc_fechapago = fechapago
+        monto_totall = datospago['pgc_total']
+        cuotas_pagar = datospago['cuotaspagar']
+        pagos_atrasados = len(cuotas_pagar) > 1
+        cre_id = datospago['cre_id']
+
+        creddao = TFinCreditoDao(self.dbsession)
+        persondao = TPersonaDao(self.dbsession)
+        datoscredito = creddao.get_datos_credito(cre_id)
+        ref = persondao.buscar_porcodigo(per_id=datoscredito['per_id'])
+
+        if len(cuotas_pagar) > 0:
+            pg_npago = cuotas_pagar[0]['pg_npago']
+            for cuota in cuotas_pagar:
+                if cuota['pg_npago'] > pg_npago:
+                    pg_npago = cuota['pg_npago']
+                    monto_totall = cuota['pg_total']
+
+        talmdao = TAlmacenDao(self.dbsession)
+        nombre_comercial = talmdao.get_nombre_comercial()
+
+        diasemana = fechas.get_str_dia_largo(fechas.get_dia_de_la_semana(fechas.parse_cadena(fechapago)) - 1)
+
+        sms = "{0} le informa que el {1} {2} a mas tardar, debe cancelar la cuota Nro:{3} {4} por un monto de {5} por su crédito de {6}$".format(
+            nombre_comercial, diasemana.lower(), pgc_fechapago, pg_npago, '(Tiene pagos atrasados)' if pagos_atrasados else '',
+            monto_totall, datoscredito['cre_monto'])
+        return {'phone': cadenas.strip(ref['per_movil']), 'message': sms}
+
+    def get_smss_pago_credito(self, ndaydelta):
+        # Buscar creditos pendientes
+        fecha = datetime.datetime.now() + timedelta(days=ndaydelta)
+        fecha_str_db = fechas.parse_fecha(fecha, ctes.APP_FMT_FECHA_DB)
+
+        sql = """
+        select distinct(amor.cre_id)
+        from tfin_amortiza amor
+        left join tfin_pagoscreddet pgd on pgd.pg_amoid = amor.amo_id and pgd.pg_estado = 1
+        left join tfin_pagoscredcab pgcab on pgd.pgc_id = pgcab.pgc_id 
+        join tfin_credito cred on amor.cre_id = cred.cre_id	
+        where cred.cre_estado  = 2 and  amor.amo_estado = 0  and amo_fechapago ='{0}' and coalesce(pgd.pg_id,0) = 0
+        order by cre_id;
+        """.format(fecha_str_db)
+
+        tupla_res = ('cre_id',)
+
+        smss = []
+        creditos = self.all(sql, tupla_res)
+        for cred in creditos:
+            info_cuotas_pendientes = self.get_cuotas_pendientes(cre_id=cred['cre_id'], fecha=fecha)
+            if info_cuotas_pendientes is not None:
+                sms_info = self.get_sms_credito(info_cuotas_pendientes, fechas.parse_fecha(fecha, ctes.APP_FMT_FECHA))
+                if cadenas.es_nonulo_novacio(sms_info['phone']):
+                    smss.append(sms_info)
+
+        return smss
