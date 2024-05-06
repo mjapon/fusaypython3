@@ -71,7 +71,28 @@ class TasientoDao(AuxLogicAsiDao):
                                    desde=fechas.format_cadena_db(desde),
                                    hasta=fechas.format_cadena_db(hasta),
                                    fecinicontab=sqlfechainicontab)
+
+        previus_desde_db = fechas.sumar_dias(fechas.parse_cadena(desde), -1)
+        sql_sum_previus = """
+        select mcd_dia, 
+               coalesce(mcd_debe,0) as mcd_debe, 
+               coalesce(mcd_haber,0) as mcd_haber,
+               coalesce(mcd_saldo,0) as mcd_saldo  
+        from tsum_ctas_diario where cta_id = {0} and mcd_dia ='{1}' order by mcd_dia desc limit 1        
+        """.format(cta_codigo, previus_desde_db)
+        tupla_desc = ('mcd_dia', 'mcd_debe', 'mcd_haber', 'mcd_saldo')
+        sum_previus = self.first(sql_sum_previus, tupla_desc)
+        previus_debe = 0
+        previus_haber = 0
+        previus_saldo = 0
+        if sum_previus:
+            previus_debe = sum_previus['mcd_debe']
+            previus_haber = sum_previus['mcd_haber']
+            previus_saldo = sum_previus['mcd_saldo']
+
         data = resgrid['data']
+        for it in data:
+            it['saldo'] = float(it['saldo']) + previus_saldo
         debe = map(lambda x: x['debe'], filter((lambda x: x['dt_debito'] == 1), data))
         haber = map(lambda x: x['haber'], filter((lambda x: x['dt_debito'] == -1), data))
 
@@ -247,7 +268,7 @@ class TasientoDao(AuxLogicAsiDao):
             'dt_debito': 0,
             'dt_preref': 0.0,
             'dt_decto': 0.0,
-            'dt_dectotipo': '1',#1-valor, 2-porcentaje
+            'dt_dectotipo': '1',  # 1-valor, 2-porcentaje
             'dt_dectoin': 0.0,
             'dt_dectoporcin': 0.0,
             'dt_valor': 0.0,

@@ -163,7 +163,8 @@ class AuxLogicAsiDao(BaseDao):
             self.aux_chk_existe_doc_valid(formcab, trn_compro, tra_codigo)
         except SecuenciaEnUsoExc as ex:
             transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
-            return self.aux_gen_trn_compro(formcab, tps_codigo, int(secuencia)+1, tra_codigo)
+            formcab['secuencia'] = int(secuencia) + 1
+            return self.aux_gen_trn_compro(formcab, tps_codigo, int(secuencia) + 1, tra_codigo)
 
         return trn_compro
 
@@ -188,14 +189,21 @@ class AuxLogicAsiDao(BaseDao):
         secuencia = formcab['secuencia']
         tra_codigo = formcab['tra_codigo']
         sec_codigo = formcab['sec_codigo']
+        tps_codigo = formcab['tps_codigo']
+
+        transaccpdv_dao = TTransaccPdvDao(self.dbsession)
 
         if int(tra_codigo) == ctes.TRA_COD_FACT_COMPRA:
             trn_compro = secuencia
             self.aux_chk_existe_doc_valid_ref(formcab, trn_compro, tra_codigo, per_ciruc)
         else:
             trn_compro = self._get_trn_compro(formcab['estabptoemi'], secuencia)
-            self.aux_chk_existe_doc_valid(formcab, trn_compro, tra_codigo)
-
+            try:
+                self.aux_chk_existe_doc_valid(formcab, trn_compro, tra_codigo)
+            except SecuenciaEnUsoExc as ex:
+                if tps_codigo is not None and tps_codigo > 0 and gen_secuencia:
+                    transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
+                    trn_compro = self.aux_gen_trn_compro(formcab, tps_codigo, int(secuencia) + 1, tra_codigo)
         secuencia = formcab['secuencia']
         trn_docpen = formcab['trn_docpen']
         trn_pagpen = formcab['trn_pagpen']
@@ -230,9 +238,7 @@ class AuxLogicAsiDao(BaseDao):
         tasiento.per_codres = per_codres
         tasiento.trn_impref = formcab['trn_impref']
 
-        tps_codigo = formcab['tps_codigo']
         if tps_codigo is not None and tps_codigo > 0 and gen_secuencia:
-            transaccpdv_dao = TTransaccPdvDao(self.dbsession)
             transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
 
         self.dbsession.add(tasiento)

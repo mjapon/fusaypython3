@@ -76,7 +76,9 @@ class TFuserRolDao(BaseDao):
             # {'label': 'Cuentas', 'icon': '', 'routerLink': ['/rubros']},
             {'label': 'Plan de cuentas', 'icon': '', 'routerLink': ['/plancuentas']},
             {'label': 'Balance General', 'icon': '', 'routerLink': ['/contabilidad/balancegeneral']},
-            {'label': 'Estado de Resultados', 'icon': '', 'routerLink': ['/contabilidad/estadoresultados']}
+            {'label': 'Estado de Resultados', 'icon': '', 'routerLink': ['/contabilidad/estadoresultados']},
+            {'label': 'Cierre Periodo', 'icon': '', 'routerLink': ['contabilidad/periodo/cierre']},
+            {'label': 'Apertura Periodo', 'icon': '', 'routerLink': ['contabilidad/periodo/apertura']}
         ]
         tickets_list = [
             {'label': 'Listado', 'icon': 'pi pi-fw pi-ticket', 'routerLink': ['/tickets']},

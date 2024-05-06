@@ -122,15 +122,21 @@ class TAsientoRest(TokenView):
         elif accion == 'getbalancegeneral':
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
+            chkperparam = self.get_request_param('chkper')
+            chk_per = True
+            if chkperparam is not None and chkperparam == '0':
+                chk_per = False
+
             reportes_cont_dao = ReportesContablesDao(self.dbsession)
             datos_balance = reportes_cont_dao.build_balance_gen_mayorizado(desde=desde, hasta=hasta,
-                                                                           sec_id=self.get_sec_id())
+                                                                           sec_id=self.get_sec_id(), chk_per=chk_per)
 
             return self.res200(
                 {'balance': datos_balance['balance_list'],
                  'balancetree': datos_balance['balance_tree'],
                  'total_grupos': datos_balance['total_grupos'],
-                 'resultado_ejercicio': datos_balance['resultado_ejercicio']}
+                 'resultado_ejercicio': datos_balance['resultado_ejercicio'],
+                 'cta_contab_result': datos_balance['cta_contab_result']}
             )
         elif accion == 'getestadoresultados':
             desde = self.get_request_param('desde')

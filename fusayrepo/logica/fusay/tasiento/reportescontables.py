@@ -69,10 +69,9 @@ class ReportesContablesDao(BaseDao):
     def get_total_grupos_dict(self, desde, hasta, sec_id):
         sql = """
         with data as (
-            select scd.cta_id, round(sum(scd.scd_saldo),2) as total 
-                from tsaldos_ctas_diario scd
-                where date(scd_dia) between '{desde}' and '{hasta}'
-                group by scd.cta_id order by scd.cta_id
+            select mcd.cta_id, round(mcd.mcd_saldo,2) as total 
+                from tsum_ctas_diario mcd
+                where date(mcd_dia) = '{hasta}' order by mcd.cta_id
         )
 
         select SUBSTRING(ic_code,1,1) grupo, sum(coalesce(data.total,0.0)) as total 
@@ -96,10 +95,10 @@ class ReportesContablesDao(BaseDao):
 
         return result_dict
 
-    def build_balance_gen_mayorizado(self, desde, hasta, sec_id):
+    def build_balance_gen_mayorizado(self, desde, hasta, sec_id, chk_per=True):
         periododao = TPeriodoContableDao(self.dbsession)
         periodo_contable = periododao.get_datos_periodo_contable()
-        if periodo_contable is None:
+        if periodo_contable is None and chk_per:
             raise ErrorValidacionExc('No existe un periodo contable activo registrado, favor verificar')
 
         # pc_desde = periodo_contable['pc_desde']
@@ -122,10 +121,9 @@ class ReportesContablesDao(BaseDao):
 
         sql = """
             with data as (
-                select scd.cta_id, round(sum(scd.scd_saldo),2) as total 
-                    from tsaldos_ctas_diario scd
-                    where date(scd_dia) between '{desde}' and '{hasta}'
-                    group by scd.cta_id 
+                select mcd.cta_id, round(mcd.mcd_saldo,2) as total 
+                    from tsum_ctas_diario mcd
+                    where date(mcd_dia) = '{hasta}'                     
                 {sql_cta_result}
             )            
             select ic.ic_id, ic_code, ic_nombre, ic_code||' '||ic_nombre as codenombre, ic_padre, ic_haschild, 
@@ -152,7 +150,8 @@ class ReportesContablesDao(BaseDao):
             'balance_list': result,
             'balance_tree': treebg,
             'total_grupos': total_grupos_dict,
-            'resultado_ejercicio': resultado_ejercicio
+            'resultado_ejercicio': resultado_ejercicio,
+            'cta_contab_result':cta_contab_result
         }
 
     def get_resultado_ejercicio_mayorizado(self, desde, hasta, sec_id):
@@ -164,10 +163,9 @@ class ReportesContablesDao(BaseDao):
         #pc_desde = periodo_contable['pc_desde']
         sql = """
                     with data as (
-                        select scd.cta_id, round(sum(scd.scd_saldo),2) as total 
-                            from tsaldos_ctas_diario scd
-                            where date(scd_dia) between '{desde}' and '{hasta}'
-                            group by scd.cta_id order by scd.cta_id
+                        select mcd.cta_id, round(mcd.mcd_saldo,2) as total 
+                            from tsum_ctas_diario mcd
+                            where date(mcd_dia) = '{hasta}' order by mcd.cta_id
                     )            
                     select ic.ic_id, ic_code, ic_nombre, ic_padre, ic_haschild, coalesce(data.total,0.0) as total 
                             from titemconfig ic
