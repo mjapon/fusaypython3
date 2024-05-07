@@ -3,8 +3,6 @@
 Fecha de creacion 11/9/20
 @autor: Manuel Japon
 """
-import datetime
-import decimal
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -13,7 +11,6 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from fusayrepo.utils import fechas, ctes
-from fusayrepo.utils.jsonutil import SimpleJsonUtil
 
 
 def get_session_factory(engine):
@@ -86,7 +83,7 @@ if __name__ == "__main__":
         dbsession = session_factory()
 
         esquemas_procesar = [
-            'cajaruna'
+            'cajainti', 'cajaruna'
         ]
 
         for esquema in esquemas_procesar:
@@ -95,8 +92,8 @@ if __name__ == "__main__":
             try:
                 dbsession.execute("SET search_path TO {0}".format(esquema))
 
-                #fecha_fin_db = fechas.get_str_fecha_actual(ctes.APP_FMT_FECHA_DB)
-                fecha_fin_db = "2024-05-05"
+                fecha_fin_db = fechas.get_str_fecha_actual(ctes.APP_FMT_FECHA_DB)
+                #fecha_fin_db = "2024-05-06"
 
                 log.info('Fecha ejecucion proceso:{0}'.format(fecha_fin_db))
 

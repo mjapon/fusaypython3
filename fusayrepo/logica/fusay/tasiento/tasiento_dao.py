@@ -954,7 +954,10 @@ class TasientoDao(AuxLogicAsiDao):
         sumapagos = 0.0
         creditodao = TAsicreditoDao(self.dbsession)
         abonodao = TAsiAbonoDao(self.dbsession)
-        for pago in pagos:
+
+        pagos_validos =  filter(lambda pago:cadenas.es_nonulo_novacio(pago['dt_valor']),pagos)
+
+        for pago in pagos_validos:
             valorpago = float(pago['dt_valor'])
             if valorpago > 0.0:
                 dt_codigo = self.save_tasidet_pago(trn_codigo=trn_codigo, per_codigo=per_codigo, pago=pago)
