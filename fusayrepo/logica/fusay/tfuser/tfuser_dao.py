@@ -25,11 +25,9 @@ class TFuserDao(BaseDao):
         return self.dbsession.query(TFuser).filter(TFuser.us_id == us_id).first()
 
     def autenticar(self, us_cuenta, us_clave):
-        sql = """
-        select count(*) as cuenta from tfuser where us_cuenta = '{0}' and us_clave = '{1}' and us_estado = 0  
-        """.format(us_cuenta, us_clave)
-        cuenta = self.first_col(sql, 'cuenta')
-        return cuenta > 0
+        sql = "select count(*) as cuenta from tfuser where us_cuenta = :user and us_clave = :passw and us_estado = 0"
+        result = self.first_raw(sql, user=us_cuenta, passw=us_clave)
+        return result[0] > 0 if result is not None else False
 
     def get_user(self, us_cuenta):
         sql = """select a.us_id,

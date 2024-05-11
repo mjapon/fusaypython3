@@ -13,6 +13,9 @@ from fusayrepo.utils.jsonutil import SEJsonEncoder
 
 log = logging.getLogger(__name__)
 
+DB_MESSAGE_PREFIX = '(psycopg2.errors'
+GENERAL_ERROR_MESSAGE = 'Ha ocurrido un error'
+
 
 def procesar_excepcion(exc, request):
     emp_codigo = 0
@@ -25,11 +28,9 @@ def procesar_excepcion(exc, request):
     log.error(' Exception capturada: ', exc_info=True)
     log.error(' Empresa donde se genera el error es: {0} '.format(emp_codigo))
 
-    #msg = str(exc)
-    msg = "Ha ocurrido un error"
-    msg = procesar_msg_postgres(msg)
-    log.error('Valor de mensaje enviado es:')
-    log.error(msg)
+    exc_mgs = proccess_exception_message(exc)
+    log.error("Mensaje retornado: ")
+    log.error(exc_mgs)
 
     inputid = ""
     if 'inputid' in dir(exc):
@@ -49,11 +50,8 @@ def procesar_excepcion(exc, request):
 
     ss_expirada = 0
 
-    # if emp_codigo == 0:
-    #     ss_expirada = 1
-
     return {
-        'msg': msg,
+        'msg': exc_mgs,
         'inputid': inputid,
         'status_code': status_code,
         'error_code': error_code,
@@ -64,6 +62,14 @@ def procesar_excepcion(exc, request):
 def add_status_to_response(response, exc_res):
     response.status_code = exc_res.get("status_code", 400)
     return response
+
+
+def proccess_exception_message(exc):
+    exc_msg = str(exc)
+    if exc_msg is not None and exc_msg.startswith(DB_MESSAGE_PREFIX):
+        exc_msg = GENERAL_ERROR_MESSAGE
+
+    return exc_msg
 
 
 @view_config(context=Exception, renderer='excepcion/general.html')
