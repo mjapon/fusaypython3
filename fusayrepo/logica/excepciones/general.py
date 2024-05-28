@@ -14,6 +14,8 @@ from fusayrepo.utils.jsonutil import SEJsonEncoder
 log = logging.getLogger(__name__)
 
 DB_MESSAGE_PREFIX = '(psycopg2.errors'
+DB_OPERATIONAL_PREFIX = '(psycopg2.OperationalError'
+DB_CUSTOM_MESSAGE_PREFIX = '(psycopg2.DatabaseError'
 GENERAL_ERROR_MESSAGE = 'Ha ocurrido un error'
 
 
@@ -66,8 +68,10 @@ def add_status_to_response(response, exc_res):
 
 def proccess_exception_message(exc):
     exc_msg = str(exc)
-    if exc_msg is not None and exc_msg.startswith(DB_MESSAGE_PREFIX):
+    if exc_msg is not None and (exc_msg.startswith(DB_MESSAGE_PREFIX) or exc_msg.startswith(DB_OPERATIONAL_PREFIX)):
         exc_msg = GENERAL_ERROR_MESSAGE
+    elif exc_msg.startswith(DB_CUSTOM_MESSAGE_PREFIX):
+        exc_msg = procesar_msg_postgres(exc_msg)
 
     return exc_msg
 

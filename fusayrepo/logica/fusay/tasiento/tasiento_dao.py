@@ -581,14 +581,14 @@ class TasientoDao(AuxLogicAsiDao):
             descglobal += dt_dectogeniva
 
         return {
-            'subtotal': numeros.roundm2(gsubtotal),
-            'subtotal12': numeros.roundm2(gsubtotal12),
-            'subtotal0': numeros.roundm2(gsubtotal0),
-            'iva': numeros.roundm2(giva),
-            'descuentos': numeros.roundm2(gdescuentos),
+            'subtotal': numeros.roundm4(gsubtotal),
+            'subtotal12': numeros.roundm4(gsubtotal12),
+            'subtotal0': numeros.roundm4(gsubtotal0),
+            'iva': numeros.roundm4(giva),
+            'descuentos': numeros.roundm4(gdescuentos),
             'total': numeros.roundm2(gtotal),
-            'descglobalin': numeros.roundm2(descglobal),
-            'descglobal': numeros.roundm2(descglobal),
+            'descglobalin': numeros.roundm4(descglobal),
+            'descglobal': numeros.roundm4(descglobal),
             'descglobaltipo': '1'
         }
 

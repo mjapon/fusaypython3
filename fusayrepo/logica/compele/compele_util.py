@@ -51,6 +51,17 @@ class CompeleUtilDao(BaseDao):
         ambiente_facte = datos_alm_matriz['alm_tipoamb']
 
         try:
+            if sec_codigo is not None and int(sec_codigo) > 1:
+                tsecciondao = TSeccionDao(self.dbsession)
+                sec_tipoamb = tsecciondao.get_sec_tipoamb(sec_id=sec_codigo)
+                if sec_tipoamb > 0:
+                    ambiente_facte = sec_tipoamb
+        except Exception as ex_sec:
+            log.error('Error controlado al tratar de obtener el ambiente facturacion', ex_sec)
+
+        try:
+            gen_fact = GeneraFacturaCompEle(self.dbsession)
+            claveacceso = gen_fact.get_clave_acceso(datos_factura=datos_fact['cabecera'], tipo_ambiente=ambiente_facte)
             gen_data.save_proxy_send_response(trn_codigo=trn_codigo, ambiente=ambiente_facte,
                                               proxy_response={
                                                   'estado': 0,
@@ -58,7 +69,7 @@ class CompeleUtilDao(BaseDao):
                                                   'fechaAutorizacion': '',
                                                   'mensajes': '',
                                                   'numeroAutorizacion': '',
-                                                  'claveAcceso': ''
+                                                  'claveAcceso': claveacceso
                                               })
 
             message = {
@@ -70,7 +81,6 @@ class CompeleUtilDao(BaseDao):
 
             str_message = self.myjsonutil.dumps(message)
             self.redispublis.publish_message(str_message)
-
 
         except Exception as ex:
             log.error("Error al tratar de enviar mensaje (para envio) a la cola de comprobantes electronicos", ex)
@@ -155,7 +165,7 @@ class CompeleUtilDao(BaseDao):
             estado_envio = 0
 
         return {'is_cons_final': is_cons_final, 'compelenviado': compelenviado, 'estado_envio': estado_envio,
-                'trn_codigo': trn_codigo, 'validarcompro':True}
+                'trn_codigo': trn_codigo, 'validarcompro': True}
 
     def enviar(self, trn_codigo, sec_codigo):
         gen_fact = GeneraFacturaCompEle(self.dbsession)
