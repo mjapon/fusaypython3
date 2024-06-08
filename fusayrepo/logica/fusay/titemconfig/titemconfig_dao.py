@@ -682,6 +682,20 @@ class TItemConfigDao(BaseDao):
         ic_id = self.crea_ctacontable(form, user_crea)
         return ic_id
 
+    def cta_contable_has_moves(self, cta_codigo):
+        """
+        Verifica si una cuenta contable tiene movimientos validos registrados
+        """
+        sql = """
+        select count(asi.trn_codigo) from tasidetalle det
+              join titemconfig ic on det.cta_codigo = ic.ic_id
+              join tasiento asi on det.trn_codigo = asi.trn_codigo
+        where coalesce(det.cta_codigo, 0)> 0 and asi.trn_valido = 0 and asi.trn_docpen = 'F'
+        and det.cta_codigo = :cta"""
+
+        result = self.first_raw(sql, cta=cta_codigo)
+        return result[0] > 0 if result is not None else False
+
     def crea_ctacontable(self, form, usercrea):
         if not cadenas.es_nonulo_novacio(form['sec']):
             raise ErrorValidacionExc('Debe ingresar la secuencia')
@@ -713,6 +727,12 @@ class TItemConfigDao(BaseDao):
         titemconfig.ic_alias = cadenas.strip_upper(form['ic_alias'])
 
         icpadre = self.find_byid(ic_id=form['ic_padre'])
+
+        if self.cta_contable_has_moves(cta_codigo=form['ic_padre']):
+            raise ErrorValidacionExc(
+                "No es posible crear subcuentas para la cuenta {0}-{1}, esta cuenta tiene movimientos registrados"
+                .format(icpadre.ic_code, icpadre.ic_nombre))
+
         if icpadre is not None:
             icpadre.ic_haschild = True
 

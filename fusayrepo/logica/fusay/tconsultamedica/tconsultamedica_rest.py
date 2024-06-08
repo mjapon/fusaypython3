@@ -34,8 +34,8 @@ class TConsultaMedicaRest(TokenView):
         elif accion == 'listaatenciones':
             ciruc = self.get_request_param('ciruc')
             items = tconsultam_dao.get_historia_porpaciente(per_ciruc=ciruc)
-            antecedespers = tconsultam_dao.get_antecedentes_personales(per_ciruc=ciruc)
-            return {'status': 200, 'items': items, 'antpers': antecedespers}
+            # antecedespers = tconsultam_dao.get_antecedentes_personales(per_ciruc=ciruc)
+            return {'status': 200, 'items': items}
         elif accion == 'odontograma':
             ciruc = self.get_request_param('ciruc')
             odontograma = tconsultam_dao.get_odontograma(per_ciruc=ciruc)
@@ -45,7 +45,11 @@ class TConsultaMedicaRest(TokenView):
             codhistoria = self.get_request_param('codhistoria')
             datoshistoria = tconsultam_dao.get_datos_historia(cosm_id=codhistoria)
             return {'status': 200, 'datoshistoria': datoshistoria}
-
+        elif accion == 'findhistantecedentes':
+            pac_id = self.get_request_param('pac')
+            antecedentes = tconsultam_dao.get_antecedentes_paciente(pac_id)
+            hasvalue = len(list(filter(lambda it: it['valorreg'] != '', antecedentes))) > 0
+            return {'antecedentes': antecedentes, 'hasvalue': hasvalue}
         elif accion == 'galertexfis':
             valor = self.get_request_param('valor')
             categ = self.get_request_param('categ')
@@ -96,6 +100,12 @@ class TConsultaMedicaRest(TokenView):
             formdata = self.get_request_json_body()
             msg, cosm_id = tconsultam_dao.registrar(form=formdata, usercrea=self.get_user_id())
             return {'status': 200, 'msg': msg, 'ccm': cosm_id}
+        elif accion == 'saveantp':
+            formdata = self.get_request_json_body()
+            tconsultam_dao = TConsultaMedicaDao(self.dbsession)
+            tconsultam_dao.save_antencedentes_paciente(pac_id=formdata['pac'], antecedentes=formdata['antecedentes'])
+            return {'status': 200, 'msg': 'Registro exitoso'}
+
         elif 'anular' == accion:
             tconsultam_dao = TConsultaMedicaDao(self.dbsession)
             formdata = self.get_request_json_body()

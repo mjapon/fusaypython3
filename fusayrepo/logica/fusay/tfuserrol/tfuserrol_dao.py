@@ -70,121 +70,90 @@ class TFuserRolDao(BaseDao):
             hasplanes = cadenas.strip(hasplanesvalue) == '1'
 
         contabilidad_list = [
-            {'label': 'Ingresos y Gastos', 'icon': '', 'routerLink': ['/vtickets']},
-            {'label': 'Libro Diario', 'icon': 'pi pi-fw pi-book', 'routerLink': ['/librodiario']},
-            {'label': 'Libro Mayor', 'icon': '', 'routerLink': ['/libromayor']},
-            # {'label': 'Cuentas', 'icon': '', 'routerLink': ['/rubros']},
-            {'label': 'Plan de cuentas', 'icon': '', 'routerLink': ['/plancuentas']},
-            {'label': 'Balance General', 'icon': '', 'routerLink': ['/contabilidad/balancegeneral']},
-            {'label': 'Estado de Resultados', 'icon': '', 'routerLink': ['/contabilidad/estadoresultados']},
-            {'label': 'Cierre Periodo', 'icon': '', 'routerLink': ['contabilidad/periodo/cierre']},
-            {'label': 'Apertura Periodo', 'icon': '', 'routerLink': ['contabilidad/periodo/apertura']}
+            {'label': 'Ingresos y Gastos', 'icon': 'fa-solid fa-bars-staggered', 'routerLink': ['/vtickets']},
+            {'label': 'Libro Diario', 'icon': 'fa-solid fa-book', 'routerLink': ['/librodiario']},
+            {'label': 'Libro Mayor', 'icon': 'fa-solid fa-book-open', 'routerLink': ['/libromayor']},
+            {'label': 'Plan de cuentas', 'icon': 'fa-solid fa-list-ol', 'routerLink': ['/plancuentas']},
+            {'label': 'Balance General', 'icon': 'fa-solid fa-chart-pie',
+             'routerLink': ['/contabilidad/balancegeneral']},
+            {'label': 'Estado de Resultados', 'icon': 'fa-solid fa-chart-line',
+             'routerLink': ['/contabilidad/estadoresultados']},
+            {'label': 'Cierre Periodo', 'icon': 'fa-solid fa-folder-closed',
+             'routerLink': ['contabilidad/periodo/cierre']},
+            {'label': 'Apertura Periodo', 'icon': 'fa-solid fa-folder-open',
+             'routerLink': ['contabilidad/periodo/apertura']}
         ]
         tickets_list = [
-            {'label': 'Listado', 'icon': 'pi pi-fw pi-ticket', 'routerLink': ['/tickets']},
-            {'label': 'Crear', 'icon': 'pi pi-fw pi-file', 'routerLink': ['/ticket/form']}
+            {'label': 'Listado', 'icon': 'fa-solid fa-rectangle-list', 'routerLink': ['/tickets']},
+            {'label': 'Crear', 'icon': 'fa-solid fa-ticket-simple', 'routerLink': ['/ticket/form']}
         ]
 
         prods_list = [
-            {'label': 'Listado', 'icon': '', 'routerLink': ['/mercaderia']},
-            {'label': 'Categorias', 'icon': '', 'routerLink': ['/categorias']}
+            {'label': 'Listado', 'icon': 'fa-solid fa-rectangle-list', 'routerLink': ['/mercaderia']},
+            {'label': 'Categorias', 'icon': 'fa-solid fa-tags', 'routerLink': ['/categorias']}
         ]
 
         if hasplanes:
             prods_list.append({'label': 'Planes', 'icon': '', 'routerLink': ['/planes']})
 
         users_list = [
-            {'label': 'Admin Usuarios', 'icon': 'pi pi-fw pi-users', 'routerLink': ['/usuarios']},
-            {'label': 'Admin Roles', 'icon': 'pi pi-fw pi-bookmark', 'routerLink': ['/roles']}
-        ]
-
-        hist_list = [
-            {'label': 'Administrar', 'icon': 'pi pi-fw pi-calendar',
-             'routerLink': ['/historiaclinica/1']}
-        ]
-
-        histo_list = [
-            {'label': 'Administrar', 'icon': 'pi pi-fw pi-bell',
-             'routerLink': ['/odonto']}
+            {'label': 'Usuarios', 'icon': 'fa-solid fa-users', 'routerLink': ['/usuarios']},
+            {'label': 'Roles', 'icon': 'fa-solid fa-users-gear', 'routerLink': ['/roles']}
         ]
 
         ventas_list = [
-            {'label': 'Movimientos', 'icon': '',
+            {'label': 'Listado', 'icon': 'fa-solid fa-rectangle-list',
              'routerLink': ['/trndocs/1']},
-            {'label': 'Emitir Factura', 'icon': 'pi pi-fw pi-money-bill',
+            {'label': 'Emitir Factura', 'icon': 'fa-solid fa-file-invoice-dollar',
              'routerLink': ['/trndocform/1/c']},
-            {'label': 'Emitir nota de venta', 'icon': '',
+            {'label': 'Emitir Nota de venta', 'icon': 'fa-solid fa-file-invoice',
              'routerLink': ['/trndocform/2/c']},
-            {'label': 'Utilidades', 'icon': '',
+            {'label': 'Utilidades', 'icon': 'fa-solid fa-coins',
              'routerLink': ['/utilventas']},
-            {'label': 'Cierre Caja', 'icon': '',
+            {'label': 'Cierre Caja', 'icon': 'fa-solid fa-cash-register',
              'routerLink': ['/cierrecaja']}
         ]
 
         compras_list = [
-            {'label': 'Movimientos', 'icon': '', 'cicon': 'fas fa-shopping-basket',
+            {'label': 'Movimientos', 'icon': 'fa-solid fa-rectangle-list',
              'routerLink': ['/trndocs/2']},
-            {'label': 'Registrar factura', 'icon': '',
+            {'label': 'Registrar factura', 'icon': 'fa-solid fa-file-invoice',
              'routerLink': ['/trndocform/7/c']}
         ]
 
-        refs_list = [
-            {'label': 'Listado', 'icon': 'pi pi-fw pi-users',
-             'routerLink': ['/referentes']},
-        ]
-
-        agn_list = [
-            {'label': 'Agenda', 'icon': 'pi pi-fw pi-calendar',
-             'routerLink': ['/agenda/1']},
-        ]
-
-        cbr_agua = [
-            {'label': 'Cobro de agua', 'icon': 'pi pi-fw pi-circle-off',
-             'routerLink': ['/aguap/home']},
-        ]
-
-        adm_reps = [
-            {'label': 'Reportes', 'icon': 'pi pi-fw pi-chart-bar',
-             'routerLink': ['/reportes']},
-        ]
-
         caja_list = [
-            {'label': 'Crédito', 'icon': '', 'cicon': '',
+            {'label': 'Créditos', 'icon': 'fa-solid fa-credit-card',
              'routerLink': ['/finan/home']},
-            {'label': 'Cuentas', 'icon': '',
+            {'label': 'Cuentas', 'icon': 'fa-solid fa-file-circle-plus',
              'routerLink': ['/finan/aperturacta']},
-            {'label': 'Movimientos', 'icon': '',
+            {'label': 'Movimientos', 'icon': 'fa-solid fa-comments-dollar',
              'routerLink': ['/finan/movscta']}
         ]
 
         all_menu = {
-            '*': {'label': 'Inicio', 'icon': 'pi pi-fw pi-home', 'cicon': 'fas fa-home', 'routerLink': ['/lghome']},
-            'TK_LISTAR': {'label': 'Tickets', 'icon': 'pi pi-fw pi-ticket', 'cicon': 'fas fa-ticket-alt',
+            '*': {'label': 'Inicio', 'icon': 'fa-solid fa-house', 'routerLink': ['/lghome']},
+            'TK_LISTAR': {'label': 'Tickets', 'icon': 'fa-solid fa-ticket',
                           'items': tickets_list},
-            'IG_LISTAR': {'label': 'Contabilidad', 'icon': 'pi pi-fw pi-book', 'cicon': 'fas fa-calculator',
+            'IG_LISTAR': {'label': 'Contabilidad', 'icon': 'fa-solid fa-book', 'cicon': 'fas fa-calculator',
                           'items': contabilidad_list},
-            'PRODS_LISTAR': {'label': 'Inventario', 'icon': 'pi pi-fw pi-microsoft', 'cicon': 'fas fa-store',
+            'PRODS_LISTAR': {'label': 'Productos/Servicios', 'icon': 'fa-solid fa-boxes-stacked', 'cicon': 'fas fa-store',
                              'items': prods_list},
-            'HIST_LISTAR': {'label': 'Atención Médica', 'icon': 'pi pi-fw pi-calendar',
-                            'cicon': 'fas fa-stethoscope', 'items': hist_list},
-            'HISTO_LISTAR': {'label': 'Atención Odontológica', 'icon': 'pi pi-fw pi-bell',
-                             'cicon': 'fas fa-tooth',
-                             'items': histo_list},
-            'US_LISTAR': {'label': 'Usuarios', 'icon': 'pi pi-fw pi-users', 'cicon': 'fas fa-users',
+            'HIST_LISTAR': {'label': 'Atención Médica', 'icon': 'fa-solid fa-user-doctor',
+                            'routerLink': ['/historiaclinica/1']},
+            'HISTO_LISTAR': {'label': 'Atención Odontológica', 'icon': 'fa-solid fa-tooth',
+                             'routerLink': ['/odonto']},
+            'US_LISTAR': {'label': 'Usuarios', 'icon': 'fa-solid fa-user-group',
                           'items': users_list},
-            'VN_LISTAR': {'label': 'Ventas', 'icon': 'pi pi-fw pi-money-bill', 'cicon': 'fas fa-shopping-cart',
+            'VN_LISTAR': {'label': 'Ventas', 'icon': 'fa-solid fa-cart-shopping',
                           'items': ventas_list},
-            'CM_LISTAR': {'label': 'Compras', 'icon': 'pi pi-fw pi-wallet', 'cicon': 'fas fa-shopping-bag',
+            'CM_LISTAR': {'label': 'Compras', 'icon': 'fa-solid fa-boxes-packing',
                           'items': compras_list},
-            'REF_LISTAR': {'label': 'Referentes', 'icon': 'pi pi-fw pi-users', 'cicon': 'fas fa-user-friends',
-                           'items': refs_list},
-            'AGN_LISTAR': {'label': 'Agenda', 'icon': 'pi pi-fw pi-calendar', 'cicon': 'far fa-calendar-plus',
-                           'items': agn_list},
-            'AGP_ADM': {'label': 'Cobro Agua', 'icon': 'pi pi-fw pi-circle-off', 'cicon': 'fas fa-tint',
-                        'items': cbr_agua},
-            'REP_ADM': {'label': 'Reportes', 'icon': 'pi pi-fw pi-chart-bar', 'cicon': 'fas fa-tint',
-                        'items': adm_reps},
-            'FIN_CRED_LIST': {'label': 'Caja de Crédito', 'icon': 'pi pi-fw pi-folder', 'cicon': 'fas fa-tint',
+            'REF_LISTAR': {'label': 'Referentes', 'icon': 'fa-solid fa-address-book', 'routerLink': ['/referentes']},
+            'AGN_LISTAR': {'label': 'Agenda', 'icon': 'fa-solid fa-calendar-check', 'routerLink': ['/agenda/1']},
+            'AGP_ADM': {'label': 'Cobro Agua', 'icon': 'fa-solid fa-faucet-drip', 'routerLink': ['/aguap/home']},
+            'REP_ADM': {'label': 'Reportes', 'icon': 'fa-solid fa-chart-pie',
+                        'routerLink': ['/reportes']},
+            'FIN_CRED_LIST': {'label': 'Caja de Crédito', 'icon': 'fa-solid fa-piggy-bank',
                               'items': caja_list}
         }
 
@@ -196,14 +165,16 @@ class TFuserRolDao(BaseDao):
             permisosSet.add(abrperm)
 
         if 'CXC_LISTAR' in permisosSet:
-            ventas_list.append({'label': 'Cuentas por cobrar', 'icon': '',
+            ventas_list.append({'label': 'Cuentas por cobrar', 'icon': 'fa-solid fa-person-arrow-down-to-line',
                                 'routerLink': ['/cuentasxcp/1']})
         if 'CXP_LISTAR' in permisosSet:
-            compras_list.append({'label': 'Cuentas por pagar', 'icon': '',
+            compras_list.append({'label': 'Cuentas por pagar', 'icon': 'fa-solid fa-person-arrow-up-from-line',
                                  'routerLink': ['/cuentasxcp/2']})
 
         for key in all_menu.keys():
             if key in permisosSet:
                 menu.append(all_menu[key])
+
+        #menu_sorted = sorted(menu, key=lambda x: x['label'])
 
         return menu

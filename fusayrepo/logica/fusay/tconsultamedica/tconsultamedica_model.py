@@ -53,3 +53,4 @@ class TConsultaMedicaValores(Declarative, JsonAlchemy):
     valcm_valor = Column(Text, nullable=False)
     valcm_categ = Column(Integer, nullable=False)
     od_antid = Column(Integer)
+    pac_id = Column(Integer)

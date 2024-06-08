@@ -12,6 +12,7 @@ from fusayrepo.logica.fusay.tconsultamedica.tconsultamedica_model import TConsul
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.utils import fechas, cadenas, ctes
+from sqlalchemy import and_
 
 log = logging.getLogger(__name__)
 
@@ -410,6 +411,62 @@ class TConsultaMedicaDao(BaseDao):
 
         return itemsres, lenitems
 
+    def save_antencedentes_paciente(self, pac_id, antecedentes):
+        """
+        Registra informacion de antecedentes personales de un paciente
+        """
+        sql = "select cmtv_id from tconsultam_tiposval cmtval where cmtval.cmtv_cat = 1"
+        tipos_array = self.all_raw(sql)
+        tipos = [tip[0] for tip in tipos_array]
+        # Borramos registros de antecedentes
+        previus_ant = self.dbsession.query(TConsultaMedicaValores).filter(and_(TConsultaMedicaValores.pac_id == pac_id,
+                                                                               TConsultaMedicaValores.valcm_tipo.in_(tipos))).all()
+        if previus_ant is not None:
+            for it in previus_ant:
+                self.dbsession.delete(it)
+
+        # Registramos los nuevos valores enviados
+        self.registra_datosadc_consmedica(0, antecedentes, pac_id)
+
+    def paciente_tiene_antecedentes(self, pac_id):
+        """
+        Obtiene el listado de antecedentes personales asociados a un paciente
+        """
+        sql = """
+        select count(*) as cuenta
+            from tconsultam_tiposval cmtval
+            left join tconsultam_valores cval on cmtval.cmtv_id = cval.valcm_tipo and cval.cosm_id = 0
+            where cmtval.cmtv_cat = 1 and cval.pac_id = {0}
+        """.format(pac_id)
+        result = self.first_raw(sql)
+        return result[0] > 0 if result is not None else False
+
+    def get_antecedentes_paciente(self, pac_id):
+        tupla_desc = ('cmtv_id', 'cmtv_cat', 'cmtv_nombre', 'cmtv_valor', 'cmtv_tinput', 'valorreg', 'cmtv_unidad')
+        if self.paciente_tiene_antecedentes(pac_id):
+            sql = """
+            select cmtval.cmtv_id, cmtval.cmtv_cat, cmtval.cmtv_nombre, cmtval.cmtv_valor, 
+                   cmtval.cmtv_tinput, coalesce(cval.valcm_valor,'') as valorreg, cmtval.cmtv_unidad 
+                from tconsultam_tiposval cmtval
+                left join tconsultam_valores cval on cmtval.cmtv_id = cval.valcm_tipo and cval.cosm_id =0 and cval.pac_id = {0}
+                where cmtval.cmtv_cat = 1 order by cmtval.cmtv_orden
+            """.format(pac_id)
+            return self.all(sql, tupla_desc)
+        else:
+            sql = """
+               select cmtval.cmtv_id, cmtval.cmtv_cat, cmtval.cmtv_nombre, cmtval.cmtv_valor, 
+                   cmtval.cmtv_tinput, coalesce(cval.valcm_valor,'') as valorreg, cmtval.cmtv_unidad 
+                from tconsultam_tiposval cmtval
+                left join tconsultam_valores cval on cmtval.cmtv_id = cval.valcm_tipo and cval.cosm_id = (
+                   select max(cosm_id) from tconsultam_valores tv where valcm_tipo  in (
+                       select cmtv_id from tconsultam_tiposval where cmtv_cat = 1
+                       ) and cosm_id  in (select cosm_id from tconsultamedica t  where pac_id = {0} and cosm_estado = 1
+                       ) and tv.valcm_valor is not null and  tv.valcm_valor <> ''
+                )             
+                where cmtval.cmtv_cat = 1 order by cmtval.cmtv_orden
+            """.format(pac_id)
+            return self.all(sql, tupla_desc)
+
     def get_datos_historia(self, cosm_id):
         """
         Retorna toda la informacion relacionada con una historia medica registrada
@@ -516,14 +573,14 @@ class TConsultaMedicaDao(BaseDao):
             else:
                 form_datosconsulta[key] = datos_cita_medica[key]
 
-        form_antecedentes = self.get_valores_adc_citamedica(1, cosm_id)
+        # form_antecedentes = self.get_valores_adc_citamedica(1, cosm_id)
         form_examsfisicos = self.get_valores_adc_citamedica(3, cosm_id)
         form_revxsistemas = self.get_valores_adc_citamedica(2, cosm_id)
 
         return {
             'paciente': form_paciente,
             'datosconsulta': form_datosconsulta,
-            'antecedentes': form_antecedentes,
+            # 'antecedentes': form_antecedentes,
             'examsfisicos': form_examsfisicos,
             'revxsistemas': form_revxsistemas
         }
@@ -575,8 +632,8 @@ class TConsultaMedicaDao(BaseDao):
         select cmtval.cmtv_id, cmtval.cmtv_cat, cmtval.cmtv_nombre, cmtval.cmtv_valor, 
                cmtval.cmtv_tinput, coalesce(cval.valcm_valor,'') as valorreg, cmtval.cmtv_unidad 
             from tconsultam_tiposval cmtval
-            left join tconsultam_valores cval on cmtval.cmtv_id = cval.valcm_tipo
-                        where cmtv_cat = {0} and cval.cosm_id = {1} order by cmtval.cmtv_orden;
+            left join tconsultam_valores cval on cmtval.cmtv_id = cval.valcm_tipo and cval.cosm_id = {1}
+                        where cmtv_cat = {0} order by cmtval.cmtv_orden;
         """.format(catc_id, cosm_id)
 
         tupla_desc = ('cmtv_id', 'cmtv_cat', 'cmtv_nombre', 'cmtv_valor', 'cmtv_tinput', 'valorreg', 'cmtv_unidad')
@@ -600,7 +657,7 @@ class TConsultaMedicaDao(BaseDao):
 
         return self.all(sql, tupla_desc)
 
-    def registra_datosadc_consmedica(self, cosm_id, listadatosadc):
+    def registra_datosadc_consmedica(self, cosm_id, listadatosadc, pac_id=None):
         for item in listadatosadc:
             codcat = item['cmtv_cat']
             valorpropiedad = item['valorreg']
@@ -610,6 +667,7 @@ class TConsultaMedicaDao(BaseDao):
             tconsultmvalores.valcm_tipo = codtipo
             tconsultmvalores.valcm_valor = valorpropiedad
             tconsultmvalores.valcm_categ = codcat
+            tconsultmvalores.pac_id = pac_id
             self.dbsession.add(tconsultmvalores)
 
     def procesar_array_diags(self, diagnosticos):
@@ -707,11 +765,11 @@ class TConsultaMedicaDao(BaseDao):
 
             # 3 Registro de antecendentes:
             # Esto se registra como lista de valores
-            antecedentes = form['antecedentes']
+            # antecedentes = form['antecedentes']
             examsfisicos = form['examsfisicos']
             revxsistemas = form['revxsistemas']
 
-            self.registra_datosadc_consmedica(cosm_id, antecedentes)
+            # self.registra_datosadc_consmedica(cosm_id, antecedentes)
             self.registra_datosadc_consmedica(cosm_id, examsfisicos)
             self.registra_datosadc_consmedica(cosm_id, revxsistemas)
 
@@ -783,12 +841,12 @@ class TConsultaMedicaDao(BaseDao):
 
         # 3 Registro de antecendentes:
         # Esto se registra como lista de valores
-        antecedentes = form['antecedentes']
+        # antecedentes = form['antecedentes']
         examsfisicos = form['examsfisicos']
         revxsistemas = form['revxsistemas']
         # diagnostico = form['diagnostico']
 
-        self.registra_datosadc_consmedica(cosm_id, antecedentes)
+        # self.registra_datosadc_consmedica(cosm_id, antecedentes)
         self.registra_datosadc_consmedica(cosm_id, examsfisicos)
         self.registra_datosadc_consmedica(cosm_id, revxsistemas)
         # self.registra_datosadc_consmedica(cosm_id, diagnostico)

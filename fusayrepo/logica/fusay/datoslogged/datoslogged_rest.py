@@ -20,7 +20,7 @@ class DatosLoggedRest(TokenView):
         datosloged_dao = DataLoggedDao(self.dbsession)
         accion = self.get_rqpa()
         if accion == 'datosgen':
-            datoslogged = datosloged_dao.get_datos_logged(user_id=self.get_user_id(), emp_codigo=self.get_emp_codigo())
+            datoslogged = datosloged_dao.get_datos_logged(user_id=self.get_user_id(), emp_esquema=self.get_emp_esquema())
             return self.res200({'datlogged': datoslogged})
         elif accion == 'chkperm':
             perm = self.get_request_param('perm')

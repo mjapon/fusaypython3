@@ -211,11 +211,13 @@ class TFinPagosCredDao(BaseDao):
         pgd.pg_usercrea,
         pgd.pg_interes,
         coalesce(pgcab.pgc_id,0) as pgc_id,
-        coalesce(pgcab.pgc_trncod,0) as trncod,        
+        coalesce(pgcab.pgc_trncod,0) as trncod,
+        coalesce(asi.trn_mayorizado,false) as asimayorizado,
         now()::date>((amo_fechapago - interval '68 day')::date) as enablepago
         from tfin_amortiza amor
         left join tfin_pagoscreddet pgd on pgd.pg_amoid = amor.amo_id and pgd.pg_estado = 1
         left join tfin_pagoscredcab pgcab on pgd.pgc_id = pgcab.pgc_id 
+        left join tasiento asi on pgcab.pgc_trncod = asi.trn_codigo
         where amor.amo_estado = 0 and amor.cre_id = {0}
         order by amo_ncuota
         
@@ -247,6 +249,7 @@ class TFinPagosCredDao(BaseDao):
             'pg_interes',
             'pgc_id',
             'trncod',
+            'asimayorizado',
             'enablepago'
         )
 

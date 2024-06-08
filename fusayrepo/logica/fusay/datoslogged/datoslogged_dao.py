@@ -20,7 +20,7 @@ class DataLoggedDao(BaseDao):
         fuserroldao = TFuserRolDao(self.dbsession)
         return fuserroldao.user_has_permiso(user_id=user_id, prm_abreviacion=permiso)
 
-    def get_datos_logged(self, user_id, emp_codigo):
+    def get_datos_logged(self, user_id, emp_esquema):
         fechaactual = fechas.get_fecha_letras_largo(fecha=datetime.now())
 
         fuserroldao = TFuserRolDao(self.dbsession)
@@ -143,7 +143,7 @@ class DataLoggedDao(BaseDao):
 
         menu = fuserroldao.build_menu(permisos)
         tempresadao = TEmpresaDao(self.dbsession)
-        datosemp = tempresadao.get_info_by_schema(emp_codigo)
+        datosemp = tempresadao.get_info_by_schema(emp_esquema)
 
         version = ctes.VERSION_APP
 

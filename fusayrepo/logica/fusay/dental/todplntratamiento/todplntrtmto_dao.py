@@ -115,7 +115,7 @@ class TOdPlanTratamientoDao(BaseDao):
         when  pnt_estado = 5 then 'Anulado'
         else 'Desconocido' end as estadodesc,
         med_id, pac_id, trn_codigo, pnt_obs from todplntrtmto
-        where pac_id = {0} and pnt_estado != 5 order by pnt_fechacrea
+        where pac_id = {0} and pnt_estado != 5 order by pnt_fechacrea desc
         """.format(pac_id)
 
         tupla_desc = (
