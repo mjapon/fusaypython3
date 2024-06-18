@@ -152,6 +152,11 @@ class CompeleUtilDao(BaseDao):
             gen_data = GenDataForFacte(self.dbsession)
             datos_alm_matriz = gen_data.get_datos_alm_matriz(sec_codigo=sec_id)
             ambiente_facte = datos_alm_matriz['alm_tipoamb']
+
+            datos_fact = gen_data.get_factura_data(trn_codigo=trn_codigo)
+            gen_fact = GeneraFacturaCompEle(self.dbsession)
+            claveacceso = gen_fact.get_clave_acceso(datos_factura=datos_fact['cabecera'], tipo_ambiente=ambiente_facte)
+
             gen_data.save_proxy_send_response(trn_codigo=trn_codigo, ambiente=ambiente_facte,
                                               proxy_response={
                                                   'estado': 0,
@@ -159,7 +164,7 @@ class CompeleUtilDao(BaseDao):
                                                   'fechaAutorizacion': '',
                                                   'mensajes': '',
                                                   'numeroAutorizacion': '',
-                                                  'claveAcceso': ''
+                                                  'claveAcceso': claveacceso
                                               })
             compelenviado = True
             estado_envio = 0
