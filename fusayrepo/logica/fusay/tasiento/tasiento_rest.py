@@ -92,7 +92,11 @@ class TAsientoRest(TokenView):
             filtro = self.get_request_param('filtro')
             tracod = self.get_request_param('tracod')
             tipo = self.get_request_param('tipo')
-            grid, totales = tasientodao.listar_grid_ventas(desde, hasta, filtro, tracod, tipo, sec_id=self.get_sec_id())
+            limit = self.get_request_param('limit')
+            first = self.get_request_param('first')
+            grid = tasientodao.listar_grid_ventas(desde, hasta, filtro, tracod, tipo,
+                                                           sec_id=self.get_sec_id(), limit=limit, first=first)
+            totales = grid['sumatorias'] if 'sumatorias' in grid else {}
             return self.res200({'grid': grid, 'totales': totales})
         elif accion == 'formasiento':
             form = tasientodao.get_form_asiento(sec_codigo=self.get_sec_id())

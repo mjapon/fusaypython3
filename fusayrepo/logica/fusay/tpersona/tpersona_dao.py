@@ -232,46 +232,68 @@ class TPersonaDao(BaseDao):
         sql = "{0} where per_email = '{1}'".format(self.BASE_SQL, cadenas.strip(per_email))
         return self.first(sql, tupla_desc=self.BASE_TUPLA_DESC)
 
-    def buscar_pornomapelci(self, filtro, solo_cedulas=True, limit=30, offsset=0):
-        basesql = u"""
-        select per_id,
-                        per_ciruc,
-                        per_genero,
-                        per_nombres||' '||coalesce(per_apellidos,'') as nomapel,
-                        per_lugresidencia,
-                        coalesce(tlugar.lug_nombre,'') as lugresidencia
-                        from tpersona
-                        left join public.tlugar on tpersona.per_lugresidencia = tlugar.lug_id
-        """
-        concedula = u" coalesce(per_ciruc,'')!='' and per_id>0" if solo_cedulas else ''
+    def logica_iniciales(self, filtro):
+        basesql = "select per_id from tpersona"
+        filtro_length = len(filtro)
+        filtro_upper = filtro.upper()
+        sqls = []
 
-        if cadenas.es_nonulo_novacio(filtro):
-            palabras = cadenas.strip_upper(filtro).split()
-            filtromod = []
-            for cad in palabras:
-                filtromod.append(u"%{0}%".format(cad))
+        if filtro_length >= 1:
+            sqls.append(f"(per_nombres like '{filtro_upper[0]}%' or per_nombres like '% {filtro_upper[0]}%')")
+        if filtro_length >= 2:
+            sqls.append(
+                f"(per_nombres like '% {filtro_upper[1]}%' or per_apellidos like '{filtro_upper[1]}%' or per_apellidos like '% {filtro_upper[1]}%')")
+        if filtro_length >= 3:
+            sqls.append(f"(per_apellidos like '{filtro_upper[2]}%' or per_apellidos like '% {filtro_upper[2]}%')")
+        if filtro_length > 3:
+            sqls.append(f"(per_apellidos like '% {filtro_upper[3]}%')")
 
-            nombreslike = u' '.join(filtromod)
-            filtrocedulas = u" per_ciruc like '{0}%'".format(cadenas.strip(filtro))
+        conditions = " and ".join(sqls)
+        sql = f"{basesql} where per_id>0 and coalesce(per_ciruc,'')!='' and {conditions} "
 
-            sql = u"""{basesql}
-                        where ((per_nombres||' '||per_apellidos like '{nombreslike}') or ({filtrocedulas})) and {concedula} order by 4 limit {limit} offset {offset}
-                    """.format(nombreslike=nombreslike,
-                               concedula=concedula,
-                               limit=limit,
-                               offset=offsset,
-                               filtrocedulas=filtrocedulas,
-                               basesql=basesql)
+        return sql
 
-            tupla_desc = ('per_id', 'per_ciruc', 'per_genero', 'nomapel', 'per_lugresidencia', 'lugresidencia')
-            return self.all(sql, tupla_desc)
-        else:
-            sql = u"""{basesql} where {concedula}
-             order by 4 limit {limit} offset {offset}
-            """.format(basesql=basesql, limit=limit, offset=offsset, concedula=concedula)
+    def buscar_pornomapelci(self, filtro, solo_cedulas=True, limit=30, offset=0, tipo=0):
+        basesql = u"""select per_id, per_ciruc, per_genero, per_nombres||' '||coalesce(per_apellidos,'') as nomapel,
+                        per_lugresidencia, coalesce(tlugar.lug_nombre,'') as lugresidencia, '1' as stype from tpersona
+                        left join public.tlugar on tpersona.per_lugresidencia = tlugar.lug_id"""
+        tupladesc = ('per_id', 'per_ciruc', 'per_genero', 'nomapel', 'per_lugresidencia', 'lugresidencia', 'stype')
 
-        tupla_desc = ('per_id', 'per_ciruc', 'per_genero', 'nomapel', 'per_lugresidencia', 'lugresidencia')
-        return self.all(sql, tupla_desc)
+        sqls = []
+        clean_filtro = cadenas.strip_upper(filtro)
+        if int(tipo) > 0:
+            sqls.append(f"per_tipo ={tipo}")
+
+        if solo_cedulas:
+            sqls.append("coalesce(per_ciruc,'')!='' and per_id>0")
+
+        subquery = ""
+        if len(clean_filtro) > 0:
+            if filtro.isdigit():
+                sqls.append(f"per_ciruc like '{clean_filtro}%'")
+            else:
+                palabras = [cadena.strip() for cadena in clean_filtro.split()]
+                len_palabras = len(palabras)
+                if len_palabras >= 1:
+                    sqls.append(f"(per_nombres like '{palabras[0]}%' or per_nombres like '% {palabras[0]}%')")
+                if len_palabras >= 2:
+                    sqls.append(
+                        f"(per_nombres like '% {palabras[1]}%' or per_apellidos like '{palabras[1]}%' or per_apellidos like '% {palabras[1]}%')")
+                if len_palabras >= 3:
+                    sqls.append(f"(per_apellidos like '{palabras[2]}%' or per_apellidos like '% {palabras[2]}%')")
+                if len_palabras > 3:
+                    sqls.append(f"(per_apellidos like '% {palabras[3]}%')")
+
+                if len(clean_filtro) <= 4:
+                    sq = self.logica_iniciales(filtro)
+                    subquery = f" or (per_id in ({sq}))"
+
+        conditions = " and ".join(sqls)
+
+        sql = (f"{basesql} where per_id>0 and coalesce(per_ciruc,'')!='' and (({conditions}) {subquery})  "
+               f"order by 4 limit {limit} offset {offset}")
+
+        return self.all(sql, tupladesc)
 
     def existe_ciruc(self, per_ciruc):
         sql = u"select count(*) as cuenta from tpersona t where t.per_ciruc = '{0}'".format(per_ciruc)

@@ -136,7 +136,7 @@ class TFuserRolDao(BaseDao):
                           'items': tickets_list},
             'IG_LISTAR': {'label': 'Contabilidad', 'icon': 'fa-solid fa-book', 'cicon': 'fas fa-calculator',
                           'items': contabilidad_list},
-            'PRODS_LISTAR': {'label': 'Productos/Servicios', 'icon': 'fa-solid fa-boxes-stacked', 'cicon': 'fas fa-store',
+            'PRODS_LISTAR': {'label': 'Productos', 'icon': 'fa-solid fa-boxes-stacked', 'cicon': 'fas fa-store',
                              'items': prods_list},
             'HIST_LISTAR': {'label': 'Atención Médica', 'icon': 'fa-solid fa-user-doctor',
                             'routerLink': ['/historiaclinica/1']},

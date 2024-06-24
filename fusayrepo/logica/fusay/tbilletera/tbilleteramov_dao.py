@@ -331,14 +331,27 @@ class TBilleteraMovDao(BaseDao):
         else:
             raise ErrorValidacionExc('No se pudo obtener los detalles del movimiento de ingreso/gasto registrado')
 
-    def listar_grid(self, desde, hasta, tipo, cuenta, cuentabill, sec_id, user=0):
+    def contar_grid(self, sec_id, swhere):
+        sql = """
+          select count(*) as cuenta                                                                                                   
+         from tasidetalle det                                                                                                               
+                 left join tbilleteramov mov on mov.trn_codigo = det.trn_codigo                                                         
+                 join titemconfig ic on ic.ic_id = det.cta_codigo                                                                           
+                 join titemconfig_sec ics on ics.ic_id = ic.ic_id and ics.sec_id = {sec_id}                                         
+                 join tasiento asi on det.trn_codigo = asi.trn_codigo and asi.trn_valido = 0 and asi.trn_docpen = 'F'                       
+                 join ttransacc tra on asi.tra_codigo = tra.tra_codigo
+                 join tbillhist his on his.dt_codigo = det.dt_codigo and his.bh_valido = 0
+         where coalesce(mov.bmo_estado, 0) in (0, 1) {swhere}
+        """.format(sec_id=sec_id, swhere=swhere)
+
+        result = self.first_raw(sql)
+        return result[0] if result is not None else 0
+
+    def listar_grid(self, desde, hasta, tipo, cuenta, cuentabill, sec_id, user=0, limit=15, first=0):
 
         tgrid_dao = TGridDao(self.dbsession)
         joinbillmov = 'left join'
-        andwhere = """ 
-        and det.cta_codigo in (select bil.ic_id from tbilletera bil join titemconfig_sec ics on bil.ic_id = ics.ic_id
-        and ics.sec_id = {0} where bil_estado = 1)
-        """.format(sec_id)
+        andwhere = " and det.cta_codigo in ({0})".format(cuentabill)
 
         sfechas = ' '
         if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
@@ -347,15 +360,6 @@ class TBilleteraMovDao(BaseDao):
         if user is not None and int(user) > 0:
             sfechas += ' and asi.us_id = {0}'.format(user)
 
-        tparamsdao = TParamsDao(self.dbsession)
-        fecha_ini_contab = tparamsdao.get_param_value('fecha_ini_contab', sec_id=sec_id)
-        sqlfechainicontab = ''
-        joinmayor = 'join fn_mayorizar_dtcodhasta(ic.ic_id, det.dt_codigo)'
-        if fecha_ini_contab is not None and len(fecha_ini_contab) > 0:
-            fec_ini_contabdb = fechas.format_cadena_db(fecha_ini_contab)
-            sqlfechainicontab = " and date(asi.trn_fecha)>='{0}' ".format(fec_ini_contabdb)
-            joinmayor = "join fn_mayorizar(ic.ic_id, '{0} 00:00:00', asi.trn_fecha)".format(fec_ini_contabdb)
-
         if tipo is not None and int(tipo) > 0:
             joinbillmov = 'join'
             andwhere = """ and mov.bmo_clase = {0} and coalesce(ic.ic_clasecc,'') not in ('E','B') 
@@ -363,23 +367,17 @@ class TBilleteraMovDao(BaseDao):
                             ics.ic_id = ic.ic_id and ics.sec_id = {1} )""".format(tipo, sec_id)
             if cuenta is not None and int(cuenta) > 0:
                 andwhere = " and mov.bmo_clase = {0} and det.cta_codigo = {1}".format(tipo, cuenta)
-        elif cuentabill is not None and int(cuentabill) > 0:
-            andwhere = " and det.cta_codigo in ({0})".format(cuentabill)
 
-        swhere = " {0} {1} {2}".format(sfechas, andwhere, sqlfechainicontab)
+        swhere = " {0} {1} ".format(sfechas, andwhere)
 
-        if cuentabill is None or int(cuentabill) == 0:
-            sqlfirstbill = """
-            select ic_id from tbilletera where bil_estado = 1
-            and ic_id in (select ic_id from titemconfig_sec where sec_id = {0})
-            order by bil_id asc limit 1
-            """.format(sec_id)
-
-            cuentabill = self.first_col(sqlfirstbill, 'ic_id')
-
-        data = tgrid_dao.run_grid(grid_nombre='ingrgastos', joinbillmov=joinbillmov, swhere=swhere, sec_id=sec_id,
-                                  joinmayor=joinmayor, cuentabill=cuentabill, sqlfechainicontab=sqlfechainicontab)
-
+        offset = first
+        limit = "limit {0}".format(limit)
+        offset = "offset {0}".format(offset)
+        data = tgrid_dao.run_grid(grid_nombre='ingrgastos', swhere=swhere, sec_id=sec_id,
+                                  limit=limit, offset=offset)
+        if int(first) == 0:
+            total = self.contar_grid(sec_id=sec_id, swhere=swhere)
+            data['total'] = total
         return data
 
     def crea_asiento_for_ticket(self, valorticket, prodstickets, sec_codigo, usercrea):

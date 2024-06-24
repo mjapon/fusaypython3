@@ -17,6 +17,7 @@ from fusayrepo.logica.fusay.tasiento.auxlogicasi_dao import AuxLogicAsiDao
 from fusayrepo.logica.fusay.tasiento.tasiento_model import TAsiento
 from fusayrepo.logica.fusay.tasiento.tasientoaud_dao import TAsientoAudDao
 from fusayrepo.logica.fusay.tasifacte.tasifacte_dao import TasiFacteDao
+from fusayrepo.logica.fusay.tbilletera.tbilleterahist_dao import TBilleteraHistoDao
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.timpuesto.timpuesto_dao import TImpuestoDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
@@ -144,8 +145,34 @@ class TasientoDao(AuxLogicAsiDao):
 
         return form_asiento
 
-    def listar_grid_ventas(self, desde, hasta, filtro, tracod, tipo, sec_id):
-        tgrid_dao = TGridDao(self.dbsession)
+    def contar_grid_ventas(self, swhere):
+        sql = """ select  count(*) as cuenta from tasiento a
+         join tpersona p on a.per_codigo = p.per_id where a.trn_valido = 0 {swhere} 
+        """.format(swhere=swhere)
+        result = self.first_raw(sql)
+        return result[0] if result is not None else 0
+
+    def totalizar_grid_ventas(self, swhere):
+        sql = """        
+            select round(sum(pagos.efectivo),2),round(sum(pagos.credito),2), round(sum(pagos.saldopend),2), round(sum(pagos.total),2)
+            from tasiento a
+            join tpersona p on a.per_codigo = p.per_id
+            join get_pagos_factura(a.trn_codigo) as pagos(efectivo numeric, credito numeric, total numeric, saldopend numeric, trncodigo integer)
+              on a.trn_codigo = pagos.trncodigo
+            where a.trn_valido = 0 {swhere}
+        """.format(swhere=swhere)
+        result = self.first_raw(sql)
+
+        totales = {'efectivo': 0.0, 'credito': 0.0, 'saldopend': 0.0, 'total': 0.0}
+        if result is not None:
+            totales['efectivo'] = self.type_json(result[0])
+            totales['credito'] = self.type_json(result[1])
+            totales['saldopend'] = self.type_json(result[2])
+            totales['total'] = self.type_json(result[3])
+
+        return totales
+
+    def build_grid_ventas_where(self, desde, hasta, filtro, tracod, tipo, sec_id):
         sqladc = ''
         if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
             sqladc = " and (a.trn_fecreg between '{0}' and '{1}' )".format(fechas.format_cadena_db(desde),
@@ -168,14 +195,25 @@ class TasientoDao(AuxLogicAsiDao):
         else:
             sqltra = "and a.tra_codigo in ({0})".format(tracod)
 
-        swhere = ' {0} {1} and a.sec_codigo = {2}'.format(sqltra, sqladc, sec_id)
+        return ' {0} {1} and a.sec_codigo = {2}'.format(sqltra, sqladc, sec_id)
 
-        data = tgrid_dao.run_grid(grid_nombre='ventas', swhere=swhere)
+    def listar_grid_ventas(self, desde, hasta, filtro, tracod, tipo, sec_id, limit=15, first=0):
+        tgrid_dao = TGridDao(self.dbsession)
 
-        # Totalizar
-        totales = self.totalizar_facturas(listafact=data['data'])
+        swhere = self.build_grid_ventas_where(desde, hasta, filtro, tracod, tipo, sec_id)
 
-        return data, totales
+        offset = first
+        limit = "limit {0}".format(limit)
+        offset = "offset {0}".format(offset)
+        data = tgrid_dao.run_grid(grid_nombre='ventas', swhere=swhere, limit=limit, offset=offset)
+
+        # totales = self.totalizar_facturas(listafact=data['data'])
+        if int(first) == 0:
+            totales = self.totalizar_grid_ventas(swhere=swhere)
+            total = self.contar_grid_ventas(swhere=swhere)
+            data['total'] = total
+            data['sumatorias'] = totales
+        return data
 
     def aux_get_cod_cuentas_repconta(self, cuentas, codcuentas):
         for cuenta in cuentas:
@@ -661,6 +699,9 @@ class TasientoDao(AuxLogicAsiDao):
                 self.save_tasidet_asiento(trn_codigo=trn_codigo, per_codigo=per_codigo, detalle=detalle,
                                           roundvalor=roundvalor)
 
+        tbillhist_dao = TBilleteraHistoDao(self.dbsession)
+        tbillhist_dao.generate_history_mov(trn_codigo)
+
         return trn_codigo
 
     def crear_asiento_cxcp(self, formcab, per_codigo, user_crea, detalles):
@@ -695,7 +736,8 @@ class TasientoDao(AuxLogicAsiDao):
                         formcre = creditodao.get_form_asi(dt_codigo=dt_codigo, trn_fecreg=formcab['trn_fecreg'],
                                                           monto_cred=dt_valor, cre_tipo=cre_tipo)
                         creditodao.crear(form=formcre)
-
+        billhisto_dao = TBilleteraHistoDao(self.dbsession)
+        billhisto_dao.generate_history_mov(trn_codigo=trn_codigo)
         transaccpdv_dao = TTransaccPdvDao(self.dbsession)
         resestabsec = transaccpdv_dao.get_estabptoemi_secuencia(alm_codigo=0,
                                                                 tra_codigo=ctes.TRA_COD_ASI_CONTABLE,
@@ -714,6 +756,8 @@ class TasientoDao(AuxLogicAsiDao):
     def aux_cambia_estado(self, trn_codigo, user_do, obs, new_state):
         tasiento = self.find_entity_byid(trn_codigo=trn_codigo)
         if tasiento is not None:
+            current_trn_valido = tasiento.trn_valido
+            current_trn_docpen = tasiento.trn_docpen
             if tasiento.trn_valido != new_state:
                 tasiento.trn_valido = new_state
                 self.dbsession.add(tasiento)
@@ -726,6 +770,11 @@ class TasientoDao(AuxLogicAsiDao):
                     aud_accion = ctes.AUD_ASIENTO_ERRAR
 
                 tasientoauddao.craer(trn_codigo=trn_codigo, aud_accion=aud_accion, aud_user=user_do, aud_obs=obs)
+
+                # Verificamos si se trata de aun asiento en el que interviene una cuenta tipo billetera, se debe totalizar nuevamente
+                histobill_dao = TBilleteraHistoDao(self.dbsession)
+                if current_trn_valido == 0 and current_trn_docpen == 'F':
+                    histobill_dao.destroy_mov(trn_codigo=trn_codigo)
 
     def is_transacc_abono(self, trn_codigo):
         sql = "select tra_codigo from tasiento where trn_codigo = {0}".format(trn_codigo)
@@ -849,13 +898,18 @@ class TasientoDao(AuxLogicAsiDao):
             if 'trn_observ' in formcab:
                 tasiento.trn_observ = cadenas.strip_upper(formcab['trn_observ'])
 
+        tbillhist_dao = TBilleteraHistoDao(self.dbsession)
         # Se debe anular la factura anterior
         tasiauddao.save_anula_transacc(tasiento=self.find_entity_byid(trn_codorig), user_anula=user_edita)
 
         self.dbsession.add(tasiento)
         self.dbsession.flush()
 
+        tbillhist_dao.destroy_mov(trn_codigo=trn_codorig)
+
         new_trn_codigo = tasiento.trn_codigo
+
+        tbillhist_dao.generate_history_mov(trn_codigo=new_trn_codigo)
 
         valdebehaber = []
         auxlogicasi.save_dets_imps_fact(detalles=detalles, tasiento=tasiento, totales=totales,
@@ -955,7 +1009,7 @@ class TasientoDao(AuxLogicAsiDao):
         creditodao = TAsicreditoDao(self.dbsession)
         abonodao = TAsiAbonoDao(self.dbsession)
 
-        pagos_validos =  filter(lambda pago:cadenas.es_nonulo_novacio(pago['dt_valor']),pagos)
+        pagos_validos = filter(lambda pago: cadenas.es_nonulo_novacio(pago['dt_valor']), pagos)
 
         for pago in pagos_validos:
             valorpago = float(pago['dt_valor'])
@@ -1002,4 +1056,7 @@ class TasientoDao(AuxLogicAsiDao):
             transaccpdv_dao.gen_secuencia(tps_codigo=resestabsec['tps_codigo'], secuencia=resestabsec['secuencia'])
 
             tasiento.trn_compro_rel = trn_compro_rel
+
+        thistbill_dao = TBilleteraHistoDao(self.dbsession)
+        thistbill_dao.generate_history_mov(trn_codigo)
         return trn_codigo

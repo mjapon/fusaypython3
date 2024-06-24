@@ -42,6 +42,10 @@ class BaseDao(SimpleJsonUtil):
         tupla_res = self.dbsession.query(col).from_statement(text(sql)).first()
         return tupla_res[0] if tupla_res is not None and tupla_res[0] is not None else None
 
+    def execute(self, sql, **params):
+        consulta = text(sql)
+        return self.dbsession.execute(consulta, params)
+
     def first_raw(self, sql, **params):
         consulta = text(sql)
         resultados = self.dbsession.execute(consulta, params)

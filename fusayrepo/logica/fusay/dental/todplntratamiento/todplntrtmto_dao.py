@@ -12,6 +12,7 @@ from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.dental.todplntratamiento.todplntrtmto_model import TOdPlnTrtmto
 from fusayrepo.logica.fusay.tasiento.auxlogicasi_dao import AuxLogicAsiDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
+from fusayrepo.logica.fusay.tbilletera.tbilleterahist_dao import TBilleteraHistoDao
 from fusayrepo.logica.fusay.tmodelocontab.tmodelocontab_dao import TModelocontabDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.utils import cadenas
@@ -172,6 +173,9 @@ class TOdPlanTratamientoDao(BaseDao):
                                                               per_codigo=per_codigo, sec_codigo=sec_id)
                         response_logica_facte = compeleutil.logica_check_envio_factura_dental(
                             trn_codigo=tasiento.trn_codigo)
+
+                        tbillhist_dao = TBilleteraHistoDao(self.dbsession)
+                        tbillhist_dao.generate_history_mov(trn_codigo=todplantratamiento.trn_codigo)
 
             self.dbsession.add(todplantratamiento)
 

@@ -72,6 +72,7 @@ class TPersonaRest(TokenView):
         elif 'filtropag' == accion:
             filtro = self.get_request_param('filtro')
             lastpage = self.get_request_param('pag')
+            tipo = self.get_request_param('tipo')#Filtro para busqueda por tipo 0-todos, 1-cliente, 2-proveedores
             intlastpage = 0
             try:
                 intlastpage = int(lastpage)
@@ -81,7 +82,7 @@ class TPersonaRest(TokenView):
             tpersonadao = TPersonaDao(self.dbsession)
             limit = 50
             offset = intlastpage * limit
-            items = tpersonadao.buscar_pornomapelci(filtro, solo_cedulas=True, limit=limit, offsset=offset)
+            items = tpersonadao.buscar_pornomapelci(filtro, solo_cedulas=True, limit=limit, offset=offset, tipo=tipo)
             hasMore = items is not None and len(items) == limit
             return {'status': 200, 'items': items, 'hasMore': hasMore, 'nextp': intlastpage + 1}
         elif 'lmedicos' == accion:

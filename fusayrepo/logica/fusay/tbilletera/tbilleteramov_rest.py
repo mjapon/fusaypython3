@@ -31,7 +31,10 @@ class TBilleteraMovRest(TokenView):
             cuenta = self.get_request_param('cuenta')
             cuentabill = self.get_request_param('cuentabill')
             user = self.get_request_param('user')
-            grid = billeteramovdao.listar_grid(desde, hasta, tipo, cuenta, cuentabill, sec_id=self.get_sec_id(), user=user)
+            limit = self.get_request_param('limit')
+            first = self.get_request_param('first')
+            grid = billeteramovdao.listar_grid(desde, hasta, tipo, cuenta, cuentabill, sec_id=self.get_sec_id(),
+                                               user=user, limit=limit, first=first)
             return self.res200({'grid': grid})
         elif accion == 'formfiltros':
             formfiltro = billeteramovdao.get_form_filtros()

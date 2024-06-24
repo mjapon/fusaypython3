@@ -31,6 +31,7 @@ class TTicketDao(BaseDao):
         if tticket is not None:
             tticket.tk_estado = 2
             self.dbsession.add(tticket)
+        #TODO: Agregar logica de anulacion del asiento asociado al ticket
 
     def get_detalles(self, tk_id):
         sql = """        
