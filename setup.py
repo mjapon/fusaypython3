@@ -28,7 +28,8 @@ requires = [
     'suds',
     'requests',
     'redis',
-    'twilio'
+    'twilio',
+    'python-dateutil'
 ]
 
 tests_require = [
