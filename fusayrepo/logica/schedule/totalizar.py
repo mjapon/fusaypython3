@@ -21,26 +21,25 @@ def get_session_factory(engine):
 
 def generar_sumatoria_dias(dbsess, last_saldo, fecha_ini_db, fecha_fn_db):
     sql_all_saldos = """                            
-                                  select scd_dia,scd_id,
-                                    coalesce(sum(scd_debe) over (order by scd_dia asc rows between unbounded preceding and current row), 0) as debe,
-                                    coalesce(sum(scd_haber) over (order by scd_dia asc rows between unbounded preceding and current row), 0) as haber,
-                                    coalesce(sum(scd_saldo) over (order by scd_dia asc rows between unbounded preceding and current row), 0) as saldo
-                                    from tsaldos_ctas_diario where scd_mayorizado = false and scd_dia>='{0}' and cta_id = {1} order by scd_dia asc
+      select scd_dia,scd_id,
+        coalesce(sum(scd_debe) over (order by scd_dia asc rows between unbounded preceding and current row), 0) as debe,
+        coalesce(sum(scd_haber) over (order by scd_dia asc rows between unbounded preceding and current row), 0) as haber,
+        coalesce(sum(scd_saldo) over (order by scd_dia asc rows between unbounded preceding and current row), 0) as saldo
+        from tsaldos_ctas_diario where scd_mayorizado = false and scd_dia>='{0}' and cta_id = {1} order by scd_dia asc
                                 """.format(fecha_ini_db, cta_id)
 
     tupla_desc = ('scd_dia', 'scd_id', 'debe', 'haber', 'saldo')
 
     saldos_for_cuenta = dbsess.query(*tupla_desc).from_statement(text(sql_all_saldos)).all()
-    #simplejsonutil = SimpleJsonUtil()
-    #saldos = simplejsonutil.make_json_list(saldos_for_cuenta,tupla_desc)
+
     saldos_for_cuenta_map = {}
     for saldo_it in saldos_for_cuenta:
-        debe=saldo_it[2]+last_saldo['debe']
-        haber=saldo_it[3]+last_saldo['haber']
-        saldo=saldo_it[4]+last_saldo['saldo']
+        debe = saldo_it[2] + last_saldo['debe']
+        haber = saldo_it[3] + last_saldo['haber']
+        saldo = saldo_it[4] + last_saldo['saldo']
         scd_id = saldo_it[1]
 
-        saldos_for_cuenta_map[saldo_it[0]] = {'debe':debe,'haber':haber,'saldo':saldo,'scd_id':scd_id}
+        saldos_for_cuenta_map[saldo_it[0]] = {'debe': debe, 'haber': haber, 'saldo': saldo, 'scd_id': scd_id}
 
     # Generamos un array de rango de fechas
     sql_range_dates = "SELECT date(generate_series('{0}'::date, '{1}'::date, '1 day')) as fecha".format(
@@ -83,7 +82,7 @@ if __name__ == "__main__":
         dbsession = session_factory()
 
         esquemas_procesar = [
-            'cajainti', 'cajaruna'
+            'cajaruna', 'cajainti', 'fusay', 'achel', 'cajademo'
         ]
 
         for esquema in esquemas_procesar:
@@ -93,7 +92,7 @@ if __name__ == "__main__":
                 dbsession.execute("SET search_path TO {0}".format(esquema))
 
                 fecha_fin_db = fechas.get_str_fecha_actual(ctes.APP_FMT_FECHA_DB)
-                #fecha_fin_db = "2024-05-06"
+                # fecha_fin_db = "2023-12-31"
 
                 log.info('Fecha ejecucion proceso:{0}'.format(fecha_fin_db))
 
@@ -125,7 +124,9 @@ if __name__ == "__main__":
 
                         fecha_inicio_db = fechas.parse_fecha(fecha_inicio, formato=ctes.APP_FMT_FECHA_DB)
                         if es_carga_inicial:
-                            generar_sumatoria_dias(dbsess=dbsession, last_saldo={'scd_dia':0,'scd_id':0,'debe':0,'haber':0, 'saldo':0},
+                            generar_sumatoria_dias(dbsess=dbsession,
+                                                   last_saldo={'scd_dia': 0, 'scd_id': 0, 'debe': 0, 'haber': 0,
+                                                               'saldo': 0},
                                                    fecha_ini_db=fecha_inicio_db, fecha_fn_db=fecha_fin_db)
 
                         else:
@@ -153,10 +154,13 @@ if __name__ == "__main__":
                                     mcd_haber = row_dia_anterior[2]
                                     mcd_saldo = row_dia_anterior[3]
                                     scd_id = row_dia_anterior[0]
-                                    fecha_ini_sum = fechas.sumar_dias(fecha_inicio,1)
+                                    fecha_ini_sum = fechas.sumar_dias(fecha_inicio, 1)
                                     generar_sumatoria_dias(dbsess=dbsession,
-                                                           last_saldo={'scd_dia':0, 'scd_id':scd_id, 'debe': mcd_debe, 'haber': mcd_haber,'saldo': mcd_saldo},
-                                                           fecha_ini_db=fechas.parse_fecha(fecha_ini_sum, formato=ctes.APP_FMT_FECHA_DB), fecha_fn_db=fecha_fin_db)
+                                                           last_saldo={'scd_dia': 0, 'scd_id': scd_id, 'debe': mcd_debe,
+                                                                       'haber': mcd_haber, 'saldo': mcd_saldo},
+                                                           fecha_ini_db=fechas.parse_fecha(fecha_ini_sum,
+                                                                                           formato=ctes.APP_FMT_FECHA_DB),
+                                                           fecha_fn_db=fecha_fin_db)
 
                         dbsession.commit()
                 else:

@@ -33,6 +33,8 @@ class TAsientoRest(TokenView):
         ttransaccdao = TTransaccDao(self.dbsession)
         tasicredao = TAsicreditoDao(self.dbsession)
         transaccpago = TTransaccPagoDao(self.dbsession)
+        tsecciondao = TSeccionDao(self.dbsession)
+        almdao = TAlmacenDao(self.dbsession)
 
         if accion == 'formcab':
             tra_codigo = self.get_request_param('tra_cod')
@@ -47,6 +49,16 @@ class TAsientoRest(TokenView):
             pagosefectivo = transaccpago.get_pagos_efectivo(sec_id=self.get_sec_id())
             form_det = tasientodao.get_form_detalle(sec_codigo=secid)
 
+            sec_tipoamb = 0
+            aplica_facte_por_seccion = False
+            if secid is not None:
+                sec_tipoamb = tsecciondao.get_sec_tipoamb(sec_id=secid)
+                aplica_facte_por_seccion = sec_tipoamb > 0
+
+            alm_tipoamb = 0
+            if not aplica_facte_por_seccion:
+                alm_tipoamb = almdao.get_alm_tipoamb()
+
             return self.res200(
                 {
                     'formcab': form_cab,
@@ -55,7 +67,10 @@ class TAsientoRest(TokenView):
                     'pagosef': pagosefectivo,
                     'formdet': form_det,
                     'impuestos': form_cab['impuestos'],
-                    'secid': secid
+                    'secid': secid,
+                    'sec_tipoamb':sec_tipoamb,
+                    'alm_tipoamb':alm_tipoamb
+
                 }
             )
 

@@ -488,7 +488,8 @@ class TasientoDao(AuxLogicAsiDao):
         coalesce(vu.referente, '') as refusercrea,
         per.per_ciruc,
         per.per_telf,
-        per.per_direccion
+        per.per_direccion,
+        per.per_email
          from tasiento a 
          join tpersona per on a.per_codigo = per.per_id
          join ttransacc tra on a.tra_codigo = tra.tra_codigo 
@@ -523,7 +524,8 @@ class TasientoDao(AuxLogicAsiDao):
                       'refusercrea',
                       'per_ciruc',
                       'per_telf',
-                      'per_direccion')
+                      'per_direccion',
+                      'per_email')
 
         tasiento = self.first(sql, tupla_desc)
         return tasiento

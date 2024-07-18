@@ -263,6 +263,8 @@ class TPersonaDao(BaseDao):
         clean_filtro = cadenas.strip_upper(filtro)
         if int(tipo) > 0:
             sqls.append(f"per_tipo ={tipo}")
+            if int(tipo) == 1:
+                sqls.append(f"per_tipo in (1,2)")
 
         if solo_cedulas:
             sqls.append("coalesce(per_ciruc,'')!='' and per_id>0")
@@ -275,7 +277,7 @@ class TPersonaDao(BaseDao):
                 palabras = [cadena.strip() for cadena in clean_filtro.split()]
                 len_palabras = len(palabras)
                 if len_palabras >= 1:
-                    sqls.append(f"(per_nombres like '{palabras[0]}%' or per_nombres like '% {palabras[0]}%')")
+                    sqls.append(f"(per_nombres like '{palabras[0]}%' or per_apellidos like '% {palabras[0]}%')")
                 if len_palabras >= 2:
                     sqls.append(
                         f"(per_nombres like '% {palabras[1]}%' or per_apellidos like '{palabras[1]}%' or per_apellidos like '% {palabras[1]}%')")

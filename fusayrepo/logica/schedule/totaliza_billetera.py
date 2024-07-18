@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     log.info('Inicia proceso de totalizacion de billeteras---->')
 
-    esquemas = ['pangel']
+    esquemas = ['fusay']
 
     dbsession = None
     try:
