@@ -262,9 +262,10 @@ class TPersonaDao(BaseDao):
         sqls = []
         clean_filtro = cadenas.strip_upper(filtro)
         if int(tipo) > 0:
-            sqls.append(f"per_tipo ={tipo}")
             if int(tipo) == 1:
                 sqls.append(f"per_tipo in (1,2)")
+            else:
+                sqls.append(f"per_tipo ={tipo}")
 
         if solo_cedulas:
             sqls.append("coalesce(per_ciruc,'')!='' and per_id>0")
