@@ -25,11 +25,11 @@ class TFuserDao(BaseDao):
         return self.dbsession.query(TFuser).filter(TFuser.us_id == us_id).first()
 
     def autenticar(self, us_cuenta, us_clave):
-        sql = "select count(*) as cuenta from tfuser where us_cuenta = :user and us_clave = :passw and us_estado = 0"
+        sql = "select count(*) as cuenta from tuseremail where ue_email = :user and ue_password = :passw and us_status = true"
         result = self.first_raw(sql, user=us_cuenta, passw=us_clave)
         return result[0] > 0 if result is not None else False
 
-    def get_user(self, us_cuenta):
+    def aux_get_info_user(self, field, value):
         sql = """select a.us_id,
         a.per_id,
         a.us_cuenta,
@@ -45,7 +45,7 @@ class TFuserDao(BaseDao):
         b.per_tipo,
         b.per_lugnac from tfuser a
         join tpersona b on a.per_id = b.per_id           
-         where us_cuenta = '{0}'""".format(us_cuenta)
+         where {0} = '{1}'""".format(field, value)
 
         tupla_desc = ('us_id', 'per_id', 'us_cuenta', 'us_fechacrea', 'us_estado',
                       'per_ciruc', 'per_nombres', 'per_apellidos', 'per_direccion', 'per_telf',
@@ -53,6 +53,12 @@ class TFuserDao(BaseDao):
 
         datos_user = self.first(sql=sql, tupla_desc=tupla_desc)
         return datos_user
+
+    def find_by_email(self, us_email):
+        return self.aux_get_info_user('b.per_email', us_email)
+
+    def get_user(self, us_cuenta):
+        return self.aux_get_info_user('a.us_cuenta', us_cuenta)
 
     def listar(self):
         sql = """

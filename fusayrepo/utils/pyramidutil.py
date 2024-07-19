@@ -176,6 +176,54 @@ class FacteView(PyramidView):
         return self.cnt_id
 
 
+class TokenMovilView(PyramidView):
+    """
+    Clase que implemente autenticacion basada en token para app movil
+    """
+
+    def init(self):
+        if self.request.method == 'OPTIONS':
+            # Http OPTIONS parsed avoid this request
+            pass
+        else:
+            self.conf_dbsession()
+
+    def change_dbschema(self, emp_esquema):
+        self.request.dbsession.execute("SET search_path TO {0}".format(emp_esquema))
+
+    def conf_dbsession(self):
+        if 'x-authtoken' not in self.request.headers:
+            raise UnauthorizedExc("No autenticado")
+
+        auth_token = self.request.headers['x-authtoken']
+        # TODO: Codigo para verificar si token ya ha expirado
+        genera_token_util = GeneraTokenUtil()
+        datostoken = genera_token_util.get_datos_fromtoken_movil(auth_token)
+
+        self.emp_codigo = datostoken['emp']
+        self.emp_esquema = datostoken['schema']
+        self.user_email = datostoken['email']
+        self.user_id = datostoken['usuario']
+        self.request.headers['emp_codigo'] = self.emp_codigo
+        self.change_dbschema(self.emp_esquema)
+
+    def get_user_id(self):
+        return self.user_id
+
+    def get_emp_codigo(self):
+        return self.emp_codigo
+
+    def get_emp_esquema(self):
+        return self.emp_esquema
+
+    def get_rqpa(self):
+        """
+        get_request_param accion
+        :return:
+        """
+        return self.get_request_param('accion')
+
+
 class TokenView(PyramidView):
     """
     Clase para implementar autenticacion basada en token, en la cabecera de la peticion debe venir

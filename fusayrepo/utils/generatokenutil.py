@@ -11,11 +11,18 @@ from fusayrepo.utils import numeros, fechas
 
 log = logging.getLogger(__name__)
 
+MOVIL_PASS_PHRASE = "3qkr%GAua^4E8YM"
+
 
 class GeneraTokenUtil(object):
 
     def get_token(self, clave='sosecret'):
         return jwt.encode({'some': 'payload'}, clave, algorithm='HS256')
+
+    def gen_movil_token(self, us_id, us_email, default_emp, default_scheme):
+        data = {'usuario': us_id, 'email': us_email, 'emp': default_emp, 'schema': default_scheme}
+        encoded_jwt = jwt.encode(data, MOVIL_PASS_PHRASE, algorithm='HS256')
+        return encoded_jwt
 
     def gen_token(self, us_id, emp_codigo, emp_esquema, sec_id, clave="fusay4793", tdv_codigo=1, emp_id=0):
         data = {'us_id': us_id, 'emp_codigo': emp_codigo, 'emp_esquema': emp_esquema,
@@ -53,6 +60,10 @@ class GeneraTokenUtil(object):
 
     def get_datos_fromtoken(self, token, clave="fusay4793"):
         decoded_value = jwt.decode(token, clave, algorithms=['HS256'])
+        return decoded_value
+
+    def get_datos_fromtoken_movil(self, token):
+        decoded_value = jwt.decode(token, MOVIL_PASS_PHRASE, algorithms=['HS256'])
         return decoded_value
 
 
