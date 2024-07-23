@@ -10,6 +10,12 @@ class TUserEmailDao(BaseDao):
         result = self.first_raw(sql, user=email, passw=clave)
         return result[0] > 0 if result is not None else False
 
+    def autenticarEmail(self, email):
+        sql = ("select count(*) as cuenta from tuseremail where "
+               "ue_email = :user and ue_status = true")
+        result = self.first_raw(sql, user=email)
+        return result[0] > 0 if result is not None else False
+
     def get_user_info(self, email):
         sql = "select ue_email, ue_emplist from tuseremail where ue_email = :email"
         result = self.first_raw(sql, email=email)

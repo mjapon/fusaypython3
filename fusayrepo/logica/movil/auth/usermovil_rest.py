@@ -45,3 +45,40 @@ class TUserEmailRest(DbComunView):
                 }
         else:
             return {'autenticado': autenticado}
+
+
+
+@resource(collection_path='/api/movil/authEmail', path='/api/movil/authEmail/{email}', cors_origins=('*',))
+class TUEmailRest(DbComunView):
+
+    def collection_post(self):
+        self.change_dbschema('public')
+        form = self.get_request_json_body()
+        useremaildao = TUserEmailDao(self.dbsession)
+        input_email = cadenas.strip(form['username'])
+        if len(input_email) == 0:
+            raise ErrorValidacionExc('Debe ingresar un correo de google')
+
+        autenticado = useremaildao.autenticarEmail(email=input_email)
+        if autenticado:
+            userinfo = useremaildao.get_user_info(email=input_email)
+            if userinfo is not None:
+                empresas = userinfo['empresas']
+                emp_schemas = useremaildao.get_emp_schemas(empcods=empresas)
+                default_emp = empresas[0]
+                default_schema = emp_schemas[0]['emp_esquema']
+                self.change_dbschema(default_schema)
+                userdao = TFuserDao(self.dbsession)
+                userempinfo = userdao.find_by_email(us_email=input_email)
+
+                genera_token_util = GeneraTokenUtil()
+                token = genera_token_util.gen_movil_token(us_id=userempinfo['us_id'], us_email=input_email, default_emp=default_emp,
+                                                          default_scheme=default_schema)
+                return {
+                    'auth': autenticado,
+                    'userinfo': userempinfo,
+                    'token': token,
+                    'empresas': emp_schemas
+                }
+        else:
+            return {'autenticado': autenticado}
