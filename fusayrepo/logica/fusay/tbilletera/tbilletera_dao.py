@@ -9,11 +9,12 @@ import logging
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tbilletera.tbilletera_model import TBilletera
+from fusayrepo.logica.fusay.tbilletera.tbilleterahist_model import TBilleteraHist
 from fusayrepo.logica.fusay.tbilletera.tbilleteramov_dao import TBilleteraMovDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
-from fusayrepo.utils import cadenas
+from fusayrepo.utils import cadenas, fechas
 
 log = logging.getLogger(__name__)
 
@@ -228,3 +229,62 @@ class TBilleteraDao(BaseDao):
                                           usercrea=user_crea)
 
         self.dbsession.add(tbilletera)
+
+    def get_fecha_inicio_contab(self, sec_id):
+        sql = f"select tprm_val from tparams where tprm_abrev = 'fecha_ini_contab' and tprm_seccion = {sec_id} "
+        result = self.first_raw(sql)
+        fec_ini_contabdb = ''
+        if result is not None and len(result) > 0:
+            fec_ini_contabdb = " and date(asi.trn_fecha)>='{0}' ".format(fechas.format_cadena_db(result[0]))
+        return fec_ini_contabdb
+
+    def totalizar(self, cta_id, user_crea, sec_id=None):
+        """
+        Totaliza billetera
+        """
+        fecha_inicio = ''
+        if sec_id is not None:
+            fecha_inicio = self.get_fecha_inicio_contab(sec_id)
+
+        sql_mov_bills = f"""
+        with data as (
+            select det.dt_codigo, asi.trn_fecha, det.dt_debito, 
+            case when det.dt_debito = 1 then round(det.dt_valor,2) else null end as credito,
+            case when det.dt_debito = -1 then round(det.dt_valor,2) else null end as debito,
+            det.cta_codigo from tasidetalle det join tasiento asi on det.trn_codigo = asi.trn_codigo
+            where coalesce(det.cta_codigo, 0)> 0 and asi.trn_valido = 0 and asi.trn_docpen = 'F'
+              and det.cta_codigo ={cta_id} {fecha_inicio}  order by asi.trn_fecha
+            )
+            select dt_codigo, trn_fecha, debito, credito, 
+               coalesce(sum(abs(credito)) over (order by trn_fecha asc rows between unbounded preceding and current row), 0)  -
+               coalesce(sum(abs(debito)) over (order by trn_fecha asc rows between unbounded preceding and current row), 0)  as saldo,
+               cta_codigo
+            from data order by trn_fecha asc
+        """
+        results = self.all_raw(sql_mov_bills)
+
+        # Borramos el historial
+        self.dbsession.query(TBilleteraHist).filter(TBilleteraHist.cta_codigo == cta_id).delete()
+
+        inserted = 0
+        for result in results:
+            debito = result[2] if result[2] else None
+            credito = result[3] if result[3] else None
+
+            newrow = TBilleteraHist()
+            newrow.dt_codigo = result[0]
+            newrow.bh_debito = debito
+            newrow.bh_credito = credito
+            newrow.bh_saldo = result[4]
+            newrow.bh_fechacrea = datetime.datetime.now()
+            newrow.bh_usercrea = user_crea
+            newrow.bh_valido = 0
+            newrow.bh_fechatransacc = result[1]
+            newrow.cta_codigo = result[5]
+            self.dbsession.add(newrow)
+            self.flush()
+
+            inserted += 1
+            print(newrow.bh_id)
+
+        return inserted

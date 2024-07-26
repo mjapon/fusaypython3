@@ -68,3 +68,8 @@ class TBilleteraRest(TokenView):
                 return self.res404({'msg':
                     'No se pudo anular la billetera (No existe billetera registrada con el codigo{0})'.format(
                         bil_id)})
+        elif accion == 'recalc':
+            form = self.get_json_body()
+            cta_id = form['cta']
+            inserted = billeteradao.totalizar(cta_id=cta_id, user_crea=self.get_user_id(), sec_id=self.get_sec_id())
+            return self.res200({'result': inserted, 'msg': 'Actualización exitosa'})

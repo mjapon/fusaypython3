@@ -153,22 +153,31 @@ class TasientoDao(AuxLogicAsiDao):
         return result[0] if result is not None else 0
 
     def totalizar_grid_ventas(self, swhere):
-        sql = """        
-            select round(sum(pagos.efectivo),2),round(sum(pagos.credito),2), round(sum(pagos.saldopend),2), round(sum(pagos.total),2)
-            from tasiento a
-            join tpersona p on a.per_codigo = p.per_id
-            join get_pagos_factura(a.trn_codigo) as pagos(efectivo numeric, credito numeric, total numeric, saldopend numeric, trncodigo integer)
-              on a.trn_codigo = pagos.trncodigo
-            where a.trn_valido = 0 {swhere}
+
+        sql = """select ic.ic_clasecc, sum(det.dt_valor), sum(coalesce(cred.cre_saldopen, 0.0)) as cre_saldopen
+                    from fusay.tasidetalle det
+                             join titemconfig ic on det.cta_codigo = ic.ic_id
+                             left join tasicredito cred on det.dt_codigo = cred.dt_codigo
+                             join tasiento a on det.trn_codigo = a.trn_codigo
+                             join tpersona p on a.per_codigo = p.per_id
+                    where a.trn_valido = 0
+                      and det.dt_tipoitem = 2 {swhere}
+                    group by ic.ic_clasecc
         """.format(swhere=swhere)
-        result = self.first_raw(sql)
+        result = self.all_raw(sql)
 
         totales = {'efectivo': 0.0, 'credito': 0.0, 'saldopend': 0.0, 'total': 0.0}
-        if result is not None:
-            totales['efectivo'] = self.type_json(result[0])
-            totales['credito'] = self.type_json(result[1])
-            totales['saldopend'] = self.type_json(result[2])
-            totales['total'] = self.type_json(result[3])
+        for row in result:
+            if row[0] == 'XC' or row[0] == 'XP':
+                totales['credito'] = float(row[1])
+                totales['saldopend'] = float(row[2])
+            else:
+                totales['efectivo'] = float(row[1])
+
+            totales['total'] += float(row[1])
+
+        for key in totales:
+            totales[key] = numeros.roundm2(totales[key])
 
         return totales
 
@@ -205,15 +214,49 @@ class TasientoDao(AuxLogicAsiDao):
         offset = first
         limit = "limit {0}".format(limit)
         offset = "offset {0}".format(offset)
-        data = tgrid_dao.run_grid(grid_nombre='ventas', swhere=swhere, limit=limit, offset=offset)
+        grid = tgrid_dao.run_grid(grid_nombre='ventas', swhere=swhere, limit=limit, offset=offset)
 
-        # totales = self.totalizar_facturas(listafact=data['data'])
+        trn_codigos = [str(row['trn_codigo']) for row in grid['data']]
+        pagos_map = self.get_pagos_factura(','.join(trn_codigos))
+        for row in grid['data']:
+            trn_codigo = row['trn_codigo']
+            if trn_codigo in pagos_map:
+                pago_row = pagos_map[trn_codigo]
+                row["efectivo"] = pago_row['efectivo']
+                row["credito"] = pago_row['credito']
+                row["saldopend"] = pago_row['saldopend']
+                row["total"] = pago_row['total']
+
         if int(first) == 0:
             totales = self.totalizar_grid_ventas(swhere=swhere)
             total = self.contar_grid_ventas(swhere=swhere)
-            data['total'] = total
-            data['sumatorias'] = totales
-        return data
+            grid['total'] = total
+            grid['sumatorias'] = totales
+        return grid
+
+    def get_pagos_factura(self, trn_codigos):
+        resultmap = {}
+        if len(trn_codigos) > 0:
+            sql = f"""select det.trn_codigo, ic.ic_clasecc, det.dt_valor, coalesce(cred.cre_saldopen, 0.0) as cre_saldopen
+                    from tasidetalle det
+                    join titemconfig ic on det.cta_codigo = ic.ic_id
+                    left join tasicredito cred on det.dt_codigo = cred.dt_codigo
+                where det.trn_codigo in ({trn_codigos})
+                and det.dt_tipoitem = 2"""
+            results = self.all_raw(sql)
+
+            for row in results:
+                if row[0] not in resultmap:
+                    resultmap[row[0]] = {'credito': 0.0, 'efectivo': 0.0, 'saldopend': 0.0, 'total': 0.0}
+                if row[1] == 'XC' or row[1] == 'XP':
+                    resultmap[row[0]]['credito'] = float(row[2])
+                    resultmap[row[0]]['saldopend'] = float(row[3])
+                else:
+                    resultmap[row[0]]['efectivo'] = float(row[2])
+
+                resultmap[row[0]]['total'] += float(row[2])
+
+        return resultmap
 
     def aux_get_cod_cuentas_repconta(self, cuentas, codcuentas):
         for cuenta in cuentas:
