@@ -94,8 +94,8 @@ class TPersonaRest(TokenView):
         elif 'gtotaldeudas' == accion:
             tasicreditodao = TAsicreditoDao(self.dbsession)
             percodigo = self.get_request_param('codper')
-            totaldeudas = tasicreditodao.get_total_deudas(per_codigo=percodigo, clase=1)
-            totalcxp = tasicreditodao.get_total_deudas(per_codigo=percodigo, clase=2)
+            totaldeudas = tasicreditodao.get_total_deudas_referente(per_codigo=percodigo, clase=1)
+            totalcxp = tasicreditodao.get_total_deudas_referente(per_codigo=percodigo, clase=2)
             return self.res200({'deudas': totaldeudas, 'totalcxp': totalcxp})
         elif 'gcuentafacts' == accion:
             tpersonadao = TPersonaDao(self.dbsession)

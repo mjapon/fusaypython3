@@ -409,7 +409,7 @@ class TAsicreditoDao(BaseDao):
 
         return self.first(sql, tupla_desc)
 
-    def get_total_deudas(self, per_codigo, clase):
+    def get_total_deudas_referente(self, per_codigo, clase):
         icclase = 'XC'
         if int(clase) == 2:
             icclase = 'XP'
@@ -427,11 +427,60 @@ class TAsicreditoDao(BaseDao):
         totaldeuda = self.first_col(sql, 'totaldeuda')
         return self.type_json(totaldeuda)
 
-    def listar(self, tipo, desde, hasta, filtro, sec_id):
+    def get_total_deudas(self, tipo, sec_codigo):
+        """
+        Retorna el total de deudas validas con saldo pendiente
+        1:cuentas por cobrar, 2:cuentas por pagar
+        """
+        sql = ("select round(sum(cred.cre_saldopen),2) as total from tasicredito cred "
+               "join tasidetalle det on det.dt_codigo = cred.dt_codigo "
+               "join tasiento tasi on det.trn_codigo = tasi.trn_codigo "
+               "where cred.cre_tipo = :tipo and tasi.trn_docpen = 'F' and tasi.trn_valido = 0 "
+               "and tasi.sec_codigo =:sec and cred.cre_saldopen >0")
+
+        saldopend = self.first_raw(sql, tipo=tipo, sec=sec_codigo)
+        return self.type_json(saldopend[0])
+
+    def totalizar_grid(self, sqlfiltro, tipo, sqlfechas):
+        sql = f"""
+        select round(sum(cred.cre_saldopen),2) as saldopend,
+            round(sum(detcred.dt_valor),2) as monto
+               from tasicredito cred
+        join tasidetalle detcred on cred.dt_codigo = detcred.dt_codigo
+        join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo
+        join tpersona per on tasi.per_codigo = per.per_id {sqlfiltro}
+        where cred.cre_tipo = {tipo} and tasi.trn_docpen = 'F' and tasi.trn_valido = 0 {sqlfechas}
+        """
+        totales = self.first_raw(sql)
+        return {'credito': self.type_json(totales[1]), 'saldopend': self.type_json(totales[0])}
+
+    def count_grid(self, sqlfiltro, tipo, sqlfechas):
+        sql = f"""
+        select count(*) as cuenta from tasicredito cred
+        join tasidetalle detcred on cred.dt_codigo = detcred.dt_codigo
+        join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo
+        join tpersona per on tasi.per_codigo = per.per_id {sqlfiltro}
+        where cred.cre_tipo = {tipo} and tasi.trn_docpen = 'F' and tasi.trn_valido = 0 {sqlfechas}        
+        """
+
+        count = self.first_raw(sql)
+        return self.type_json(count[0])
+
+    def listar(self, tipo, desde, hasta, filtro, sec_id, tipopago=0, limit=15, first=0):
+        """
+        tipopago:0-todos, 1-con saldo pendiente, 2-pagados en su totalidad
+        """
+
         sqlfechas = ""
         if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
             sqlfechas = " and (tasi.trn_fecreg between '{0}' and '{1}' )".format(fechas.format_cadena_db(desde),
                                                                                  fechas.format_cadena_db(hasta))
+
+        if tipopago == 1:  # Busco todas las cuentas por cobrar que tienen aun un saldo pendiente
+            sqlfechas += " and cred.cre_saldopen>0 "
+        elif tipopago == 2:
+            sqlfechas += " and cred.cre_saldopen=0 "
+
         sqlfiltro = ' '
         if sec_id > 0:
             sqlfiltro = ' and tasi.sec_codigo = {0}'.format(sec_id)
@@ -443,19 +492,21 @@ class TAsicreditoDao(BaseDao):
                 auxfiltroupper)
             sqlfiltro += " and {0} ".format(filtrocedula)
 
+        offset = first
+        limit = "limit {0}".format(limit)
+        offset = "offset {0}".format(offset)
+
         tgrid_dao = TGridDao(self.dbsession)
-        data = tgrid_dao.run_grid(grid_nombre='cxcp', tipo=tipo, sqlfiltro=sqlfiltro, sqlfechas=sqlfechas)
+        data = tgrid_dao.run_grid(grid_nombre='cxcp', tipo=tipo, sqlfiltro=sqlfiltro, sqlfechas=sqlfechas,
+                                  limit=limit, offset=offset)
 
-        # Totalizar
-        totales = {'credito': 0.0, 'saldopend': 0.0}
-        for item in data['data']:
-            totales['credito'] += item['dt_valor']
-            totales['saldopend'] += item['cre_saldopen']
+        if int(first) == 0:
+            totales = self.totalizar_grid(sqlfiltro, tipo, sqlfechas)
+            count = self.count_grid(sqlfiltro, tipo, sqlfechas)
+            data['totales'] = totales
+            data['count'] = count
 
-        totales['credito'] = numeros.roundm2(totales['credito'])
-        totales['saldopend'] = numeros.roundm2(totales['saldopend'])
-
-        return data, totales
+        return data
 
     def listar_creditos(self, per_codigo, solo_pendientes=True, clase=1, sec_codigo=0):
         tracodin = "1,2"

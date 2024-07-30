@@ -38,8 +38,21 @@ class TAsiCreditoRest(TokenView):
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
             filtro = self.get_request_param('filtro')
-            data, totales = tasicredao.listar(tipo, desde, hasta, filtro, sec_id=self.get_sec_id())
-            return self.res200({'grid': data, 'totales': totales})
+            limit = self.get_request_param('limit')
+            first = self.get_request_param('first')
+            tipopago = self.get_request_param('tipopago')
+            tipopagoint = 0
+            if cadenas.es_nonulo_novacio(tipopago):
+                tipopagoint = int(tipopago)
+
+            data = tasicredao.listar(tipo, desde, hasta, filtro, sec_id=self.get_sec_id(),
+                                     tipopago=tipopagoint, limit=limit, first=first)
+            """
+            totalsalopend = 0
+            if int(first) == 0:
+                totalsalopend = tasicredao.get_total_deudas(tipo=tipo, sec_codigo=self.get_sec_id())
+            """
+            return self.res200({'grid': data})
         elif accion == 'gformcrea':
             clase = self.get_request_param('clase')
             codref = self.get_request_param('ref')
