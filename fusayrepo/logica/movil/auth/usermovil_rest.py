@@ -35,7 +35,8 @@ class TUserEmailRest(DbComunView):
                 userempinfo = userdao.find_by_email(us_email=input_email)
 
                 genera_token_util = GeneraTokenUtil()
-                token = genera_token_util.gen_movil_token(us_id=userempinfo['us_id'], us_email=input_email, default_emp=default_emp,
+                token = genera_token_util.gen_movil_token(us_id=userempinfo['us_id'], us_email=input_email,
+                                                          default_emp=default_emp,
                                                           default_scheme=default_schema)
                 return {
                     'auth': autenticado,
@@ -45,7 +46,6 @@ class TUserEmailRest(DbComunView):
                 }
         else:
             return {'autenticado': autenticado}
-
 
 
 @resource(collection_path='/api/movil/authEmail', path='/api/movil/authEmail/{email}', cors_origins=('*',))
@@ -72,7 +72,8 @@ class TUEmailRest(DbComunView):
                 userempinfo = userdao.find_by_email(us_email=input_email)
 
                 genera_token_util = GeneraTokenUtil()
-                token = genera_token_util.gen_movil_token(us_id=userempinfo['us_id'], us_email=input_email, default_emp=default_emp,
+                token = genera_token_util.gen_movil_token(us_id=userempinfo['us_id'], us_email=input_email,
+                                                          default_emp=default_emp,
                                                           default_scheme=default_schema)
                 return {
                     'auth': autenticado,

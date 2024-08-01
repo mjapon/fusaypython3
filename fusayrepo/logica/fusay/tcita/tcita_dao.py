@@ -405,3 +405,30 @@ class TCitaDao(BaseDao):
                       'ct_estado', 'user_crea', 'ct_fechacrea', 'ct_td', 'ct_color', 'ct_titulo', 'ct_tipo')
 
         return self.first(sql, tupla_desc)
+
+    def get_user_calendar_data(self, us_email):
+        """
+        Retorna el tipo de calendario que debe cargar en funcion del tipo de usuario
+        Para que un usuario pueda hacer uso de un calendario debe estar registrado en la tabla tmedico
+        """
+
+        sql = """
+        select a.us_id,
+        a.per_id,       
+        med.med_tipo,
+        med.med_estado        
+        from tfuser a
+        join tpersona b on a.per_id = b.per_id
+        left join tmedico med on b.per_id  = med.per_id 
+        where b.per_email = :email
+        """
+        result = self.first_raw(sql, email=us_email)
+        if result is not None:
+            return {
+                'us_id': self.type_json(result[0]),
+                'per_id': self.type_json(result[1]),
+                'med_tipo': self.type_json(result[2]),
+                'med_estado': self.type_json(result[3]),
+            }
+        else:
+            return None

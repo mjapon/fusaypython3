@@ -8,6 +8,7 @@ import logging
 from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tcita.tcita_dao import TCitaDao
+from fusayrepo.logica.fusay.tcita.tcita_logic import TCitaLogic
 from fusayrepo.logica.fusay.tpersona.tpersoncitadao import TPersonCitaDao
 from fusayrepo.logica.fusay.ttipocita.ttipocita_dao import TTipoCitaDao
 from fusayrepo.utils.pyramidutil import TokenView
@@ -22,12 +23,8 @@ class TCitaRest(TokenView):
         accion = self.get_request_param('accion')
         tcitadao = TCitaDao(self.dbsession)
         if accion == 'form':
-            pac_id = self.get_request_param('pac')
-            tipocita = self.get_request_param('tipocita')
-            form = tcitadao.get_form(pac_id=pac_id)
-            horas = tcitadao.get_horas_for_form(tipocita=tipocita)
-            colores = tcitadao.get_lista_colores()
-            return {'status': 200, 'form': form, 'horas': horas, 'colores': colores}
+            tcitalogic = TCitaLogic(self.request)
+            return tcitalogic.get_form(tcitadao)
         elif accion == 'lstw':
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')
@@ -75,15 +72,8 @@ class TCitaRest(TokenView):
         accion = self.get_request_param('accion')
         tcitadao = TCitaDao(self.dbsession)
         if accion == 'guardar':
-            form = self.get_request_json_body()
-            ct_id = int(form['ct_id'])
-            msg = 'Registrado exitosamente'
-            if ct_id > 0:
-                msg = 'Actualizado exitosamente'
-                tcitadao.actualizar(form, user_edita=self.get_user_id())
-            else:
-                tcitadao.guardar(form, user_crea=self.get_user_id())
-            return {'status': 200, 'msg': msg}
+            tcitalogic = TCitaLogic(self.request)
+            return tcitalogic.do_save(userid=self.get_user_id(), tcitadao=tcitadao)
         elif accion == 'anular':
             cod = self.get_request_param('cod')
             tcitadao.anular(ct_id=cod)
