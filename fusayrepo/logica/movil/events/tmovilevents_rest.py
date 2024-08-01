@@ -29,10 +29,30 @@ class TMovilEventsRest(TokenMovilView):
         elif accion == 'getinfocalendar':
             calendar_data = tcitadao.get_user_calendar_data(us_email=self.user_email)
             return {'status': 200, 'caluserdata': calendar_data}
-        elif accion == 'guardar':
+        """elif accion == 'guardar':
             tcitalogic = TCitaLogic(self.request)
             return tcitalogic.do_save(userid=self.get_user_id(), tcitadao=tcitadao)
         elif accion == 'anular':
             cod = self.get_request_param('cod')
             tcitadao.anular(ct_id=cod)
-            return {'status': 200, 'msg': 'Cita anulada exitosamente'}
+            return {'status': 200, 'msg': 'Cita anulada exitosamente'}"""
+
+    def post(self):
+        form = self.get_request_json_body()
+        msg = 'Registrado exitosamente'
+        tcitadao = TCitaDao(self.dbsession)
+        tcitadao.guardar(form, user_crea=self.get_user_id())
+        return {'status': 200, 'msg': msg}
+
+    def put(self):
+        form = self.get_request_json_body()
+        msg = 'Registrado exitosamente'
+        tcitadao = TCitaDao(self.dbsession)
+        tcitadao.actualizar(form, user_edita=self.get_user_id())
+        return {'status': 200, 'msg': msg}
+
+    def delete(self):
+        ct_id = int(self.get_request_matchdict('ct_id'))
+        tcitadao = TCitaDao(self.dbsession)
+        tcitadao.anular(ct_id=ct_id)
+        return {'status': 200, 'msg': 'Cita anulada exitosamente'}
