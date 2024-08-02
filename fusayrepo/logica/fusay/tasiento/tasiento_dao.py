@@ -155,7 +155,7 @@ class TasientoDao(AuxLogicAsiDao):
     def totalizar_grid_ventas(self, swhere):
 
         sql = """select ic.ic_clasecc, sum(det.dt_valor), sum(coalesce(cred.cre_saldopen, 0.0)) as cre_saldopen
-                    from fusay.tasidetalle det
+                    from tasidetalle det
                              join titemconfig ic on det.cta_codigo = ic.ic_id
                              left join tasicredito cred on det.dt_codigo = cred.dt_codigo
                              join tasiento a on det.trn_codigo = a.trn_codigo
