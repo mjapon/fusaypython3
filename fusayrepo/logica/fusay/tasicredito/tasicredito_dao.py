@@ -481,28 +481,30 @@ class TAsicreditoDao(BaseDao):
         elif tipopago == 2:
             sqlfechas += " and cred.cre_saldopen=0 "
 
-        sqlfiltro = ' '
+        sqlfiltro_persona = ' '
         if sec_id > 0:
-            sqlfiltro = ' and tasi.sec_codigo = {0}'.format(sec_id)
+            sqlfechas += ' and tasi.sec_codigo = {0}'.format(sec_id)
 
         if cadenas.es_nonulo_novacio(filtro):
             filtroupper = cadenas.strip_upper(filtro)
             auxfiltroupper = '%'.join(filtroupper.split(' '))
             filtrocedula = " ( ( (per.per_nombres || ' ' || coalesce(per.per_apellidos, '')) like '%{0}%' ) or (per.per_ciruc like '%{0}%') ) ".format(
                 auxfiltroupper)
-            sqlfiltro += " and {0} ".format(filtrocedula)
+            # sqlfiltro_persona += " and {0} ".format(filtrocedula)
+
+            sqlfechas += " and (tasi.trn_compro like '%{0}%' or {1} ) ".format(filtro, filtrocedula)
 
         offset = first
         limit = "limit {0}".format(limit)
         offset = "offset {0}".format(offset)
 
         tgrid_dao = TGridDao(self.dbsession)
-        data = tgrid_dao.run_grid(grid_nombre='cxcp', tipo=tipo, sqlfiltro=sqlfiltro, sqlfechas=sqlfechas,
+        data = tgrid_dao.run_grid(grid_nombre='cxcp', tipo=tipo, sqlfiltro=sqlfiltro_persona, sqlfechas=sqlfechas,
                                   limit=limit, offset=offset)
 
         if int(first) == 0:
-            totales = self.totalizar_grid(sqlfiltro, tipo, sqlfechas)
-            count = self.count_grid(sqlfiltro, tipo, sqlfechas)
+            totales = self.totalizar_grid(sqlfiltro_persona, tipo, sqlfechas)
+            count = self.count_grid(sqlfiltro_persona, tipo, sqlfechas)
             data['totales'] = totales
             data['count'] = count
 

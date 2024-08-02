@@ -819,7 +819,7 @@ class TItemConfigDao(BaseDao):
     def get_ctaconbtab_saldoinibill(self, sec_codigo):
         sql = """
         select ic.ic_id from titemconfig ic
-        join titemconfig_sec ics in ics.ic_id = ic.ic_id and ics.sec_id = {0}
+        join titemconfig_sec ics on ics.ic_id = ic.ic_id and ics.sec_id = {0}
          where ic_estado = 1 and ic_clasecc = '{1}'
         """.format(sec_codigo, ctes.CLASECC_SALDOINIBILL)
         return self.first_col(sql, 'ic_id')

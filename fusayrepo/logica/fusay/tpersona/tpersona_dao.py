@@ -278,7 +278,7 @@ class TPersonaDao(BaseDao):
                 palabras = [cadena.strip() for cadena in clean_filtro.split()]
                 len_palabras = len(palabras)
                 if len_palabras >= 1:
-                    sqls.append(f"(per_nombres like '{palabras[0]}%' or per_apellidos like '% {palabras[0]}%')")
+                    sqls.append(f"(per_nombres like '{palabras[0]}%' or per_nombres like '% {palabras[0]}%' or per_apellidos like '{palabras[0]}%' or per_apellidos like  '% {palabras[0]}%')")
                 if len_palabras >= 2:
                     sqls.append(
                         f"(per_nombres like '% {palabras[1]}%' or per_apellidos like '{palabras[1]}%' or per_apellidos like '% {palabras[1]}%')")
