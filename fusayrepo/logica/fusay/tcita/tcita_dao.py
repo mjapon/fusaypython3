@@ -231,7 +231,7 @@ class TCitaDao(BaseDao):
         sql = """
         select a.ct_id, date(a.ct_fecha) as ct_fecha, a.ct_hora, a.ct_hora_fin, a.pac_id, a.ct_obs, a.med_id, a.ct_titulo,
                per.per_nombres, per.per_apellidos, per.per_ciruc,
-        a.ct_color, a.ct_fechacrea, a.user_crea from tcita a left join  tpersona per on
+        a.ct_color, a.ct_fechacrea, a.user_crea, a.ct_td from tcita a left join  tpersona per on
         a.pac_id = per.per_id where a.ct_estado in (0,1) and a.ct_tipo ={2} and  date(a.ct_fecha) between '{0}' and '{1}' order by a.ct_fecha
         """.format(fechas.format_cadena_db(desde), fechas.format_cadena_db(hasta), ct_tipo)
         tupla_desc = ('ct_id',
@@ -245,7 +245,7 @@ class TCitaDao(BaseDao):
                       'per_nombres',
                       'per_apellidos',
                       'per_ciruc',
-                      'ct_color', 'ct_fechacrea', 'user_crea')
+                      'ct_color', 'ct_fechacrea', 'user_crea', 'ct_td')
         return self.all(sql, tupla_desc)
 
     def contar_validos(self, desde, hasta, ct_tipo=1):
