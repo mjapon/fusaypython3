@@ -77,7 +77,7 @@ class TFuserMovilRest(DbComunView):
                                                 emp_esquema=empresa['emp_esquema'], sec_id=sec_id,
                                                 tdv_codigo=tdv_codigo)
 
-            return {'status': 200, 'msg': 'Post ejectutado exitosamente',
+            return {'status': 200, 'msg': 'Post ejectutado exitósamente',
                     'autenticado': autenticado,
                     'token': token,
                     'secid': sec_id,

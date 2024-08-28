@@ -53,17 +53,17 @@ class TBilleteraRest(TokenView):
         if accion == 'create':
             form = self.get_json_body()
             billeteradao.crear(form=form, user_crea=self.get_user_id(), sec_id=self.get_sec_id())
-            return self.res200({'msg': 'Billetera registrada exitosamente'})
+            return self.res200({'msg': 'Billetera registrada exitósamente'})
         elif accion == 'update':
             form = self.get_json_body()
             billeteradao.update(form=form, user_update=self.get_user_id())
-            return self.res200({'msg': 'Billetera actualizada exitosamente'})
+            return self.res200({'msg': 'Billetera actualizada exitósamente'})
         elif accion == 'anular':
             form = self.get_json_body()
             bil_id = form['bil_id']
             res = billeteradao.anular(bil_id=bil_id, user_anula=self.get_user_id())
             if res == 1:
-                return self.res200({'msg': 'Billetera anulada exitosamente'})
+                return self.res200({'msg': 'Billetera anulada exitósamente'})
             else:
                 return self.res404({'msg':
                     'No se pudo anular la billetera (No existe billetera registrada con el codigo{0})'.format(

@@ -36,11 +36,11 @@ class TodRxDocsRest(TokenView):
         jsonbody = self.get_request_json_body()
         if accion == 'crear':
             rxdocsdao.crear(form=jsonbody['form'], user_crea=self.get_user_id(), file=jsonbody['archivo'])
-            msg = 'Registrado exitosamente'
+            msg = 'Registrado exitósamente'
             return self.res200({'msg': msg})
         elif accion == 'editar':
             rxdocsdao.editar(form=jsonbody['form'])
-            return self.res200({'msg': 'Actualizado exitosamente'})
+            return self.res200({'msg': 'Actualizado exitósamente'})
         elif accion == 'borrar':
             rxdocsdao.eliminar(rxd_id=self.get_request_json_body()['cod'])
-            return self.res200({'msg': 'Documento eliminado exitosamente'})
+            return self.res200({'msg': 'Documento eliminado exitósamente'})

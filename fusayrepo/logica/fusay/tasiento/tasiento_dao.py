@@ -204,7 +204,7 @@ class TasientoDao(AuxLogicAsiDao):
         else:
             sqltra = "and a.tra_codigo in ({0})".format(tracod)
 
-        return ' {0} {1} and a.sec_codigo = {2}'.format(sqltra, sqladc, sec_id)
+        return " {0} {1} and a.trn_docpen='F' and a.sec_codigo = {2}".format(sqltra, sqladc, sec_id)
 
     def listar_grid_ventas(self, desde, hasta, filtro, tracod, tipo, sec_id, limit=15, first=0):
         tgrid_dao = TGridDao(self.dbsession)

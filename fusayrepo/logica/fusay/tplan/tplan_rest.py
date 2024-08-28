@@ -39,4 +39,4 @@ class TPlanRest(TokenView):
         if accion == 'crea':
             form = self.get_json_body()
             pln_id = tplandao.crear(form, usercrea=self.get_user_id())
-            return self.res200({'msg': 'Plan creado exitosamente', 'pln_id': pln_id})
+            return self.res200({'msg': 'Plan creado exitósamente', 'pln_id': pln_id})

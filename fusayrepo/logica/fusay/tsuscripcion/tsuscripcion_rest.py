@@ -37,9 +37,9 @@ class TSuscripcionRest(TokenView):
         tsuscripdao = TSuscripcionDao(self.dbsession)
         if accion == 'crea':
             tsuscripdao.crear(form=self.get_json_body(), user_crea=self.get_user_id())
-            return self.res200({'msg': 'Suscripcion registrada exitosamente'})
+            return self.res200({'msg': 'Suscripcion registrada exitósamente'})
         elif accion == 'cambiarestado':
             form = self.get_json_body()
             tsuscripdao.cambiar_estado(sus_id=form['sus_id'], nuevo_estado=form['estado'],
                                        user_upd=self.get_user_id())
-            return self.res200({'msg': 'Actualizado exitosamente'})
+            return self.res200({'msg': 'Actualizado exitósamente'})

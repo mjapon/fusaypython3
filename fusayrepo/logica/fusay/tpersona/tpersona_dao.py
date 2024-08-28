@@ -10,6 +10,7 @@ from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tpersona.tpersona_model import TPersona
 from fusayrepo.utils import cadenas, fechas, ctes
+from fusayrepo.utils.validruc import is_valid_ecuadorian
 
 log = logging.getLogger(__name__)
 
@@ -148,7 +149,7 @@ class TPersonaDao(BaseDao):
             log.error('Error controlado al tratar se setear edad', ex)
 
     def buscar_porciruc(self, per_ciruc):
-        sql = "{0} where per_ciruc = '{1}'".format(self.BASE_SQL, cadenas.strip(per_ciruc))
+        sql = "{0} where per_nota = '1' and per_ciruc = '{1}'".format(self.BASE_SQL, cadenas.strip(per_ciruc))
         result = self.first(sql, tupla_desc=self.BASE_TUPLA_DESC)
         self._aux_add_per_edad(result)
 
@@ -209,7 +210,8 @@ class TPersonaDao(BaseDao):
                             left join public.tlistavalores tipsanval on paciente.per_tiposangre = tipsanval.lval_id and tipsanval.lval_cat=4
                             left join public.tlistavalores tiporefval on paciente.per_tipo = coalesce(tiporefval.lval_valor,'1')::int and tiporefval.lval_cat=5
                             left join public.tlugar lugar on paciente.per_lugresidencia = lugar.lug_id
-                        where {0} = {1}""".format(cadenas.strip(propname), cadenas.strip(str(propvalue)))
+                        where per_nota = '1' and {0} = {1}""".format(cadenas.strip(propname),
+                                                                     cadenas.strip(str(propvalue)))
         result = self.first(sql, tupla_desc)
         self._aux_add_per_edad(result)
 
@@ -225,11 +227,11 @@ class TPersonaDao(BaseDao):
         return self.dbsession.query(TPersona).filter(TPersona.per_id == per_id).first()
 
     def buscar_porcodigo(self, per_id):
-        sql = "{0} where per_id = {1}".format(self.BASE_SQL, per_id)
+        sql = "{0} where per_nota = '1' and per_id = {1}".format(self.BASE_SQL, per_id)
         return self.first(sql, self.BASE_TUPLA_DESC)
 
     def buscar_poremail(self, per_email):
-        sql = "{0} where per_email = '{1}'".format(self.BASE_SQL, cadenas.strip(per_email))
+        sql = "{0} where per_nota = '1' and per_email = '{1}'".format(self.BASE_SQL, cadenas.strip(per_email))
         return self.first(sql, tupla_desc=self.BASE_TUPLA_DESC)
 
     def logica_iniciales(self, filtro):
@@ -249,15 +251,15 @@ class TPersonaDao(BaseDao):
             sqls.append(f"(per_apellidos like '% {filtro_upper[3]}%')")
 
         conditions = " and ".join(sqls)
-        sql = f"{basesql} where per_id>0 and coalesce(per_ciruc,'')!='' and {conditions} "
+        sql = f"{basesql} where coalesce(per_ciruc,'')!='' and {conditions} "
 
         return sql
 
     def buscar_pornomapelci(self, filtro, solo_cedulas=True, limit=30, offset=0, tipo=0):
         basesql = u"""select per_id, per_ciruc, per_genero, per_nombres||' '||coalesce(per_apellidos,'') as nomapel,
-                        per_lugresidencia, coalesce(tlugar.lug_nombre,'') as lugresidencia, '1' as stype from tpersona
+                        per_lugresidencia, coalesce(tlugar.lug_nombre,'') as lugresidencia from tpersona
                         left join public.tlugar on tpersona.per_lugresidencia = tlugar.lug_id"""
-        tupladesc = ('per_id', 'per_ciruc', 'per_genero', 'nomapel', 'per_lugresidencia', 'lugresidencia', 'stype')
+        tupladesc = ('per_id', 'per_ciruc', 'per_genero', 'nomapel', 'per_lugresidencia', 'lugresidencia')
 
         sqls = []
         clean_filtro = cadenas.strip_upper(filtro)
@@ -278,7 +280,8 @@ class TPersonaDao(BaseDao):
                 palabras = [cadena.strip() for cadena in clean_filtro.split()]
                 len_palabras = len(palabras)
                 if len_palabras >= 1:
-                    sqls.append(f"(per_nombres like '{palabras[0]}%' or per_nombres like '% {palabras[0]}%' or per_apellidos like '{palabras[0]}%' or per_apellidos like  '% {palabras[0]}%')")
+                    sqls.append(
+                        f"(per_nombres like '{palabras[0]}%' or per_nombres like '% {palabras[0]}%' or per_apellidos like '{palabras[0]}%' or per_apellidos like  '% {palabras[0]}%')")
                 if len_palabras >= 2:
                     sqls.append(
                         f"(per_nombres like '% {palabras[1]}%' or per_apellidos like '{palabras[1]}%' or per_apellidos like '% {palabras[1]}%')")
@@ -293,18 +296,21 @@ class TPersonaDao(BaseDao):
 
         conditions = " and ".join(sqls)
 
-        sql = (f"{basesql} where per_id>0 and coalesce(per_ciruc,'')!='' and (({conditions}) {subquery})  "
-               f"order by 4 limit {limit} offset {offset}")
+        sql = (
+            f"{basesql} where per_id>0 and per_nota = '1' and (({conditions}) {subquery})  "
+            f"order by 4 limit {limit} offset {offset}")
 
         return self.all(sql, tupladesc)
 
     def existe_ciruc(self, per_ciruc):
-        sql = u"select count(*) as cuenta from tpersona t where t.per_ciruc = '{0}'".format(per_ciruc)
+        sql = u"select count(*) as cuenta from tpersona t where t.per_nota = '1' and t.per_ciruc = '{0}'".format(
+            per_ciruc)
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
 
     def existe_email(self, per_email):
-        sql = "select count(*) as cuenta from tpersona t where t.per_email = '{0}'".format(per_email)
+        sql = "select count(*) as cuenta from tpersona t where t.per_nota = '1' and t.per_email = '{0}'".format(
+            per_email)
         cuenta = self.first_col(sql, 'cuenta')
         return cuenta > 0
 
@@ -336,7 +342,7 @@ class TPersonaDao(BaseDao):
                 per_fecreg,    
                 per_tipo,      
                 per_lugnac,    
-                per_nota from tpersona where per_tipo = {0} order by per_nombres
+                per_nota from tpersona where per_nota = '1' and per_tipo = {0} order by per_nombres
         """.format(per_tipo)
 
         tupla_desc = ('per_id',
@@ -505,6 +511,25 @@ class TPersonaDao(BaseDao):
 
         self._aux_set_per_tipo(form, tpersona)
 
+    def baja(self, per_id):
+        tpersona = self.get_entity_byid(per_id)
+        if tpersona is not None and int(per_id) > 0:
+            current_ciruc = tpersona.per_ciruc
+            if current_ciruc is None:
+                current_ciruc = ''
+
+            is_validciruc = is_valid_ecuadorian(current_ciruc)
+            if is_validciruc:
+                raise ErrorValidacionExc('No es posible eliminar un referente con un número de cédula o ruc válidos')
+
+            tpersona.per_nota = '0'
+            tpersona.per_ciruc = None  # Se quita el numero de cedula erroneo ingresado
+            tpersona.per_email = None  # Se quita tambien el correo usado, ya no se puede hacer uso de este referente
+
+            self.dbsession.add(tpersona)
+            return 1
+        return 0
+
     def actualizar(self, per_id, form):
         tpersona = self.get_entity_byid(per_id)
         if tpersona is not None:
@@ -520,7 +545,6 @@ class TPersonaDao(BaseDao):
                     tpersona.per_ciruc = per_ciruc
 
             self._set_datos_ref(form, tpersona)
-
             self.dbsession.add(tpersona)
             self.dbsession.flush()
             return True
@@ -542,7 +566,7 @@ class TPersonaDao(BaseDao):
         tpersona.per_ciruc = per_ciruc
         tpersona.per_lugnac = 0
         tpersona.per_telf = ''
-        tpersona.per_nota = ''
+        tpersona.per_nota = '1'
         tpersona.per_fecreg = datetime.now()
 
         self._set_datos_ref(form, tpersona)

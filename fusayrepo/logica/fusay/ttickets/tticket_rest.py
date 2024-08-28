@@ -87,7 +87,7 @@ class TTicketRest(TokenView):
         elif accion == 'upd':
             form = self.get_json_body()
             ticket_dao.actualizar(tk_id=form['tk_id'], form=form)
-            return {'status': 200, 'msg': 'Actualizado exitosamente'}
+            return {'status': 200, 'msg': 'Actualizado exitósamente'}
 
         if accion == 'anular':
             form = self.get_json_body()

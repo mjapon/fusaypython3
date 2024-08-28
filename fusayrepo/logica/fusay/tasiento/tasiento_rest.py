@@ -68,8 +68,8 @@ class TAsientoRest(TokenView):
                     'formdet': form_det,
                     'impuestos': form_cab['impuestos'],
                     'secid': secid,
-                    'sec_tipoamb':sec_tipoamb,
-                    'alm_tipoamb':alm_tipoamb
+                    'sec_tipoamb': sec_tipoamb,
+                    'alm_tipoamb': alm_tipoamb
 
                 }
             )
@@ -110,7 +110,7 @@ class TAsientoRest(TokenView):
             limit = self.get_request_param('limit')
             first = self.get_request_param('first')
             grid = tasientodao.listar_grid_ventas(desde, hasta, filtro, tracod, tipo,
-                                                           sec_id=self.get_sec_id(), limit=limit, first=first)
+                                                  sec_id=self.get_sec_id(), limit=limit, first=first)
             totales = grid['sumatorias'] if 'sumatorias' in grid else {}
             return self.res200({'grid': grid, 'totales': totales})
         elif accion == 'formasiento':
@@ -184,7 +184,6 @@ class TAsientoRest(TokenView):
     def collection_post(self):
         accion = self.get_request_param('accion')
         tasientodao = TasientoDao(self.dbsession)
-        tsecciondao = TSeccionDao(self.dbsession)
         if accion == 'creadoc':
             form = self.get_json_body()
             formcab = form['form_cab']
@@ -205,30 +204,16 @@ class TAsientoRest(TokenView):
             msg = 'Registro exitoso'
 
             almdao = TAlmacenDao(self.dbsession)
+            alm_tipoamb = almdao.get_alm_tipoamb()
 
-            # Check multiple secciones
-            sec_id = self.get_sec_id()
-            sec_tipoamb = 0
-            aplica_facte_por_seccion = False
-            if sec_id is not None and int(sec_id) > 1:
-                sec_tipoamb = tsecciondao.get_sec_tipoamb(sec_id=sec_id)
-                aplica_facte_por_seccion = sec_tipoamb > 0
-
-            alm_tipoamb = 0
-            if not aplica_facte_por_seccion:
-                alm_tipoamb = almdao.get_alm_tipoamb()
-
+            compelutil = CompeleUtilDao(self.dbsession)
+            genera_factele = compelutil.is_generate_facte(sec_id=self.get_sec_id())
             compelenviado = False
             estado_envio = 0
             is_cons_final = False
-            if (alm_tipoamb > 0 or sec_tipoamb > 0) and creando and tra_codigo == ctes.TRA_COD_FACT_VENTA:
+            if genera_factele and creando and tra_codigo == ctes.TRA_COD_FACT_VENTA:
                 log.info("Configurado facturacion se envia su generacion--trn_codigo:{0}".format(trn_codigo))
-                compelutil = CompeleUtilDao(self.dbsession)
-                """compelutil = CompeleUtilDao(self.dbsession)
-                response_compele = compelutil.enviar(trn_codigo=trn_codigo, sec_codigo=sec_id)
-                compelenviado = response_compele['enviado']
-                estado_envio = response_compele['estado_envio']
-                """
+
                 is_cons_final = int(form['form_persona']['per_id']) < 0
                 compelutil.redis_enviar(trn_codigo=trn_codigo, emp_codigo=self.get_emp_codigo(),
                                         emp_esquema=self.get_emp_esquema())
@@ -241,7 +226,7 @@ class TAsientoRest(TokenView):
         elif accion == 'anular':
             form = self.get_json_body()
             tasientodao.anular(trn_codigo=form['trncod'], user_anula=self.get_user_id(), obs_anula=form['obs'])
-            msg = 'Comprobante anulado exitosamente'
+            msg = 'Comprobante anulado exitósamente'
             return self.res200({'msg': msg})
         elif accion == 'errar':
             form = self.get_json_body()
@@ -259,13 +244,13 @@ class TAsientoRest(TokenView):
             trn_codigo = tasientodao.crear_asiento(formcab=body['formcab'], formref=body['formref'],
                                                    usercrea=self.get_user_id(),
                                                    detalles=body['detalles'])
-            return self.res200({'msg': 'Asiento registrado exitosamente', 'trn_codigo': trn_codigo})
+            return self.res200({'msg': 'Asiento registrado exitósamente', 'trn_codigo': trn_codigo})
         elif accion == 'editasiento':
             body = self.get_json_body()
             trn_codigo = tasientodao.editar_asiento(formcab=body['formcab'], formref=body['formref'],
                                                     useredita=self.get_user_id(),
                                                     detalles=body['detalles'], obs='')
-            return self.res200({'msg': 'Asiento actualizado exitosamente', 'trn_codigo': trn_codigo})
+            return self.res200({'msg': 'Asiento actualizado exitósamente', 'trn_codigo': trn_codigo})
         elif accion == 'changesec':
             body = self.get_json_body()
             auxlogichandao = AuxLogigChangeSeccion(self.dbsession)

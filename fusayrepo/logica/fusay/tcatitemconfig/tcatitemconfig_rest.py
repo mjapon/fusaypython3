@@ -43,4 +43,4 @@ class TCatItemConfigRest(TokenView):
             cat_id = self.get_request_matchdict('catic_id')
             catdao = TCatItemConfigDao(self.dbsession)
             catdao.anular(cat_id)
-            return {'status': 200, 'msg': u'Categoria anulada exitosamente'}
+            return {'status': 200, 'msg': u'Categoría anulada exitósamente'}

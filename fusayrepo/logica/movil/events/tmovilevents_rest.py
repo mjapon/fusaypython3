@@ -35,18 +35,18 @@ class TMovilEventsRest(TokenMovilView):
         elif accion == 'anular':
             cod = self.get_request_param('cod')
             tcitadao.anular(ct_id=cod)
-            return {'status': 200, 'msg': 'Cita anulada exitosamente'}"""
+            return {'status': 200, 'msg': 'Cita anulada exitósamente'}"""
 
     def post(self):
         form = self.get_request_json_body()
-        msg = 'Registrado exitosamente'
+        msg = 'Registrado exitósamente'
         tcitadao = TCitaDao(self.dbsession)
         tcitadao.guardar(form, user_crea=self.get_user_id())
         return {'status': 200, 'msg': msg}
 
     def put(self):
         form = self.get_request_json_body()
-        msg = 'Registrado exitosamente'
+        msg = 'Registrado exitósamente'
         tcitadao = TCitaDao(self.dbsession)
         tcitadao.actualizar(form, user_edita=self.get_user_id())
         return {'status': 200, 'msg': msg}
@@ -55,4 +55,4 @@ class TMovilEventsRest(TokenMovilView):
         ct_id = int(self.get_request_matchdict('ct_id'))
         tcitadao = TCitaDao(self.dbsession)
         tcitadao.anular(ct_id=ct_id)
-        return {'status': 200, 'msg': 'Cita anulada exitosamente'}
+        return {'status': 200, 'msg': 'Cita anulada exitósamente'}

@@ -70,7 +70,7 @@ class TodPlanTrantamientoRest(TokenView):
             jbody = self.get_json_body()
             res = plantratadao.crear(form=jbody, user_crea=self.get_user_id(), sec_codigo=self.get_sec_id())
 
-            return self.res200({'msg': 'Registrado exitosamente', 'res': res})
+            return self.res200({'msg': 'Registrado exitósamente', 'res': res})
 
         elif accion == 'chgestado':
             jbody = self.get_json_body()
@@ -89,6 +89,6 @@ class TodPlanTrantamientoRest(TokenView):
                                                                 emp_esquema=self.get_emp_esquema())
             msg = 'Cambio de estado exitoso'
             if int(nuevo_estado) == 5:
-                msg = 'Registro anulado exitosamente'
+                msg = 'Registro anulado exitósamente'
 
             return self.res200({'msg': msg, 'compele': response_logica_facte})

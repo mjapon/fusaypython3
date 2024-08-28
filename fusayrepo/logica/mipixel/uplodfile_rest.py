@@ -26,13 +26,13 @@ class UploadView(FusayPublicView):
             jsonbody = self.get_request_json_body()
             pixeldao = MiPixelDao(self.dbsession)
             pixeldao.anular(px_id=jsonbody['px_id'], obsanula=jsonbody['px_obs'])
-            return {'status': 200, 'msg': 'Registro anulado exitosamente'}
+            return {'status': 200, 'msg': 'Registro anulado exitósamente'}
 
         elif accion == 'confirmar':
             jsonbody = self.get_request_json_body()
             pixeldao = MiPixelDao(self.dbsession)
             pixeldao.confirmar(px_id=jsonbody['px_id'], obs_confirma=jsonbody['px_obs'])
-            return {'status': 200, 'msg': 'Registro confirmado exitosamente'}
+            return {'status': 200, 'msg': 'Registro confirmado exitósamente'}
         else:
         """
         if accion == 'updatecode':

@@ -409,7 +409,7 @@ class TAsicreditoDao(BaseDao):
 
         return self.first(sql, tupla_desc)
 
-    def get_total_deudas_referente(self, per_codigo, clase):
+    def get_total_deudas_referente(self, per_codigo, clase, sec_id):
         icclase = 'XC'
         if int(clase) == 2:
             icclase = 'XP'
@@ -421,9 +421,9 @@ class TAsicreditoDao(BaseDao):
                 join tasidetalle detcred on cred.dt_codigo = detcred.dt_codigo
                 join titemconfig ic on detcred.cta_codigo = ic.ic_id and ic.ic_clasecc = '{icclase}'
                 join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo  
-                and tasi.trn_docpen = 'F' and tasi.trn_valido = 0
+                and tasi.trn_docpen = 'F' and tasi.trn_valido = 0 and tasi.sec_codigo = {sec}
                 join tpersona per on tasi.per_codigo = per.per_id and per.per_id = {per_codigo}
-                """.format(icclase=icclase, per_codigo=per_codigo)
+                """.format(icclase=icclase, per_codigo=per_codigo, sec=sec_id)
         totaldeuda = self.first_col(sql, 'totaldeuda')
         return self.type_json(totaldeuda)
 

@@ -38,10 +38,10 @@ class TAsiAbonoRest(TokenView):
             trn_codigo = tasientodao.crear_asiento_cxcp(formcab=form['formcab'], per_codigo=form['per_codigo'],
                                                         user_crea=self.get_user_id(), detalles=form['detalles'])
 
-            return self.res200({'msg': 'Abono registrado exitosamente', 'trn_codigo': trn_codigo})
+            return self.res200({'msg': 'Abono registrado exitósamente', 'trn_codigo': trn_codigo})
         elif accion == 'anular':
             form = self.get_request_json_body()
             tasiabondao = TAsiAbonoDao(self.dbsession)
             tasiabondao.anular(abo_codigo=form['codabo'], user_anula=self.get_user_id(), obs_anula=form['obs'])
-            msg = 'Abono anulado exitosamente'
+            msg = 'Abono anulado exitósamente'
             return self.res200({'msg': msg})

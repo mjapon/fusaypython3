@@ -5,6 +5,7 @@ Created on '29/07/15'
 """
 import logging
 import re
+import unicodedata
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +34,12 @@ def strip(cadena):
 
 def strip_upper(cadena):
     return cadena.strip().upper() if cadena is not None else ''
+
+
+def remove_accents(texto):
+    texto_normalizado = unicodedata.normalize('NFD', texto)
+    texto_sin_tildes = ''.join(c for c in texto_normalizado if unicodedata.category(c) != 'Mn')
+    return unicodedata.normalize('NFC', texto_sin_tildes)
 
 
 def replace_amp(cad):

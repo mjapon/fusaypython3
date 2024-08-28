@@ -77,7 +77,7 @@ class TagpCobroRest(TokenView):
             pagomavildao = TagpPagoMavilDao(self.dbsession)
             form = self.get_json_body()
             pagomavildao.crear(form, user_crea=self.get_user_id())
-            return self.res200({'msg': 'Pago registrado exitosamente'})
+            return self.res200({'msg': 'Pago registrado exitósamente'})
         elif accion == 'anular':
             pagomavildao = TagpPagoMavilDao(self.dbsession)
             form = self.get_json_body()
@@ -88,7 +88,7 @@ class TagpCobroRest(TokenView):
             form = self.get_json_body()
             trn_codigo = adelantosdao.crear_pago_adelantado(form=form, usercrea=self.get_user_id(),
                                                             sec_codigo=self.get_sec_id())
-            return self.res200({'trn_codigo': trn_codigo, 'msg': 'Pago adelantado registrado exitosamente'})
+            return self.res200({'trn_codigo': trn_codigo, 'msg': 'Pago adelantado registrado exitósamente'})
         elif accion == 'anularAboPagoAdel':
             form = self.get_request_json_body()
             tasiabondao = TAsiAbonoDao(self.dbsession)
@@ -100,5 +100,5 @@ class TagpCobroRest(TokenView):
                 raise ErrorValidacionExc('No pude recuperar datos del pago ')
 
             pagomavil.anula_solo_pago(pg_id=datospago['pg_id'])
-            msg = 'Pago anulado exitosamente'
+            msg = 'Pago anulado exitósamente'
             return self.res200({'msg': msg})

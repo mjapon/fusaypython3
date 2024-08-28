@@ -148,7 +148,7 @@ class TFinCreditoDao(BaseDao):
         if cre_estado in map_acciones.keys():
             accion = map_acciones[cre_estado]
 
-        msg = 'El crédito fue {0} exitosamente'.format(accion)
+        msg = 'El crédito fue {0} exitósamente'.format(accion)
         credito.cre_estado = cre_estado
         histocred_dao = TFinHistoCredDao(self.dbsession)
         histocred_dao.crear(cre_id=cre_id,

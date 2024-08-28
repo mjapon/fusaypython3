@@ -110,7 +110,7 @@ class TConsultaMedicaRest(TokenView):
             tconsultam_dao = TConsultaMedicaDao(self.dbsession)
             formdata = self.get_request_json_body()
             tconsultam_dao.anular(cosm_id=formdata['cosm_id'], form=formdata, useranula=self.get_user_id())
-            return {'status': 200, 'msg': 'Registro anulado exitosamente'}
+            return {'status': 200, 'msg': 'Registro anulado exitósamente'}
         elif 'editar' == accion:
             tconsultam_dao = TConsultaMedicaDao(self.dbsession)
             formdata = self.get_request_json_body()

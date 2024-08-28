@@ -77,4 +77,4 @@ class TCitaRest(TokenView):
         elif accion == 'anular':
             cod = self.get_request_param('cod')
             tcitadao.anular(ct_id=cod)
-            return {'status': 200, 'msg': 'Cita anulada exitosamente'}
+            return {'status': 200, 'msg': 'Cita anulada exitósamente'}

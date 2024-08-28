@@ -39,12 +39,12 @@ class TUserPacienteRest(FusayPublicView):
             userpacdao = TUserPacienteDao(self.dbsession)
             form = self.get_request_json_body()
             userpacdao.crea_actualiza_cuenta(form)
-            return {'status': 200, 'msg': 'Registrado/Actualizado exitosamente'}
+            return {'status': 200, 'msg': 'Registrado/Actualizado exitósamente'}
         elif accion == 'creacuenta':
             userpacdao = TUserPacienteDao(self.dbsession)
             form = self.get_request_json_body()
             userpacdao.crear_cuenta(form)
-            return {'status': 200, 'msg': 'Registrada exitosamente'}
+            return {'status': 200, 'msg': 'Registrada exitósamente'}
         else:
             form = self.get_request_json_body()
             userpacdao = TUserPacienteDao(self.dbsession)

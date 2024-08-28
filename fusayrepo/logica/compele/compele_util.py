@@ -16,6 +16,7 @@ from fusayrepo.logica.fusay.talmacen.talmacen_dao import TAlmacenDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.utils import ctes
 from fusayrepo.utils.jsonutil import SimpleJsonUtil
+from fusayrepo.utils.validruc import is_valid_ecuadorian
 
 log = logging.getLogger(__name__)
 
@@ -40,11 +41,15 @@ class CompeleUtilDao(BaseDao):
         total_fact = totales_fact['total']
         datos_factura = datos_fact['cabecera']
         per_codigo_factura = datos_factura['per_codigo']
+        per_ciruc = datos_factura['per_ciruc']
         if per_codigo_factura == -1 and total_fact > ctes_facte.MONTO_MAXIMO_CONS_FINAL:
             raise ErrorValidacionExc(
                 "No se puede emitir una factura electrónica a consumidor final si el monto supera los ${0}, "
                 "para registrar esta factura, por favor ingrese los datos del cliente".format(
                     ctes_facte.MONTO_MAXIMO_CONS_FINAL))
+
+        if per_codigo_factura > 0 and not is_valid_ecuadorian(per_ciruc):
+            raise ErrorValidacionExc("El número de identificación ingresado es incorrecto, favor verificar")
 
         sec_codigo = datos_factura['sec_codigo']
         datos_alm_matriz = gen_data.get_datos_alm_matriz(sec_codigo=sec_codigo)
@@ -118,19 +123,11 @@ class CompeleUtilDao(BaseDao):
                                          ambiente=ambiente_facte)
         return {'status': 200, 'exito': True}
 
-    def logica_check_envio_factura_dental(self, trn_codigo):
-        sql = """
-        select per_codigo, sec_codigo, tra_codigo from tasiento where trn_codigo = {0}
-        """.format(trn_codigo)
-
-        tupla_desc = ('per_codigo', 'sec_codigo', 'tra_codigo')
-        datosfact = self.first(sql, tupla_desc)
-
-        sec_id = datosfact['sec_codigo']
-        sec_tipoamb = 0
-        aplica_facte_por_seccion = False
+    def is_generate_facte(self, sec_id):
         tseccion_dao = TSeccionDao(self.dbsession)
         talm_dao = TAlmacenDao(self.dbsession)
+        sec_tipoamb = 0
+        aplica_facte_por_seccion = False
         if sec_id is not None and int(sec_id) > 1:
             sec_tipoamb = tseccion_dao.get_sec_tipoamb(sec_id=sec_id)
             aplica_facte_por_seccion = sec_tipoamb > 0
@@ -139,15 +136,30 @@ class CompeleUtilDao(BaseDao):
         if not aplica_facte_por_seccion:
             alm_tipoamb = talm_dao.get_alm_tipoamb()
 
+        return alm_tipoamb > 0 or sec_tipoamb > 0
+
+    def logica_check_envio_factura_dental(self, trn_codigo):
+        sql = """
+        select asi.per_codigo, asi.sec_codigo, asi.tra_codigo, per.per_ciruc from tasiento asi
+            join tpersona per on asi.per_codigo = per.per_id where trn_codigo = {0}
+        """.format(trn_codigo)
+
+        tupla_desc = ('per_codigo', 'sec_codigo', 'tra_codigo', 'per_ciruc')
+        datosfact = self.first(sql, tupla_desc)
+        sec_id = datosfact['sec_codigo']
+        genera_factele = self.is_generate_facte(sec_id=sec_id)
         compelenviado = False
         estado_envio = 0
         is_cons_final = False
         creando = True
         tra_codigo = datosfact['tra_codigo']
         per_id_asiento = datosfact['per_codigo']
-        if (alm_tipoamb > 0 or sec_tipoamb > 0) and creando and tra_codigo == ctes.TRA_COD_FACT_VENTA:
+        if genera_factele and creando and tra_codigo == ctes.TRA_COD_FACT_VENTA:
             log.info("Configurado facturacion se envia su generacion--trn_codigo:{0}".format(trn_codigo))
             is_cons_final = per_id_asiento < 0
+
+            if per_id_asiento > 0 and not is_valid_ecuadorian(datosfact['per_ciruc']):
+                raise ErrorValidacionExc("El número de identificación ingresado es incorrecto, favor verificar")
 
             gen_data = GenDataForFacte(self.dbsession)
             datos_alm_matriz = gen_data.get_datos_alm_matriz(sec_codigo=sec_id)
@@ -196,8 +208,7 @@ class CompeleUtilDao(BaseDao):
                                              datos_factura=datos_fact['cabecera'],
                                              datos_alm_matriz=datos_alm_matriz,
                                              totales=datos_fact['totales'],
-                                             detalles_db=datos_fact['detalles']
-                                             )
+                                             detalles_db=datos_fact['detalles'])
 
         claveacceso = xml_facte['clave']
         alm_ruc = datos_fact['cabecera']['alm_ruc']
@@ -232,22 +243,5 @@ class CompeleUtilDao(BaseDao):
                                                   'numeroAutorizacion': claveacceso,
                                                   'claveAcceso': claveacceso
                                               })
-
-        """
-        try:
-            message = {
-                "emp_codigo": emp_codigo,
-                "emp_esquema": emp_esquema,
-                "trn_codigo": trn_codigo,
-                "clave_acceso": claveacceso
-            }
-
-            str_message = self.myjsonutil.dumps(message)
-            self.redispublis.publish_message(str_message)
-
-        except Exception as ex:
-            log.error("Error al tratar de enviar mensaje a la cola de comprobantes electronicos", ex)
-        """
-
         return {'status': 200, 'exito': True, 'enviado': enviado, 'proxyresponse': proxy_response,
                 'estado_envio': estado_envio}

@@ -58,5 +58,5 @@ class TFinPagosCredRest(TokenView):
             body = self.get_json_body()['form']
             pagoscreddao.anular_pago(pgc_id=body['pgc_id'], user_anula=self.get_user_id(),
                                      obs=body['obs'])
-            msg = 'Pago anulado exitosamente'
+            msg = 'Pago anulado exitósamente'
             return self.res200({'msg': msg})

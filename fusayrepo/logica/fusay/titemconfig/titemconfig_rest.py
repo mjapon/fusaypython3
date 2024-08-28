@@ -107,7 +107,7 @@ class TItemConfigRest(TokenView):
             form = self.get_json_body()
             msg = 'Cuenta contable creada exitósamente'
             if int(form['ic_id']) > 0:
-                msg = 'Actualizado exitosamente'
+                msg = 'Actualizado exitósamente'
                 titemconfig_dao.actualizar_plan_cta(form=form, user_actualiza=self.get_user_id())
             else:
                 titemconfig_dao.crea_ctacontable(form=form, usercrea=self.get_user_id())

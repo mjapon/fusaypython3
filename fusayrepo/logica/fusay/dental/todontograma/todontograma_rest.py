@@ -66,7 +66,7 @@ class TOdontogramaRest(TokenView):
         odon_dao = TOdontogramaDao(self.dbsession)
         form = self.get_json_body()
         od_id = int(form['od_id'])
-        msg = 'Registrado exitosamente'
+        msg = 'Registrado exitósamente'
         if od_id == 0:
             od_id = odon_dao.crear(user_crea=self.get_user_id(),
                                    pac_id=form['pac_id'],
@@ -79,6 +79,6 @@ class TOdontogramaRest(TokenView):
                                 od_odontograma=form['od_odontograma'],
                                 od_obs=form['od_obs'],
                                 od_protesis=form['od_protesis'])
-            msg = 'Actualizado exitosamente'
+            msg = 'Actualizado exitósamente'
 
         return {'status': 200, 'msg': msg, 'od_id': od_id}

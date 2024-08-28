@@ -50,7 +50,7 @@ class TPersonaRest(TokenView):
             if res is not None:
                 return self.res200({'persona': res})
             else:
-                return self.res404()
+                return self.res404({})
 
         elif 'buscaemail' == accion:
             tpersonadao = TPersonaDao(self.dbsession)
@@ -72,7 +72,7 @@ class TPersonaRest(TokenView):
         elif 'filtropag' == accion:
             filtro = self.get_request_param('filtro')
             lastpage = self.get_request_param('pag')
-            tipo = self.get_request_param('tipo')#Filtro para busqueda por tipo 0-todos, 1-cliente, 2-proveedores
+            tipo = self.get_request_param('tipo')  # Filtro para busqueda por tipo 0-todos, 1-cliente, 2-proveedores
             intlastpage = 0
             try:
                 intlastpage = int(lastpage)
@@ -94,8 +94,10 @@ class TPersonaRest(TokenView):
         elif 'gtotaldeudas' == accion:
             tasicreditodao = TAsicreditoDao(self.dbsession)
             percodigo = self.get_request_param('codper')
-            totaldeudas = tasicreditodao.get_total_deudas_referente(per_codigo=percodigo, clase=1)
-            totalcxp = tasicreditodao.get_total_deudas_referente(per_codigo=percodigo, clase=2)
+            totaldeudas = tasicreditodao.get_total_deudas_referente(per_codigo=percodigo, clase=1,
+                                                                    sec_id=self.get_sec_id())
+            totalcxp = tasicreditodao.get_total_deudas_referente(per_codigo=percodigo, clase=2,
+                                                                 sec_id=self.get_sec_id())
             return self.res200({'deudas': totaldeudas, 'totalcxp': totalcxp})
         elif 'gcuentafacts' == accion:
             tpersonadao = TPersonaDao(self.dbsession)
@@ -106,8 +108,8 @@ class TPersonaRest(TokenView):
     def post(self):
         tpersonadao = TPersonaDao(self.dbsession)
         form = self.get_json_body()
-        per_id_gen = tpersonadao.crear(form=form)
-        return {'status': 200, 'msg': u'Registrado exitosamente', 'per_id': per_id_gen}
+        per_id_gen = tpersonadao.crear(form=form, usercrea=self.get_user_id())
+        return {'status': 200, 'msg': u'Registrado exitósamente', 'per_id': per_id_gen}
 
     def put(self):
         per_id = self.get_request_matchdict('per_id')
@@ -117,8 +119,14 @@ class TPersonaRest(TokenView):
             return self.post()
         else:
             upd = tpersonadao.actualizar(per_id=per_id, form=form)
-            msg = u'Actualizado exitosamente'
+            msg = u'Actualizado exitósamente'
             if not upd:
                 msg = 'No se pudo actualizar, no existe un registro con el codigo:{0}'.format(per_id)
 
             return {'status': 200, 'msg': msg}
+
+    def delete(self):
+        per_id = self.get_request_matchdict('per_id')
+        tpersonadao = TPersonaDao(self.dbsession)
+        result = tpersonadao.baja(per_id=per_id)
+        return {'status': 200, 'result': result}

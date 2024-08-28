@@ -96,4 +96,4 @@ class TagpContratoRest(TokenView):
         elif accion == 'anular':
             body = self.get_json_body()
             tagpcontratodao.anular(form=body['form'], useranula=self.get_user_id())
-            return self.res200({'msg': 'Registro anulado exitosamente'})
+            return self.res200({'msg': 'Registro anulado exitósamente'})

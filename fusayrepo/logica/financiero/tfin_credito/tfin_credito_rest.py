@@ -66,7 +66,7 @@ class TFinCreditoRest(TokenView):
         cj_credito_dao = TFinCreditoDao(self.dbsession)
         if accion == 'crea':
             cre_id = cj_credito_dao.crear(form=self.get_json_body(), user_crea=self.get_user_id())
-            msg = 'Crédito registrado exitosamente'
+            msg = 'Crédito registrado exitósamente'
             return self.res200({'msg': msg, 'codcred': cre_id})
         elif accion == 'calctablamor':
             amordao = TFinAmortizaDao(self.dbsession)
@@ -87,4 +87,4 @@ class TFinCreditoRest(TokenView):
             body = self.get_json_body()
             adjdao = TFinAdjuntoCredDao(self.dbsession)
             adjdao.crear(form=body, user_crea=self.get_user_id())
-            return self.res200({'msg': 'Adjunto registrado exitosamente'})
+            return self.res200({'msg': 'Adjunto registrado exitósamente'})

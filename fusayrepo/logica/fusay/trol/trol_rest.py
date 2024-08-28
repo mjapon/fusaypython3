@@ -57,4 +57,4 @@ class TRolRest(TokenView):
         elif accion == 'anular':
             form = self.get_request_json_body()
             troldao.anular(rl_id=form['rl_id'])
-            return {'status': 200, 'msg': 'Rol anulado exitosamente'}
+            return {'status': 200, 'msg': 'Rol anulado exitósamente'}

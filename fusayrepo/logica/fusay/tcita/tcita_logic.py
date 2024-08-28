@@ -13,9 +13,9 @@ class TCitaLogic(PyramidView):
     def do_save(self, userid, tcitadao):
         form = self.get_request_json_body()
         ct_id = int(form['ct_id'])
-        msg = 'Registrado exitosamente'
+        msg = 'Registrado exitósamente'
         if ct_id > 0:
-            msg = 'Actualizado exitosamente'
+            msg = 'Actualizado exitósamente'
             tcitadao.actualizar(form, user_edita=userid)
         else:
             tcitadao.guardar(form, user_crea=userid)

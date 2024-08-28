@@ -52,13 +52,13 @@ class TOdAntecedentesRest(TokenView):
         if accion == 'crear':
             form = self.get_request_json_body()
             odontodao.guardar(form=form, user_crea=self.get_user_id())
-            return {'status': 200, 'msg': 'Registrado exitosamente'}
+            return {'status': 200, 'msg': 'Registrado exitósamente'}
         elif accion == 'anular':
             jsonbody = self.get_json_body()
             odontodao.anular(od_antid=jsonbody['cod'], user_anula=self.get_user_id())
-            return {'status': 200, 'msg': 'Registro anulado exitosamente'}
+            return {'status': 200, 'msg': 'Registro anulado exitósamente'}
         elif accion == 'actualizar':
             od_antid = self.get_request_param('cod')
             jsonbody = self.get_json_body()
             odontodao.actualizar(od_antid=od_antid, form=jsonbody, user_edita=self.get_user_id())
-            return {'status': 200, 'msg': 'Actualizado exitosamente'}
+            return {'status': 200, 'msg': 'Actualizado exitósamente'}

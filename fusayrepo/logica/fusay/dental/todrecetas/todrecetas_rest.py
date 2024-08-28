@@ -33,15 +33,15 @@ class TodRecetasRest(TokenView):
         if accion == 'guardar':
             form = self.get_request_json_body()
             rec_id = int(form['rec_id'])
-            msg = 'Registrado exitosamente'
+            msg = 'Registrado exitósamente'
             if rec_id == 0:
                 rec_id = recetadao.crear(form=form, user_crea=self.get_user_id())
             else:
                 recetadao.editar(rec_id, form, user_edita=self.get_user_id())
-                msg = 'Actualizado exitosamente'
+                msg = 'Actualizado exitósamente'
 
             return self.res200({'msg': msg, 'rec_id': rec_id})
         elif accion == 'anular':
             form = self.get_request_json_body()
             recetadao.anular(rec_id=form['rec_id'], user_anula=self.get_user_id())
-            return self.res200({'msg': 'Anulado exitosamente'})
+            return self.res200({'msg': 'Anulado exitósamente'})
