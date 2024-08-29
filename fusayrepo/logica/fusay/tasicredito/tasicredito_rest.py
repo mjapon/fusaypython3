@@ -25,8 +25,12 @@ class TAsiCreditoRest(TokenView):
             clase = self.get_request_param('clase')
             if not cadenas.es_nonulo_novacio(clase):
                 clase = 1
+            tipopago = self.get_request_param('tipopago')
+            tipopagoint = 0
+            if cadenas.es_nonulo_novacio(tipopago):
+                tipopagoint = int(tipopago)
 
-            creds, sumas = tasicredao.listar_creditos(per_codigo=per_codigo, solo_pendientes=True, clase=clase,
+            creds, sumas = tasicredao.listar_creditos(per_codigo=per_codigo, tipopago=tipopagoint, clase=clase,
                                                       sec_codigo=self.get_sec_id())
             return self.res200({'creds': creds, 'totales': sumas})
         elif accion == 'gdet':

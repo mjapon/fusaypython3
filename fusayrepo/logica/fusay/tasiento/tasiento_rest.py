@@ -98,7 +98,7 @@ class TAsientoRest(TokenView):
             if not cadenas.es_nonulo_novacio(clase):
                 clase = 1
 
-            creds = tasicredao.listar_creditos(per_codigo=per_codigo, solo_pendientes=False, clase=clase,
+            creds = tasicredao.listar_creditos(per_codigo=per_codigo, tipopago=0, clase=clase,
                                                sec_codigo=self.get_sec_id())
             return self.res200({'creds': creds})
         elif accion == 'gridventas':

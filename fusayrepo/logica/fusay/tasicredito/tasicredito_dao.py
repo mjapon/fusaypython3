@@ -510,14 +510,16 @@ class TAsicreditoDao(BaseDao):
 
         return data
 
-    def listar_creditos(self, per_codigo, solo_pendientes=True, clase=1, sec_codigo=0):
+    def listar_creditos(self, per_codigo, tipopago=1, clase=1, sec_codigo=0):
         tracodin = "1,2"
         if int(clase) == 2:
             tracodin = "7"
 
         sqlpendientes = " "
-        if solo_pendientes:
-            sqlpendientes = " and cred.cre_saldopen>0"
+        if tipopago == 1:  # Busco todas las cuentas por cobrar que tienen aun un saldo pendiente
+            sqlpendientes += " and cred.cre_saldopen>0 "
+        elif tipopago == 2:
+            sqlpendientes += " and cred.cre_saldopen=0 "
 
         sql = """
         select cred.cre_codigo,
