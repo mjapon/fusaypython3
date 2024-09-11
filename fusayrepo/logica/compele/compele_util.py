@@ -185,6 +185,52 @@ class CompeleUtilDao(BaseDao):
         return {'is_cons_final': is_cons_final, 'compelenviado': compelenviado, 'estado_envio': estado_envio,
                 'trn_codigo': trn_codigo, 'validarcompro': True}
 
+    def redis_enviar_notacred(self, trn_codigo, emp_codigo, emp_esquema):
+        gen_data = GenDataForFacte(self.dbsession)
+        datos_fact = gen_data.get_factura_data(trn_codigo=trn_codigo)
+
+        # Procedimento para verificar si monto supera 50 dolares no se puede emitir factura electronica a cons final
+        datos_factura = datos_fact['cabecera']
+        sec_codigo = datos_factura['sec_codigo']
+        datos_alm_matriz = gen_data.get_datos_alm_matriz(sec_codigo=sec_codigo)
+        ambiente_facte = datos_alm_matriz['alm_tipoamb']
+
+        try:
+            if sec_codigo is not None and int(sec_codigo) > 1:
+                tsecciondao = TSeccionDao(self.dbsession)
+                sec_tipoamb = tsecciondao.get_sec_tipoamb(sec_id=sec_codigo)
+                if sec_tipoamb > 0:
+                    ambiente_facte = sec_tipoamb
+        except Exception as ex_sec:
+            log.error('Error controlado al tratar de obtener el ambiente facturacion', ex_sec)
+
+        try:
+            gen_fact = GeneraFacturaCompEle(self.dbsession)
+            claveacceso = gen_fact.get_clave_acceso(datos_factura=datos_fact['cabecera'], tipo_ambiente=ambiente_facte,
+                                                    tipo_comprobante=ctes_facte.COD_DOC_NOTA_CREDITO)
+            gen_data.save_proxy_send_response(trn_codigo=trn_codigo, ambiente=ambiente_facte,
+                                              proxy_response={
+                                                  'estado': 0,
+                                                  'estadoSRI': '',
+                                                  'fechaAutorizacion': '',
+                                                  'mensajes': '',
+                                                  'numeroAutorizacion': '',
+                                                  'claveAcceso': claveacceso
+                                              })
+
+            message = {
+                "emp_codigo": emp_codigo,
+                "emp_esquema": emp_esquema,
+                "trn_codigo": trn_codigo,
+                "accion": "enviar"
+            }
+
+            str_message = self.myjsonutil.dumps(message)
+            self.redispublis.publish_message(str_message)
+
+        except Exception as ex:
+            log.error("Error al tratar de enviar mensaje (para envio nota cred) a la cola de comprobantes electronicos", ex)
+
     def enviar_nota_credito(self, trn_notacred, sec_codigo):
 
         gen_fact = GeneraFacturaCompEle(self.dbsession)
@@ -246,8 +292,9 @@ class CompeleUtilDao(BaseDao):
 
         gen_data = GenDataForFacte(self.dbsession)
         datos_fact = gen_data.get_factura_data(trn_codigo=trn_codigo)
+        datos_factura = datos_fact['cabecera']
 
-        tra_codigo = datos_fact['tra_codigo']
+        tra_codigo = datos_factura['tra_codigo']
         if tra_codigo == ctes.TRA_COD_NOTA_CREDITO:
             self.enviar_nota_credito(trn_notacred=trn_codigo, sec_codigo=sec_codigo)
             return
@@ -257,7 +304,7 @@ class CompeleUtilDao(BaseDao):
         # Procedimento para verificar si monto supera 50 dolares no se puede emitir factura electronica a cons final
         totales_fact = datos_fact['totales']
         total_fact = totales_fact['total']
-        datos_factura = datos_fact['cabecera']
+
         per_codigo_factura = datos_factura['per_codigo']
         if per_codigo_factura == -1 and total_fact > ctes_facte.MONTO_MAXIMO_CONS_FINAL:
             raise ErrorValidacionExc(

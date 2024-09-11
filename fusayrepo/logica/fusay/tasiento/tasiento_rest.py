@@ -243,8 +243,8 @@ class TAsientoRest(TokenView):
             genera_factele = compelutil.is_generate_facte(sec_id=self.get_sec_id())
             resgen = {}
             if genera_factele:
-                resgen = compelutil.enviar_nota_credito(trn_notacred=trn_codigo_gen, sec_codigo=sec_codigo)
-
+                compelutil.redis_enviar_notacred(trn_codigo=trn_codigo_gen, emp_codigo=self.get_emp_codigo(),
+                                                 emp_esquema=self.get_emp_esquema())
             return self.res200({'trncodgen': trn_codigo_gen, 'aut': resgen})
 
         elif accion == 'errar':

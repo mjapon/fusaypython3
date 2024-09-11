@@ -312,7 +312,7 @@ class AuxLogicAsiDao(BaseDao):
 
         trn_compro = self._get_trn_compro(estabptoemi, secuencia)
         tra_codigo = ctes.TRA_COD_NOTA_CREDITO
-        auxformcab = {'trn_docpen': 'F', 'sec_codigo': sec_codigo}
+        auxformcab = {'trn_docpen': 'F', 'sec_codigo': sec_codigo, 'estabptoemi': estabptoemi}
         try:
             self.aux_chk_existe_doc_valid(auxformcab, trn_compro, tra_codigo)
         except SecuenciaEnUsoExc as ex:
