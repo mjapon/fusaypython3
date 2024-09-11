@@ -16,11 +16,11 @@ log = logging.getLogger(__name__)
 
 class GeneraFacturaCompEle(BaseDao):
 
-    def get_clave_acceso(self, datos_factura, tipo_ambiente):
+    def get_clave_acceso(self, datos_factura, tipo_ambiente, tipo_comprobante=ctes_facte.COD_DOC_FACTURA):
         trn_fecreg = datos_factura['trn_fecreg']
 
         fechafact = fechas.format_cadena(trn_fecreg, ctes.APP_FMT_FECHA, ctes_facte.APP_FMT_FECHA_SRI)
-        tipo_comprobante = '01'
+
         num_ruc = datos_factura['alm_ruc']
 
         trn_compro = datos_factura['trn_compro']
@@ -68,6 +68,196 @@ class GeneraFacturaCompEle(BaseDao):
             tipo_comprador = ctes_facte.TIPO_COMPRADOR_PASAPORTE
 
         return tipo_comprador
+
+    def generar_nota_credito(self, ambiente_value, datos_notacred, datos_alm_matriz,
+                             totales, detalles_db, datos_factura_anul,
+                             tipo_emision_value=1):
+        root = et.Element('notaCredito')
+        root.set("id", "comprobante")
+        root.set("version", "1.0.0")
+
+        info_tributaria = et.SubElement(root, "infoTributaria")
+        ambiente = et.SubElement(info_tributaria, "ambiente")
+        ambiente.text = str(ambiente_value)
+
+        tipo_emision = et.SubElement(info_tributaria, "tipoEmision")
+        tipo_emision.text = str(tipo_emision_value)
+
+        razon_social = et.SubElement(info_tributaria, "razonSocial")
+        razon_social.text = cadenas.strip(datos_notacred['alm_razsoc'])
+
+        nombre_comercial = et.SubElement(info_tributaria, "nombreComercial")
+        nombre_comercial.text = cadenas.strip(datos_notacred['alm_nomcomercial'])
+
+        ruc = et.SubElement(info_tributaria, "ruc")
+        ruc.text = cadenas.strip((datos_notacred['alm_ruc']))
+
+        clave_acceso_value = self.get_clave_acceso(datos_factura=datos_notacred, tipo_ambiente=str(ambiente_value),
+                                                   tipo_comprobante=ctes_facte.COD_DOC_NOTA_CREDITO)
+        clave_acceso = et.SubElement(info_tributaria, "claveAcceso")
+        clave_acceso.text = clave_acceso_value
+
+        cod_doc = et.SubElement(info_tributaria, "codDoc")
+        cod_doc.text = ctes_facte.COD_DOC_NOTA_CREDITO
+
+        estab = et.SubElement(info_tributaria, "estab")
+        estab.text = str(datos_notacred['alm_numest'])
+
+        pto_emi = et.SubElement(info_tributaria, "ptoEmi")
+        pto_emi.text = str(datos_notacred['tdv_numero'])
+
+        secuencial = et.SubElement(info_tributaria, "secuencial")
+        trn_compro = datos_notacred['trn_compro']
+
+        secuencial_value = trn_compro[6:]
+        secuencial.text = secuencial_value
+
+        alm_matriz_value = datos_alm_matriz['alm_direcc']
+
+        dir_matriz = et.SubElement(info_tributaria, "dirMatriz")
+        dir_matriz.text = alm_matriz_value
+
+        info_nota_credito = et.SubElement(root, "infoNotaCredito")
+
+        fecha_emision = et.SubElement(info_nota_credito, "fechaEmision")
+        fecha_emision.text = datos_notacred['trn_fecreg']
+
+        dir_establecimiento = et.SubElement(info_nota_credito, "dirEstablecimiento")
+        dir_establecimiento.text = datos_notacred['alm_direcc']
+
+        tipoidentcomprador_value = self.get_tipo_ident_comprador(per_codigo=datos_notacred['per_codigo'],
+                                                                 per_ciruc=datos_notacred['per_ciruc'])
+        tipo_ident_comprador = et.SubElement(info_nota_credito, "tipoIdentificacionComprador")
+        tipo_ident_comprador.text = str(tipoidentcomprador_value)
+
+        razon_social_comprador = et.SubElement(info_nota_credito, "razonSocialComprador")
+        razon_social_comprador.text = cadenas.clean_for_rentas(cadenas.strip_upper(datos_notacred['per_nomapel']))[
+                                      0:300]
+
+        identificacion_comprador = et.SubElement(info_nota_credito, "identificacionComprador")
+        identificacion_comprador.text = cadenas.strip(datos_notacred['per_ciruc'])[0:20]
+
+        cnt_codigo = datos_alm_matriz['cnt_codigo']
+        if cnt_codigo > 0:
+            contribuyente_especial = et.SubElement(info_nota_credito, "contribuyenteEspecial")
+            contribuyente_especial.text = str(cnt_codigo)
+
+        alm_contab = datos_alm_matriz['alm_contab']
+        if alm_contab:
+            obligado_contab = et.SubElement(info_nota_credito, "obligadoContabilidad")
+            obligado_contab.text = ctes_facte.SI
+
+        cod_doc_modificado = et.SubElement(info_nota_credito, "codDocModificado")
+        cod_doc_modificado.text = ctes_facte.COD_DOC_FACTURA
+
+        numero_factura_modifica = datos_factura_anul['trn_compro']
+        num_doc_modificado = et.SubElement(info_nota_credito, "numDocModificado")
+        num_doc_modificado.text = "{0}-{1}-{2}".format(numero_factura_modifica[:3],
+                                                       numero_factura_modifica[3:6],numero_factura_modifica[6:])
+
+        fecha_emision_doc_sustento = et.SubElement(info_nota_credito, "fechaEmisionDocSustento")
+        fecha_emision_doc_sustento.text = datos_factura_anul['trn_fecreg']
+
+        total_sin_impuestos = et.SubElement(info_nota_credito, "totalSinImpuestos")
+        total_sin_impuestos.text = str(numeros.roundm2(totales['total_sin_impuesto']))
+
+        valor_modificacion = et.SubElement(info_nota_credito, "valorModificacion")
+        valor_modificacion.text = str(numeros.roundm2(totales['total_sin_impuesto']))
+
+        moneda = et.SubElement(info_nota_credito, "moneda")
+        moneda.text = ctes_facte.MONEDA
+
+        total_con_impuestos = et.SubElement(info_nota_credito, "totalConImpuestos")
+        total_impuesto = et.SubElement(total_con_impuestos, "totalImpuesto")
+
+        codigo_impuesto_item = et.SubElement(total_impuesto, "codigo")
+        codigo_impuesto_item.text = ctes_facte.CODIGO_IMPUESTO_IVA
+
+        codigo_porcentaje = et.SubElement(total_impuesto, "codigoPorcentaje")
+        codigo_porcentaje.text = ctes_facte.CODIGO_IVA_15
+
+        base_imponible = et.SubElement(total_impuesto, "baseImponible")
+        base_imponible.text = str(numeros.roundm2(totales['base_imp_iva_12']))
+
+        valor_impuesto = et.SubElement(total_impuesto, "valor")
+        valor_impuesto.text = str(numeros.roundm2(totales['impuesto_iva_12']))
+
+        motivo = et.SubElement(info_nota_credito, "motivo")
+        motivo.text = ctes_facte.MOTIVO_DEVOLUCION
+
+        detalles = et.SubElement(root, "detalles")
+
+        for detalle_db in detalles_db:
+            detalle_item = et.SubElement(detalles, "detalle")
+
+            codigo_interno_item = et.SubElement(detalle_item, "codigoInterno")
+            codigo_interno_item.text = cadenas.clean_for_rentas(cadenas.strip(detalle_db['ic_code']))[0:25]
+
+            descripcion_item = et.SubElement(detalle_item, "descripcion")
+            descripcion_item.text = cadenas.clean_for_rentas(cadenas.strip_upper(detalle_db['ic_nombre']))[0:300]
+
+            cantidad_item = et.SubElement(detalle_item, "cantidad")
+            cantidad_item.text = str(numeros.roundm2(detalle_db['dt_cant']))
+
+            precio_unitario_item = et.SubElement(detalle_item, "precioUnitario")
+            precio_unitario_item.text = str(numeros.roundm2(detalle_db['dt_precio']))
+
+            descuento_fila_val = (detalle_db['dt_decto'] * detalle_db['dt_cant']) + detalle_db['dt_dectogen']
+            descuento_fila_round = numeros.roundm2(descuento_fila_val)
+
+            descuento_item = et.SubElement(detalle_item, "descuento")
+            descuento_item.text = str(descuento_fila_round)
+
+            precio_total_sin_impuesto_val = detalle_db['subtotal'] - descuento_fila_val
+
+            precio_total_sin_impuesto_item = et.SubElement(detalle_item, "precioTotalSinImpuesto")
+            precio_total_sin_impuesto_item.text = str(numeros.roundm2(precio_total_sin_impuesto_val))
+
+            impuestos = et.SubElement(detalle_item, "impuestos")
+            impuesto_item = et.SubElement(impuestos, "impuesto")
+
+            codigo_impuesto_item = et.SubElement(impuesto_item, "codigo")
+            codigo_impuesto_item.text = ctes_facte.CODIGO_IMPUESTO_IVA
+
+            dt_cant = detalle_db['dt_cant']
+            dai_impg = detalle_db['dai_impg']
+            dai_impg_mult = numeros.roundm2(dai_impg * 100)
+            dt_decto = detalle_db['dt_decto']
+            dt_decto_cant = dt_decto * dt_cant
+            if detalle_db['dt_valdto'] >= 0.0:
+                dt_decto_cant = dt_decto
+            dt_dectogen = detalle_db['dt_dectogen']
+            dt_precio = detalle_db['dt_precio']
+            subtforiva = (dt_cant * dt_precio) - (dt_decto_cant + dt_dectogen)
+
+            # subt = (detalle_db['dt_cant'] * detalle_db['dt_precio']) - detalle_db['dt_valdto']
+
+            if dai_impg > 0:
+                ivaval = numeros.get_valor_iva(subtforiva, dai_impg)
+                codigo_porcentaje_impuesto_item = et.SubElement(impuesto_item, "codigoPorcentaje")
+                codigo_porcentaje_impuesto_item.text = ctes_facte.CODIGO_IVA_15
+                tarifa_impuesto_item = et.SubElement(impuesto_item, "tarifa")
+                tarifa_impuesto_item.text = str(dai_impg_mult)
+                base_imponible_impuesto_item = et.SubElement(impuesto_item, "baseImponible")
+                base_imponible_impuesto_item.text = str(numeros.roundm2(subtforiva))
+                valor_impuesto_item = et.SubElement(impuesto_item, "valor")
+                valor_impuesto_item.text = str(numeros.roundm2(ivaval))
+            else:
+                codigo_porcentaje_impuesto_item = et.SubElement(impuesto_item, "codigoPorcentaje")
+                codigo_porcentaje_impuesto_item.text = ctes_facte.CODIGO_IVA_CERO
+                tarifa_impuesto_item = et.SubElement(impuesto_item, "tarifa")
+                tarifa_impuesto_item.text = "0.00"
+                base_imponible_impuesto_item = et.SubElement(impuesto_item, "baseImponible")
+                base_imponible_impuesto_item.text = str(numeros.roundm2(subtforiva))
+                valor_impuesto_item = et.SubElement(impuesto_item, "valor")
+                valor_impuesto_item.text = "0.00"
+
+        xml_str = et.tostring(root, encoding='utf8').decode('utf8')
+
+        return {
+            'clave': clave_acceso_value,
+            'xml': xml_str
+        }
 
     def generar_factura(self, ambiente_value, datos_factura, datos_alm_matriz,
                         totales, detalles_db,

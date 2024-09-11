@@ -18,6 +18,7 @@ from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
 from fusayrepo.logica.fusay.ttransaccpago.ttransaccpago_dao import TTransaccPagoDao
+from fusayrepo.logica.fusay.ttransaccrel.ttransaccrel_dao import TTransaccRelDao
 from fusayrepo.utils import ctes, cadenas
 from fusayrepo.utils.pyramidutil import TokenView
 
@@ -82,7 +83,9 @@ class TAsientoRest(TokenView):
                 isforedit = foredit == '1'
 
             doc = tasientodao.get_documento(trn_codigo=trn_codigo, foredit=isforedit)
-            return self.res200({'doc': doc})
+            ttransacclreldao = TTransaccRelDao(self.dbsession)
+            datosnotacred = ttransacclreldao.get_datos_notacred_for_factura(trn_codfact=trn_codigo)
+            return self.res200({'doc': doc, 'notacred': datosnotacred})
         elif accion == 'gfact':
             per_codigo = self.get_request_param('per')
             clase = self.get_request_param('clase')
@@ -228,6 +231,22 @@ class TAsientoRest(TokenView):
             tasientodao.anular(trn_codigo=form['trncod'], user_anula=self.get_user_id(), obs_anula=form['obs'])
             msg = 'Comprobante anulado exitósamente'
             return self.res200({'msg': msg})
+        elif accion == 'notacred':
+            form = self.get_json_body()
+            ttpdvdao = TtpdvDao(self.dbsession)
+            sec_codigo = self.get_sec_id()
+            alm_codigo = ttpdvdao.get_alm_codigo_from_sec_codigo(sec_codigo)
+            trn_codigo_gen = tasientodao.generar_nota_credito(trn_codfactura=form['trn_codigo'], alm_codigo=alm_codigo,
+                                                              sec_codigo=sec_codigo, tdv_codigo=self.get_tdv_codigo(),
+                                                              usercrea=self.get_user_id())
+            compelutil = CompeleUtilDao(self.dbsession)
+            genera_factele = compelutil.is_generate_facte(sec_id=self.get_sec_id())
+            resgen = {}
+            if genera_factele:
+                resgen = compelutil.enviar_nota_credito(trn_notacred=trn_codigo_gen, sec_codigo=sec_codigo)
+
+            return self.res200({'trncodgen': trn_codigo_gen, 'aut': resgen})
+
         elif accion == 'errar':
             form = self.get_json_body()
             tasientodao.marcar_errado(trn_codigo=form['trncod'], user_do=self.get_user_id())

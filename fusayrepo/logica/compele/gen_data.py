@@ -39,7 +39,8 @@ class GenDataForFacte(BaseDao):
                 per.per_movil,
                 per.per_email,
                 asi.trn_compro,
-                asi.sec_codigo 
+                asi.sec_codigo,
+                asi.tra_codigo 
                 from tasiento asi
                 join ttpdv on asi.tdv_codigo =   ttpdv.tdv_codigo
                 join talmacen talm on ttpdv.alm_codigo = talm.alm_codigo
@@ -66,7 +67,8 @@ class GenDataForFacte(BaseDao):
                       'per_movil',
                       'per_email',
                       'trn_compro',
-                      'sec_codigo'
+                      'sec_codigo',
+                      'tra_codigo'
                       )
 
         datos_factura = self.first(sql, tupla_desc)

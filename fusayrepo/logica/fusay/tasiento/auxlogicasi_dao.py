@@ -6,6 +6,8 @@ Fecha de creacion 5/3/21
 import logging
 from datetime import datetime
 from functools import reduce
+from itertools import groupby
+from operator import itemgetter
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc, SecuenciaEnUsoExc
@@ -14,6 +16,7 @@ from fusayrepo.logica.fusay.tasidetimp.tasidetimp_model import TAsidetimp
 from fusayrepo.logica.fusay.tasiento.tasiento_model import TAsiento
 from fusayrepo.logica.fusay.ttransaccimp.ttransaccimp_dao import TTransaccImpDao
 from fusayrepo.logica.fusay.ttransaccpdv.ttransaccpdv_dao import TTransaccPdvDao
+from fusayrepo.logica.fusay.ttransaccrel.ttransaccrel_dao import TTransaccRelDao
 from fusayrepo.utils import numeros, ctes, cadenas, fechas
 
 log = logging.getLogger(__name__)
@@ -290,3 +293,125 @@ class AuxLogicAsiDao(BaseDao):
             valdebehaber.append({'dt_debito': impuesto['dt_debito'], 'dt_valor': impuesto['dt_valor']})
 
         return valdebehaber
+
+    def gen_nota_credito(self, trn_codfactura, alm_codigo, sec_codigo, tdv_codigo, usercrea):
+
+        sql = ("select sec_codigo,per_codigo,tdv_codigo,trn_impref, trn_compro "
+               "from tasiento where trn_codigo = {0}").format(trn_codfactura)
+        tupla_desc = ('sec_codigo', 'per_codigo', 'tdv_codigo', 'trn_impref', 'trn_compro')
+        datosfact = self.first(sql, tupla_desc)
+
+        transaccpdv_dao = TTransaccPdvDao(self.dbsession)
+
+        resptoemi = transaccpdv_dao.get_estabptoemi_secuencia(alm_codigo=alm_codigo,
+                                                              tra_codigo=ctes.TRA_COD_NOTA_CREDITO,
+                                                              tdv_codigo=tdv_codigo, sec_codigo=sec_codigo)
+        estabptoemi = resptoemi['estabptoemi']
+        secuencia = resptoemi['secuencia']
+        tps_codigo = resptoemi['tps_codigo']
+
+        trn_compro = self._get_trn_compro(estabptoemi, secuencia)
+        tra_codigo = ctes.TRA_COD_NOTA_CREDITO
+        auxformcab = {'trn_docpen': 'F', 'sec_codigo': sec_codigo}
+        try:
+            self.aux_chk_existe_doc_valid(auxformcab, trn_compro, tra_codigo)
+        except SecuenciaEnUsoExc as ex:
+            if tps_codigo is not None and tps_codigo > 0:
+                transaccpdv_dao.gen_secuencia(tps_codigo=tps_codigo, secuencia=secuencia)
+                trn_compro = self.aux_gen_trn_compro(auxformcab, tps_codigo, int(secuencia) + 1, tra_codigo)
+
+        tasiento = TAsiento()
+
+        tasiento.dia_codigo = 0
+        tasiento.trn_fecreg = datetime.now()
+        tasiento.trn_compro = trn_compro
+        tasiento.trn_fecha = datetime.now()
+        tasiento.trn_valido = 0
+        tasiento.trn_docpen = 'F'
+        tasiento.trn_pagpen = 'F'
+        tasiento.sec_codigo = sec_codigo
+        tasiento.per_codigo = datosfact['per_codigo']
+        tasiento.tra_codigo = tra_codigo
+        tasiento.us_id = usercrea
+        tasiento.trn_observ = ''
+        tasiento.tdv_codigo = tdv_codigo
+        tasiento.fol_codigo = 0
+        tasiento.trn_tipcom = None
+        tasiento.trn_suscom = None
+        tasiento.per_codres = None
+        tasiento.trn_impref = datosfact['trn_impref']
+
+        self.dbsession.add(tasiento)
+        self.dbsession.flush()
+        trn_cod_gen = tasiento.trn_codigo
+
+        sql = """select
+        dt_codigo, 
+        cta_codigo,
+        art_codigo,
+        per_codigo,
+        pry_codigo,
+        dt_cant,
+        dt_precio,
+        dt_debito,
+        dt_preref,
+        dt_decto,
+        dt_valor,
+        dt_dectogen,
+        dt_tipoitem,
+        dt_valdto,
+        dt_valdtogen,
+        dt_codsec from tasidetalle where trn_codigo = {0}""".format(trn_codfactura)
+        tupla_desc = ('dt_codigo', 'cta_codigo', 'art_codigo', 'per_codigo', 'pry_codigo', 'dt_cant', 'dt_precio',
+                      'dt_debito', 'dt_preref', 'dt_decto', 'dt_valor', 'dt_dectogen', 'dt_tipoitem', 'dt_valdto',
+                      'dt_valdtogen', 'dt_codsec')
+        detalles = self.all(sql, tupla_desc)
+        dt_codigos = ','.join([str(det['dt_codigo']) for det in detalles])
+
+        sql = ("select dt_codigo, dai_imp0, dai_impg, dai_ise, dai_ice from "
+               "tasidetimp where dt_codigo in ({0})").format(dt_codigos)
+
+        tupla_desc = ('dt_codigo', 'dai_imp0', 'dai_impg', 'dai_ise', 'dai_ice')
+        dt_impuestos = self.all(sql, tupla_desc)
+
+        lista_ordenada = sorted(dt_impuestos, key=itemgetter('dt_codigo'))
+
+        impuestos_map = {k: list(v) for k, v in groupby(lista_ordenada, key=itemgetter('dt_codigo'))}
+        for det in detalles:
+            detalleit = TAsidetalle()
+            pry_codigo = None
+            if cadenas.es_nonulo_novacio(det['pry_codigo']):
+                pry_codigo = det['pry_codigo']
+            detalleit.trn_codigo = trn_cod_gen
+            detalleit.cta_codigo = det['cta_codigo']
+            detalleit.art_codigo = det['art_codigo']
+            detalleit.per_codigo = det['per_codigo']
+            detalleit.pry_codigo = pry_codigo
+            detalleit.dt_cant = det['dt_cant']
+            detalleit.dt_precio = det['dt_precio']
+            detalleit.dt_debito = det['dt_debito']
+            detalleit.dt_preref = det['dt_preref']
+            detalleit.dt_decto = det['dt_decto']
+            detalleit.dt_valor = det['dt_valor']
+            detalleit.dt_dectogen = det['dt_dectogen']
+            detalleit.dt_tipoitem = det['dt_tipoitem']
+            detalleit.dt_valdto = det['dt_valdto']
+            detalleit.dt_valdtogen = det['dt_valdtogen']
+            detalleit.dt_codsec = det['dt_codsec']
+            self.dbsession.add(detalleit)
+            self.dbsession.flush()
+            new_dt_cod = detalleit.dt_codigo
+            if det['dt_codigo'] in impuestos_map:
+                impuestos = impuestos_map[det['dt_codigo']]
+                for imp in impuestos:
+                    tasidetimp = TAsidetimp()
+                    tasidetimp.dt_codigo = new_dt_cod
+                    tasidetimp.dai_imp0 = imp['dai_imp0'] if cadenas.es_nonulo_novacio(imp['dai_imp0']) else None
+                    tasidetimp.dai_impg = imp['dai_impg'] if cadenas.es_nonulo_novacio(imp['dai_impg']) else None
+                    tasidetimp.dai_ise = imp['dai_ise'] if cadenas.es_nonulo_novacio(imp['dai_ise']) else None
+                    tasidetimp.dai_ice = imp['dai_ice'] if cadenas.es_nonulo_novacio(imp['dai_ice']) else None
+                    self.dbsession.add(tasidetimp)
+
+        transaccreldao = TTransaccRelDao(self.dbsession)
+        transaccreldao.crear_nota_credito(trn_cod_gen, trn_codfactura, usercrea)
+        return trn_cod_gen

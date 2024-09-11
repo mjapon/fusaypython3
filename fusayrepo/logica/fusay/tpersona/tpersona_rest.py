@@ -108,7 +108,7 @@ class TPersonaRest(TokenView):
     def post(self):
         tpersonadao = TPersonaDao(self.dbsession)
         form = self.get_json_body()
-        per_id_gen = tpersonadao.crear(form=form, usercrea=self.get_user_id())
+        per_id_gen = tpersonadao.crear(form=form)
         return {'status': 200, 'msg': u'Registrado exitósamente', 'per_id': per_id_gen}
 
     def put(self):

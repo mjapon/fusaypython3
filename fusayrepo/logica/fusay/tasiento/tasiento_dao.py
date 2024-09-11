@@ -201,6 +201,8 @@ class TasientoDao(AuxLogicAsiDao):
                 sqltra = "and a.tra_codigo in (1,2)"
             elif int(tipo) == 2:
                 sqltra = "and a.tra_codigo in (7)"
+            elif int(tipo) == 3:
+                sqltra = "and a.tra_codigo in (4)"
         else:
             sqltra = "and a.tra_codigo in ({0})".format(tracod)
 
@@ -873,6 +875,8 @@ class TasientoDao(AuxLogicAsiDao):
         sql = "select tra_codigo, tra_nombre from ttransacc where tra_codigo in(7) "
         if int(tipo) == 1:
             sql = "select tra_codigo, tra_nombre from ttransacc where tra_codigo in(1,2) "
+        elif int(tipo) == 3:
+            sql = "select tra_codigo, tra_nombre from ttransacc where tra_codigo in(4) "
 
         tupla_desc = ('tra_codigo', 'tra_nombre')
         return self.all(sql, tupla_desc)
@@ -902,6 +906,9 @@ class TasientoDao(AuxLogicAsiDao):
             formpersona = {'per_id': tasiento.per_codigo}
             return self.crear(form=formcab, form_persona=formpersona, user_crea=user_crea, detalles=detalles,
                               pagos=pagos, totales=totales)
+
+    def generar_nota_credito(self, trn_codfactura, alm_codigo, sec_codigo, tdv_codigo, usercrea):
+        return self.gen_nota_credito(trn_codfactura, alm_codigo, sec_codigo, tdv_codigo, usercrea)
 
     def editar(self, trn_codigo, user_edita, sec_codigo, detalles, pagos, totales, formcab=None, formref=None,
                creaupdref=False):

@@ -14,6 +14,7 @@ from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.talmacen.talmacen_dao import TAlmacenDao
 from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
+from fusayrepo.logica.fusay.ttransaccrel.ttransaccrel_dao import TTransaccRelDao
 from fusayrepo.utils import ctes
 from fusayrepo.utils.jsonutil import SimpleJsonUtil
 from fusayrepo.utils.validruc import is_valid_ecuadorian
@@ -184,11 +185,73 @@ class CompeleUtilDao(BaseDao):
         return {'is_cons_final': is_cons_final, 'compelenviado': compelenviado, 'estado_envio': estado_envio,
                 'trn_codigo': trn_codigo, 'validarcompro': True}
 
+    def enviar_nota_credito(self, trn_notacred, sec_codigo):
+
+        gen_fact = GeneraFacturaCompEle(self.dbsession)
+
+        gen_data = GenDataForFacte(self.dbsession)
+        datos_notacred = gen_data.get_factura_data(trn_codigo=trn_notacred)
+        datos_alm_matriz = gen_data.get_datos_alm_matriz(sec_codigo=sec_codigo)
+
+        ttransaccreldao = TTransaccRelDao(self.dbsession)
+        datos_factura = ttransaccreldao.get_datos_factura_for_nota_credito(trn_notacred=trn_notacred)
+
+        ambiente_facte = datos_alm_matriz['alm_tipoamb']
+
+        xml_notacred_response = gen_fact.generar_nota_credito(ambiente_value=ambiente_facte,
+                                                              datos_notacred=datos_notacred['cabecera'],
+                                                              datos_alm_matriz=datos_alm_matriz,
+                                                              totales=datos_notacred['totales'],
+                                                              datos_factura_anul=datos_factura,
+                                                              detalles_db=datos_notacred['detalles'])
+        claveacceso = xml_notacred_response['clave']
+        alm_ruc = datos_notacred['cabecera']['alm_ruc']
+
+        client_proxy = ProxyClient(self.dbsession)
+
+        proxy_response = None
+        try:
+            proxy_response = client_proxy.enviar_comprobante(claveacceso=claveacceso,
+                                                             comprobante=xml_notacred_response['xml'],
+                                                             ambiente=ambiente_facte, ruc_empresa=alm_ruc)
+        except Exception as ex:
+            log.error("Error al tratar de enviar el comprobante al sri", ex)
+
+        enviado = False
+        estado_envio = 4  # Sin transmitir
+        if proxy_response is not None:
+            proxy_response['numeroAutorizacion'] = claveacceso
+            if proxy_response['claveAcceso'] is None:
+                proxy_response['claveAcceso'] = claveacceso
+
+            estado_envio = proxy_response['estado']
+            gen_data.save_proxy_send_response(trn_codigo=trn_notacred, ambiente=ambiente_facte,
+                                              proxy_response=proxy_response)
+            enviado = True
+        else:
+            gen_data.save_proxy_send_response(trn_codigo=trn_notacred, ambiente=ambiente_facte,
+                                              proxy_response={
+                                                  'estado': 4,
+                                                  'estadoSRI': '',
+                                                  'fechaAutorizacion': '',
+                                                  'mensajes': '',
+                                                  'numeroAutorizacion': claveacceso,
+                                                  'claveAcceso': claveacceso
+                                              })
+        return {'status': 200, 'exito': True, 'enviado': enviado, 'proxyresponse': proxy_response,
+                'estado_envio': estado_envio}
+
     def enviar(self, trn_codigo, sec_codigo):
         gen_fact = GeneraFacturaCompEle(self.dbsession)
 
         gen_data = GenDataForFacte(self.dbsession)
         datos_fact = gen_data.get_factura_data(trn_codigo=trn_codigo)
+
+        tra_codigo = datos_fact['tra_codigo']
+        if tra_codigo == ctes.TRA_COD_NOTA_CREDITO:
+            self.enviar_nota_credito(trn_notacred=trn_codigo, sec_codigo=sec_codigo)
+            return
+
         datos_alm_matriz = gen_data.get_datos_alm_matriz(sec_codigo=sec_codigo)
 
         # Procedimento para verificar si monto supera 50 dolares no se puede emitir factura electronica a cons final

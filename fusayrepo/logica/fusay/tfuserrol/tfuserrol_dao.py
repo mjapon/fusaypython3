@@ -108,6 +108,8 @@ class TFuserRolDao(BaseDao):
              'routerLink': ['/trndocform/1/c']},
             {'label': 'Emitir Nota de venta', 'icon': 'fa-solid fa-file-invoice',
              'routerLink': ['/trndocform/2/c']},
+            {'label': 'Notas de crédito', 'icon': 'fa-solid fa-rectangle-list',
+             'routerLink': ['/trndocs/3']},
             {'label': 'Utilidades', 'icon': 'fa-solid fa-coins',
              'routerLink': ['/utilventas']},
             {'label': 'Cierre Caja', 'icon': 'fa-solid fa-cash-register',

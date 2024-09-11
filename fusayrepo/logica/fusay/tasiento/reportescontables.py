@@ -15,20 +15,30 @@ from fusayrepo.utils.numeros import roundm2
 
 log = logging.getLogger(__name__)
 
+SIGNOS = {'1': 1, '2': -1, '3': -1, '4': 1, '5': -1}
+
 
 class ReportesContablesDao(BaseDao):
 
     def aux_totalizar_nodo(self, nodo, planctasdict):
+        signo = 1
         totalnodo = 0.0
+        dbdata = nodo.get('dbdata', {})
+        ic_code = dbdata.get('ic_code', '')
+
+        if ic_code:
+            parent_code = ic_code[:1]
+            signo = SIGNOS.get(parent_code, 1)
+
         if 'children' in nodo and len(nodo['children']) > 0:
             for hijonodo in nodo['children']:
                 totalnodo += self.aux_totalizar_nodo(hijonodo, planctasdict)
-            nodo['total'] = abs(numeros.roundm2(totalnodo))
+            nodo['total'] = (numeros.roundm2(totalnodo)) * signo
         else:
             itemdb = nodo['dbdata']
             item_codcta = itemdb['ic_id']
             if item_codcta in planctasdict:
-                nodo['total'] = abs(numeros.roundm2(planctasdict[item_codcta]['total']))
+                nodo['total'] = (numeros.roundm2(planctasdict[item_codcta]['total'])) * signo
 
             totalnodo = numeros.roundm2(nodo['total'])
 
@@ -106,7 +116,7 @@ class ReportesContablesDao(BaseDao):
         total_grupos_dict = self.get_total_grupos_dict(desde=fechas.format_cadena_db(desde),
                                                        hasta=fechas.format_cadena_db(hasta),
                                                        sec_id=sec_id)
-        resultado_ejercicio = numeros.roundm2(abs(total_grupos_dict[5]) - abs(total_grupos_dict[4]))
+        resultado_ejercicio = numeros.roundm2(abs(total_grupos_dict[5]) - total_grupos_dict[4])
         total_grupos_dict[3] += (resultado_ejercicio * -1)
 
         paramsdao = TParamsDao(self.dbsession)
@@ -151,7 +161,7 @@ class ReportesContablesDao(BaseDao):
             'balance_tree': treebg,
             'total_grupos': total_grupos_dict,
             'resultado_ejercicio': resultado_ejercicio,
-            'cta_contab_result':cta_contab_result
+            'cta_contab_result': cta_contab_result
         }
 
     def get_resultado_ejercicio_mayorizado(self, desde, hasta, sec_id):
@@ -160,7 +170,7 @@ class ReportesContablesDao(BaseDao):
         if periodo_contable is None:
             raise ErrorValidacionExc('No existe un periodo contable activo registrado, favor verificar')
 
-        #pc_desde = periodo_contable['pc_desde']
+        # pc_desde = periodo_contable['pc_desde']
         sql = """
                     with data as (
                         select mcd.cta_id, round(mcd.mcd_saldo,2) as total 
