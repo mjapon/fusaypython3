@@ -45,12 +45,17 @@ class TAsiCreditoRest(TokenView):
             limit = self.get_request_param('limit')
             first = self.get_request_param('first')
             tipopago = self.get_request_param('tipopago')
+            doexp = self.get_request_param('doexp')  # Indica si se debe buscar para exportacion de datos
             tipopagoint = 0
             if cadenas.es_nonulo_novacio(tipopago):
                 tipopagoint = int(tipopago)
 
-            data = tasicredao.listar(tipo, desde, hasta, filtro, sec_id=self.get_sec_id(),
-                                     tipopago=tipopagoint, limit=limit, first=first)
+            if doexp == '1':
+                data = tasicredao.listar_for_export(tipo, desde, hasta, filtro, sec_id=self.get_sec_id(),
+                                                    tipopago=tipopagoint, limit=limit)
+            else:
+                data = tasicredao.listar(tipo, desde, hasta, filtro, sec_id=self.get_sec_id(),
+                                         tipopago=tipopagoint, limit=limit, first=first)
             """
             totalsalopend = 0
             if int(first) == 0:

@@ -208,6 +208,38 @@ class TasientoDao(AuxLogicAsiDao):
 
         return " {0} {1} and a.trn_docpen='F' and a.sec_codigo = {2}".format(sqltra, sqladc, sec_id)
 
+    def listar_grid_ventas_for_export(self, desde, hasta, filtro, tracod, tipo, sec_id, limit=15):
+
+        total = 0
+        mxrexport = 0  # Numero maximo de filas para exportar
+        continuar = True
+        firstit = 0
+        sumatorias = None
+        cols = None
+        alldata = []
+        while continuar:
+            it_grid_result = self.listar_grid_ventas(desde, hasta, filtro, tracod, tipo, sec_id, limit, firstit)
+            if firstit == 0:
+                total = it_grid_result['total']
+                sumatorias = it_grid_result['sumatorias']
+                cols = it_grid_result['cols']
+                mxrexport = it_grid_result['mxrexport']
+                if total > mxrexport:
+                    raise ErrorValidacionExc('El total de resultados supera el límite máximo ')
+            data = it_grid_result['data']
+            for it in data:
+                alldata.append(it)
+            firstit = firstit + int(str(limit))
+            continuar = len(data) == int(str(limit))
+
+        return {
+            'total': total,
+            'sumatorias': sumatorias,
+            'data': alldata,
+            'cols': cols,
+            'mxrexport': mxrexport
+        }
+
     def listar_grid_ventas(self, desde, hasta, filtro, tracod, tipo, sec_id, limit=15, first=0):
         tgrid_dao = TGridDao(self.dbsession)
 

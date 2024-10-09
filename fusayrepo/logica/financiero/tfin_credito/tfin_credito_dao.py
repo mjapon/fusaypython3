@@ -16,7 +16,7 @@ from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
-from fusayrepo.utils import sqls, cadenas, fechas
+from fusayrepo.utils import sqls, cadenas, fechas, numeros
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class TFinCreditoDao(BaseDao):
 
     def get_form_lista(self):
         sqlestados = """
-        select est_id, est_nombre from tfin_estadocred 
+        select est_id, est_nombre from tfin_estadocred where est_id <> 3
             union select 0,'Todos' order by est_id
         """
         tupla_desc = ('est_id', 'est_nombre')
@@ -94,6 +94,21 @@ class TFinCreditoDao(BaseDao):
                       'fecaprob', 'cre_estado', 'est_nombre', 'cre_obs', 'cre_plazo', 'cre_cuota', 'cre_totalint',
                       'cre_totalseguro', 'cre_prod', 'cre_tipoint', 'prod_nombre', 'cre_saldopend', 'cre_fecprestamo')
         return self.first(sql, tupla_desc)
+
+    def totalizar_grid(self, grid):
+        total_monto = 0.0
+        total_saldopend = 0.0
+        if grid is not None and 'data' in grid.keys():
+            data = grid['data']
+            if data is not None:
+                for row in data:
+                    total_monto += row['cre_monto'] if 'cre_monto' in row else 0
+                    total_saldopend += row['cre_saldopend'] if 'cre_saldopend' in row else 0
+
+        return {
+            'total_monto': numeros.roundm2(total_monto),
+            'total_saldopend': numeros.roundm2(total_saldopend)
+        }
 
     def get_grid(self, filtro, estado=0):
         grid_dao = TGridDao(self.dbsession)

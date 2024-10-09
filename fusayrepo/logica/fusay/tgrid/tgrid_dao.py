@@ -16,11 +16,11 @@ class TGridDao(BaseDao):
 
     def get_metadata_grid(self, grid_nombre):
         sql = """
-        select grid_id, grid_nombre, grid_basesql, grid_columnas, grid_tupladesc from tgrid
+        select grid_id, grid_nombre, grid_basesql, grid_columnas, grid_tupladesc, grid_mxrowsexport from tgrid
             where grid_nombre ='{0}'
         """.format(grid_nombre)
 
-        tupla_desc = ('grid_id', 'grid_nombre', 'grid_basesql', 'grid_columnas', 'grid_tupladesc')
+        tupla_desc = ('grid_id', 'grid_nombre', 'grid_basesql', 'grid_columnas', 'grid_tupladesc', 'grid_mxrowsexport')
 
         return self.first(sql, tupla_desc)
 
@@ -40,4 +40,4 @@ class TGridDao(BaseDao):
         log.info(sql)
 
         data = self.all(sql, tupla_desc)
-        return {'data': data, 'cols': cols}
+        return {'data': data, 'cols': cols, 'mxrexport':metadata_grid['grid_mxrowsexport']}

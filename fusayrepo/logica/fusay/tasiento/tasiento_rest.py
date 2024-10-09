@@ -112,8 +112,14 @@ class TAsientoRest(TokenView):
             tipo = self.get_request_param('tipo')
             limit = self.get_request_param('limit')
             first = self.get_request_param('first')
-            grid = tasientodao.listar_grid_ventas(desde, hasta, filtro, tracod, tipo,
-                                                  sec_id=self.get_sec_id(), limit=limit, first=first)
+            doexp = self.get_request_param('doexp')  # Indica si se debe buscar para exportacion de datos
+            if doexp == '1':
+                grid = tasientodao.listar_grid_ventas_for_export(desde, hasta, filtro, tracod, tipo,
+                                                                 sec_id=self.get_sec_id(), limit=limit)
+            else:
+                grid = tasientodao.listar_grid_ventas(desde, hasta, filtro, tracod, tipo,
+                                                      sec_id=self.get_sec_id(), limit=limit, first=first)
+
             totales = grid['sumatorias'] if 'sumatorias' in grid else {}
             return self.res200({'grid': grid, 'totales': totales})
         elif accion == 'formasiento':

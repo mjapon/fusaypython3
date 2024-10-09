@@ -466,6 +466,37 @@ class TAsicreditoDao(BaseDao):
         count = self.first_raw(sql)
         return self.type_json(count[0])
 
+    def listar_for_export(self, tipo, desde, hasta, filtro, sec_id, tipopago=0, limit=15):
+        total = 0
+        mxrexport = 0  # Numero maximo de filas para exportar
+        continuar = True
+        firstit = 0
+        sumatorias = None
+        cols = None
+        alldata = []
+        while continuar:
+            it_grid_result = self.listar(tipo, desde, hasta, filtro, sec_id, tipopago, limit, firstit)
+            if firstit == 0:
+                total = it_grid_result['count']
+                sumatorias = it_grid_result['totales']
+                cols = it_grid_result['cols']
+                mxrexport = it_grid_result['mxrexport']
+                if total > mxrexport:
+                    raise ErrorValidacionExc('El total de resultados supera el límite máximo ')
+            data = it_grid_result['data']
+            for it in data:
+                alldata.append(it)
+            firstit = firstit + int(str(limit))
+            continuar = len(data) == int(str(limit))
+
+        return {
+            'count': total,
+            'totales': sumatorias,
+            'data': alldata,
+            'cols': cols,
+            'mxrexport': mxrexport
+        }
+
     def listar(self, tipo, desde, hasta, filtro, sec_id, tipopago=0, limit=15, first=0):
         """
         tipopago:0-todos, 1-con saldo pendiente, 2-pagados en su totalidad

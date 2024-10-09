@@ -37,7 +37,8 @@ class TFinCreditoRest(TokenView):
             filtro = self.get_request_param('filtro')
             estado = self.get_request_param('estado')
             grid = credito_dao.get_grid(filtro, estado)
-            return self.res200({'grid': grid})
+            totales = credito_dao.totalizar_grid(grid)
+            return self.res200({'grid': grid, 'totales':totales})
         elif accion == 'gdetcredfull':
             cre_id = self.get_request_param('creid')
             datoscred = credito_dao.get_datos_credito_full(cre_id=cre_id)

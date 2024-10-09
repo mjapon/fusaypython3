@@ -28,6 +28,9 @@ class TFinAdjuntoCredDao(BaseDao):
     def crear(self, form, user_crea):
         adjunto = TFinAdjunto()
 
+        if 'archivo' not in form:
+            raise ErrorValidacionExc("Debe cargar el adjunto")
+
         archivo = form['archivo']
         if archivo is None:
             raise ErrorValidacionExc("Debe cargar el adjunto")
