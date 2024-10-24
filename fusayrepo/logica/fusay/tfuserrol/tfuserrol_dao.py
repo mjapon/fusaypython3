@@ -83,6 +83,7 @@ class TFuserRolDao(BaseDao):
             {'label': 'Apertura Periodo', 'icon': 'fa-solid fa-folder-open',
              'routerLink': ['contabilidad/periodo/apertura']}
         ]
+
         tickets_list = [
             {'label': 'Listado', 'icon': 'fa-solid fa-rectangle-list', 'routerLink': ['/tickets']},
             {'label': 'Crear', 'icon': 'fa-solid fa-ticket-simple', 'routerLink': ['/ticket/form']}
@@ -132,6 +133,12 @@ class TFuserRolDao(BaseDao):
              'routerLink': ['/finan/movscta']}
         ]
 
+        config_list = [
+            {'label': 'Parámetros',
+             'icon': 'fa-solid fa-cog',
+             'routerLink': ['/parametros']}
+        ]
+
         all_menu = {
             '*': {'label': 'Inicio', 'icon': 'fa-solid fa-house', 'routerLink': ['/lghome']},
             'TK_LISTAR': {'label': 'Tickets', 'icon': 'fa-solid fa-ticket',
@@ -156,27 +163,28 @@ class TFuserRolDao(BaseDao):
             'REP_ADM': {'label': 'Reportes', 'icon': 'fa-solid fa-chart-pie',
                         'routerLink': ['/reportes']},
             'FIN_CRED_LIST': {'label': 'Caja de Crédito', 'icon': 'fa-solid fa-piggy-bank',
-                              'items': caja_list}
+                              'items': caja_list},
+            'APP_CONFIG': {'label': 'Configuración', 'icon': 'fa-solid fa-cog', 'items': config_list}
         }
 
         menu = []
         # menu.append(all_menu['*'])
-        permisosSet = set()
+        permisos_set = set()
         for perm in permisos:
             abrperm = perm['prm_abreviacion']
-            permisosSet.add(abrperm)
+            permisos_set.add(abrperm)
 
-        if 'CXC_LISTAR' in permisosSet:
+        if 'CXC_LISTAR' in permisos_set:
             ventas_list.append({'label': 'Cuentas por cobrar', 'icon': 'fa-solid fa-person-arrow-down-to-line',
                                 'routerLink': ['/cuentasxcp/1']})
-        if 'CXP_LISTAR' in permisosSet:
+        if 'CXP_LISTAR' in permisos_set:
             compras_list.append({'label': 'Cuentas por pagar', 'icon': 'fa-solid fa-person-arrow-up-from-line',
                                  'routerLink': ['/cuentasxcp/2']})
 
         for key in all_menu.keys():
-            if key in permisosSet:
+            if key in permisos_set:
                 menu.append(all_menu[key])
 
-        #menu_sorted = sorted(menu, key=lambda x: x['label'])
+        # menu_sorted = sorted(menu, key=lambda x: x['label'])
 
         return menu

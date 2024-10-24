@@ -5,6 +5,9 @@ Fecha de creacion 11/9/20
 """
 import logging
 
+# from cryptography.hazmat.backends import default_backend
+# from cryptography.hazmat.primitives.serialization import pkcs12
+
 from fusayrepo.logica.compele import ctes_facte
 from fusayrepo.logica.compele.gen_data import GenDataForFacte
 from fusayrepo.logica.compele.gen_xml import GeneraFacturaCompEle
@@ -124,20 +127,23 @@ class CompeleUtilDao(BaseDao):
                                          ambiente=ambiente_facte)
         return {'status': 200, 'exito': True}
 
-    def is_generate_facte(self, sec_id):
+    def get_facte_tipoamb(self, sec_id):
         tseccion_dao = TSeccionDao(self.dbsession)
         talm_dao = TAlmacenDao(self.dbsession)
         sec_tipoamb = 0
         aplica_facte_por_seccion = False
         if sec_id is not None and int(sec_id) > 1:
             sec_tipoamb = tseccion_dao.get_sec_tipoamb(sec_id=sec_id)
-            aplica_facte_por_seccion = sec_tipoamb > 0
+            aplica_facte_por_seccion = True
 
-        alm_tipoamb = 0
-        if not aplica_facte_por_seccion:
-            alm_tipoamb = talm_dao.get_alm_tipoamb()
+        if aplica_facte_por_seccion:
+            return sec_tipoamb
+        else:
+            return talm_dao.get_alm_tipoamb()
 
-        return alm_tipoamb > 0 or sec_tipoamb > 0
+    def is_generate_facte(self, sec_id):
+        facte_tipoamb = self.get_facte_tipoamb(sec_id)
+        return facte_tipoamb > 0
 
     def logica_check_envio_factura_dental(self, trn_codigo):
         sql = """
@@ -355,3 +361,29 @@ class CompeleUtilDao(BaseDao):
                                               })
         return {'status': 200, 'exito': True, 'enviado': enviado, 'proxyresponse': proxy_response,
                 'estado_envio': estado_envio}
+
+    def get_fecha_caducidad(self, path_firma_digital, clave_firma_digital):
+
+        """
+        p12_file_path = ("C:\\Users\\userdev\\Documents\\mavil\\firma_digital_clientes"
+                         "\\JAIME_WILFRIDO_JAPON_GUALAN.p12")
+                         #"\\DIANA_NARCISA_JAPON_GUALAN_191022172123.p12")
+        password= "Runalife2021"
+        """
+
+        with open(path_firma_digital, 'rb') as file:
+            p12_data = file.read()
+
+        """
+        private_key, certificate, additional_certificates = pkcs12.load_key_and_certificates(
+            p12_data,
+            clave_firma_digital.encode(),
+            default_backend()
+        )
+
+        # Obtener la fecha de caducidad del certificado
+        expiry_date = certificate.not_valid_after
+        """
+
+        #return expiry_date
+        return None

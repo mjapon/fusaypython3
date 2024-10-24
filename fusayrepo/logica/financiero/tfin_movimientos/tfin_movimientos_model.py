@@ -29,3 +29,4 @@ class TFinMovimientos(Declarative, JsonAlchemy):
     mov_saldo_transa = Column(Numeric(15, 6), nullable=False, default=0.0)
     mov_tipotransa = Column(Integer, nullable=False)
     mov_obs = Column(Text)
+    trn_codigo = Column(Integer)

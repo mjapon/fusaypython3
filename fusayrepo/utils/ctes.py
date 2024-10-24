@@ -60,39 +60,6 @@ CLASECC_CTAXCOBRAR = "XC"
 CLASECC_CTAXPAGAR = "XP"
 CLASECC_SALDOINIBILL = "SI"
 
-
-def GET_APP_DOMINIO(request):
-    settings = {}
-    try:
-        settings = request.registry.settings
-    except:
-        log.error(u"Error al tratar de obtener settings desde request", exc_info=True)
-
-    app_dominio = 'localhost'
-    if 'app.dominio' in settings:
-        app_dominio = settings['app.dominio']
-
-    return app_dominio
-
-
-def GET_MODO_LOGOUT_ISYPLUS2(request):
-    app_withnginx = 0  # Indica si la aplicacion esta siendo servida por nginx en ese caso la url de la app es /v2
-
-    settings = {}
-    try:
-        settings = request.registry.settings
-    except:
-        log.error(u"Error al tratar de obtener settings desde request", exc_info=True)
-
-    if 'app.isnginx' in settings:
-        try:
-            app_withnginx = int(settings['app.isnginx'])
-        except:
-            log.error("Error al tratar de parsear a int app.isnginx", exc_info=True)
-
-    return 2 if app_withnginx == 1 else 1
-
-
 # MODO_LOGOUT_ISYPLUS2 = 1#1-DESARROLLO 2-PRODUCCION
 MODO_LOGOUT_DESARROLLO = 1
 MODO_LOGOUT_PRODUCCION = 2
@@ -105,3 +72,11 @@ APP_CONTABLE_URL = 'v2'
 MODULOS_REPORTES_DICT = {1: 'CONTABILIDAD',
                          2: 'REFERENTES',
                          3: 'MODULO'}
+
+# Nombre de los parametros para la creacion de asientos contables en depositos o retiros
+CTA_CONTABLE_MOV_NC_DEBE = 'cj_cta_mov_nc_debe'
+CTA_CONTABLE_MOV_NC_HABER = 'cj_cta_mov_nc_haber'
+CTA_CONTABLE_MOV_ND_DEBE = 'cj_cta_mov_nd_debe'
+CTA_CONTABLE_MOV_ND_HABER = 'cj_cta_mov_nd_haber'
+
+PERMISO_APP_CONFIG = 'APP_CONFIG'

@@ -15,6 +15,7 @@ from fusayrepo.logica.fusay.tparams.tparam_dao import TParamsDao
 from fusayrepo.logica.fusay.ttransaccpago.ttransaccpago_dao import TTransaccPagoDao
 from fusayrepo.logica.fusay.ttransaccpdv.ttransaccpdv_dao import TTransaccPdvDao
 from fusayrepo.utils import ctes, fechas, numeros, cadenas
+from fusayrepo.utils.cloneutils import clone_formdet
 
 log = logging.getLogger(__name__)
 
@@ -54,12 +55,6 @@ class TAsicreditoDao(BaseDao):
         self.flush()
 
         return tasicredito.cre_codigo
-
-    def clone_formdet(self, formdet):
-        newformdet = {}
-        for key in formdet.keys():
-            newformdet[key] = formdet[key]
-        return newformdet
 
     def get_form(self, clase, per_codigo, sec_codigo):
         from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
@@ -194,21 +189,21 @@ class TAsicreditoDao(BaseDao):
             raise ErrorValidacionExc(
                 'No pude recuperar la informacion de la cuenta contable {0}'.format(datos_ctahaber_seguro))
 
-        debedet = self.clone_formdet(formdet)
+        debedet = clone_formdet(formdet)
         debedet['dt_debito'] = 1
         debedet['dt_valor'] = numeros.roundm2(total)
         debedet['cta_codigo'] = datos_cta_debe['ic_id']
         debedet['ic_clasecc'] = ''
         detalles.append(debedet)
 
-        haberdet = self.clone_formdet(formdet)
+        haberdet = clone_formdet(formdet)
         haberdet['dt_debito'] = -1
         haberdet['dt_valor'] = numeros.roundm2(capital)
         haberdet['cta_codigo'] = datos_cta_haber['ic_id']
         haberdet['ic_clasecc'] = ''
         detalles.append(haberdet)
 
-        haberdet_int = self.clone_formdet(formdet)
+        haberdet_int = clone_formdet(formdet)
         haberdet_int['dt_debito'] = -1
         haberdet_int['dt_valor'] = numeros.roundm2(interes)
         haberdet_int['cta_codigo'] = datos_ctahaber_int['ic_id']
@@ -216,14 +211,14 @@ class TAsicreditoDao(BaseDao):
         detalles.append(haberdet_int)
 
         if mora > 0:
-            haberdet_mora = self.clone_formdet(formdet)
+            haberdet_mora = clone_formdet(formdet)
             haberdet_mora['dt_debito'] = -1
             haberdet_mora['dt_valor'] = numeros.roundm2(mora)
             haberdet_mora['cta_codigo'] = datos_ctahaber_mora['ic_id']
             haberdet_mora['ic_clasecc'] = ''
             detalles.append(haberdet_mora)
         if seguro > 0:
-            haberdet_seguro = self.clone_formdet(formdet)
+            haberdet_seguro = clone_formdet(formdet)
             haberdet_seguro['dt_debito'] = -1
             haberdet_seguro['dt_valor'] = numeros.roundm2(seguro)
             haberdet_seguro['cta_codigo'] = datos_ctahaber_seguro['ic_id']
@@ -268,14 +263,14 @@ class TAsicreditoDao(BaseDao):
         datos_cta_debe = itemconfidao.get_detalles_ctacontable_by_code(ic_code=ctadebe)
         datos_cta_haber = itemconfidao.get_detalles_ctacontable_by_code(ic_code=ctahaber)
 
-        debedet = self.clone_formdet(formdet)
+        debedet = clone_formdet(formdet)
         debedet['dt_debito'] = 1
         debedet['dt_valor'] = numeros.roundm2(monto)
         debedet['cta_codigo'] = datos_cta_debe['ic_id']
         debedet['ic_clasecc'] = 'XC'
         detalles.append(debedet)
 
-        haberdet = self.clone_formdet(formdet)
+        haberdet = clone_formdet(formdet)
         haberdet['dt_debito'] = -1
         haberdet['dt_valor'] = numeros.roundm2(monto)
         haberdet['cta_codigo'] = datos_cta_haber['ic_id']
@@ -311,7 +306,7 @@ class TAsicreditoDao(BaseDao):
         detalles = []
         motivos = form['motivos']
 
-        maindet = self.clone_formdet(formdet)
+        maindet = clone_formdet(formdet)
         maindet['dt_debito'] = form['dt_debito_main']
         maindet['dt_valor'] = form['monto']
         maindet['cta_codigo'] = form['cta_codigo_main']
@@ -319,7 +314,7 @@ class TAsicreditoDao(BaseDao):
         detalles.append(maindet)
 
         for motivo in motivos:
-            auxdet = self.clone_formdet(formdet)
+            auxdet = clone_formdet(formdet)
             auxdet['dt_debito'] = int(form['dt_debito_main']) * -1
             auxdet['dt_valor'] = motivo['dt_valor']
             auxdet['cta_codigo'] = motivo['cta_codigo']

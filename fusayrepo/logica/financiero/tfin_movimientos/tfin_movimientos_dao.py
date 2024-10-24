@@ -46,7 +46,29 @@ class TFinMovimientosDao(BaseDao):
             'tipostrans': transacciones
         }
 
-    def listar(self, cue_id, desde='', hasta='', numrows=50):
+    def get_mov_details(self, mov_id):
+        sql = """
+        select mov.mov_id, mov.mov_deb_cred, mov.mov_total_transa, mov.mov_saldo_transa,
+        cta.per_id from tfin_movimientos mov 
+        join tfin_cuentas cta on mov.cue_id = cta.cue_id
+        where mov.mov_id = {0} and mov.mov_estado = 1
+        """.format(mov_id)
+        tupla_desc = ('mov_id', 'mov_deb_cred', 'mov_total_transa', 'mov_saldo_transa', 'per_id')
+        return self.first(sql, tupla_desc)
+
+    def contar_grid_movimientos(self, cue_id, filtro_fechas):
+        sql = f"""
+        select count(*) as cuenta from tfin_movimientos mov
+                join tfin_tipostran tp on tp.tipt_id = mov.mov_tipotransa
+                where cue_id = {cue_id} and mov_estado = 1 {filtro_fechas} 
+        """
+        result = self.first_raw(sql)
+        return result[0] if result is not None else 0
+
+    def listar(self, cue_id, desde='', hasta='', limit=50, first=0):
+        qlimit = f"limit {limit}"
+        qoffset = f"offset {first}"
+
         filtro_fechas = ""
         if cadenas.es_nonulo_novacio(desde) and cadenas.es_nonulo_novacio(hasta):
             filtro_fechas = " and date(mov_fecha_sistema)>='{0}' and date(mov_fecha_sistema)<='{1}' ".format(
@@ -54,7 +76,7 @@ class TFinMovimientosDao(BaseDao):
                 fechas.format_cadena_db(hasta)
             )
 
-        sql = """
+        sql = f"""
         select mov_id, cue_id, user_crea, mov_abreviado, 
                 case when mov_deb_cred=1 then mov_total_transa else null end ingreso,
                 case when mov_deb_cred=-1 then mov_total_transa else null end egreso,
@@ -63,8 +85,9 @@ class TFinMovimientosDao(BaseDao):
                 mov_saldo_transa, mov_obs
                 from tfin_movimientos mov
                 join tfin_tipostran tp on tp.tipt_id = mov.mov_tipotransa
-                where cue_id = {0} and mov_estado = 1 {1}  order by mov_fecha_sistema desc limit {2} 
-        """.format(cue_id, filtro_fechas, numrows)
+                where cue_id = {cue_id} and mov_estado = 1 {filtro_fechas}  order by mov_fecha_sistema desc 
+                {qlimit} {qoffset} 
+        """
 
         tupla_desc = ('mov_id',
                       'cue_id',
@@ -86,10 +109,17 @@ class TFinMovimientosDao(BaseDao):
             {"label": "Saldo", "field": "mov_saldo_transa"},
             {"label": "Obs", "field": "mov_obs"}
         ]
-        return {
+
+        resultgrid = {
             'data': data,
             'cols': columnas
         }
+
+        if int(first) == 0:
+            total = self.contar_grid_movimientos(cue_id, filtro_fechas)
+            resultgrid['total'] = total
+
+        return resultgrid
 
     def crear(self, form, user_crea):
         tfin_mov = TFinMovimientos()
@@ -117,7 +147,7 @@ class TFinMovimientosDao(BaseDao):
         new_saldo_disp = numeros.roundm2(cue_saldo_disp + (total_transa * tfin_mov.mov_deb_cred))
         if new_saldo_disp < 0:
             raise ErrorValidacionExc(
-                'Error saldo en cuenta negativo (saldo anterior:{0}, monto transacción:{1}, nuevo saldo:{2})'.format(
+                'Fondos insuficientes (saldo anterior:{0}, monto transacción:{1}, nuevo saldo:{2})'.format(
                     cue_saldo_disp, total_transa, new_saldo_disp))
 
         tfincuenta.cue_saldo_disp = new_saldo_disp
@@ -126,6 +156,18 @@ class TFinMovimientosDao(BaseDao):
 
         self.dbsession.add(tfin_mov)
         self.dbsession.add(tfincuenta)
+
+        self.flush()
+        return tfin_mov.mov_id
+
+    def find_entity_by_id(self, mov_id):
+        return self.dbsession.query(TFinMovimientos).filter(TFinMovimientos.mov_id == mov_id).first()
+
+    def update_trn_codigo(self, mov_id, trn_codigo):
+        tfinmovimiento = self.find_entity_by_id(mov_id)
+        if tfinmovimiento is not None:
+            tfinmovimiento.trn_codigo = trn_codigo
+            self.dbsession.add(tfinmovimiento)
 
     """
     def mov_apertura(self, form, user_crea):
