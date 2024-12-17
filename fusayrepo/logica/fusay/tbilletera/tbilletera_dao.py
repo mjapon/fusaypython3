@@ -252,7 +252,7 @@ class TBilleteraDao(BaseDao):
             case when det.dt_debito = 1 then round(det.dt_valor,2) else null end as credito,
             case when det.dt_debito = -1 then round(det.dt_valor,2) else null end as debito,
             det.cta_codigo from tasidetalle det join tasiento asi on det.trn_codigo = asi.trn_codigo
-            where coalesce(det.cta_codigo, 0)> 0 and asi.trn_valido = 0 and asi.trn_docpen = 'F'
+            where coalesce(det.cta_codigo, 0)> 0 and asi.trn_valido = 0 and asi.trn_docpen = 'F' and asi.tra_codigo != 14
               and det.cta_codigo ={cta_id} {fecha_inicio}  order by asi.trn_fecha
             )
             select dt_codigo, trn_fecha, debito, credito, 

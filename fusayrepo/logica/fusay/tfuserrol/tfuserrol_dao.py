@@ -180,6 +180,9 @@ class TFuserRolDao(BaseDao):
         if 'CXP_LISTAR' in permisos_set:
             compras_list.append({'label': 'Cuentas por pagar', 'icon': 'fa-solid fa-person-arrow-up-from-line',
                                  'routerLink': ['/cuentasxcp/2']})
+        if 'PROF_ADMIN' in permisos_set:
+            ventas_list.append({'label': 'Proformas', 'icon': 'fa-solid fa-file-invoice',
+                                'routerLink': ['/trndocs/4']})
 
         for key in all_menu.keys():
             if key in permisos_set:

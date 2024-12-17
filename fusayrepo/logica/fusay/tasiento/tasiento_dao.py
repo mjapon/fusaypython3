@@ -197,12 +197,14 @@ class TasientoDao(AuxLogicAsiDao):
 
         sqltra = ''
         if int(tracod) == 0:
-            if int(tipo) == 1:
+            if int(tipo) == 1:#Ventas
                 sqltra = "and a.tra_codigo in (1,2)"
-            elif int(tipo) == 2:
+            elif int(tipo) == 2:#Compras
                 sqltra = "and a.tra_codigo in (7)"
-            elif int(tipo) == 3:
+            elif int(tipo) == 3:#Noas de credito
                 sqltra = "and a.tra_codigo in (4)"
+            elif int(tipo) == 4:#Proformas
+                sqltra = "and a.tra_codigo in (14)"
         else:
             sqltra = "and a.tra_codigo in ({0})".format(tracod)
 
@@ -1141,6 +1143,10 @@ class TasientoDao(AuxLogicAsiDao):
 
             tasiento.trn_compro_rel = trn_compro_rel
 
-        thistbill_dao = TBilleteraHistoDao(self.dbsession)
-        thistbill_dao.generate_history_mov(trn_codigo)
+        is_proforma = int(tasiento.tra_codigo) == ctes.TRA_COD_PROFORMA
+
+        if not is_proforma:
+            thistbill_dao = TBilleteraHistoDao(self.dbsession)
+            thistbill_dao.generate_history_mov(trn_codigo)
+
         return trn_codigo
