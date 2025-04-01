@@ -83,10 +83,10 @@ class TOdRxDocsDao(BaseDao):
             os.makedirs(rutafolder)
         rutasave = '{0}/{1}'.format(rutafolder, filename)
 
-        uploadFileUtil = CargaArchivosUtil()
-        resdecodedfile = uploadFileUtil.get_decoded_file_data_type(file)
+        upload_file_util = CargaArchivosUtil()
+        resdecodedfile = upload_file_util.get_decoded_file_data_type(file)
 
-        uploadFileUtil.save_bytarray(rutasave, resdecodedfile['decoded'])
+        upload_file_util.save_bytarray(rutasave, resdecodedfile['decoded'])
 
         todrxdoc = TOdRxDocs()
         todrxdoc.rxd_ruta = rutasave

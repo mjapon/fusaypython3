@@ -27,3 +27,4 @@ class TOdReceta(Declarative, JsonAlchemy):
     pac_id = Column(Integer, nullable=False)
     med_id = Column(Integer, nullable=False)
     rec_estado = Column(Integer, default=1, nullable=False)
+    rec_diagnostico = Column(Integer)

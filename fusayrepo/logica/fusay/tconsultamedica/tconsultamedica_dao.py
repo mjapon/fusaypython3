@@ -515,11 +515,14 @@ class TConsultaMedicaDao(BaseDao):
                     cie.cie_key ciekey,
                     historia.cosm_odontograma,
                     historia.cosm_fechaedita,
-                    historia.cosm_useredita
+                    historia.cosm_useredita,
+                    medicoper.per_nombres ||' '||medicoper.per_apellidos as medico
                       from tconsultamedica historia
         join tpersona paciente on historia.pac_id = paciente.per_id
         left join public.tcie10 cie on  historia.cosm_diagnostico = cie.cie_id
         left join public.tlistavalores lv on paciente.per_ocupacion = lv.lval_id
+        left join tmedico medico on historia.med_id = medico.med_id
+        left join tpersona medicoper on medico.per_id = medicoper.per_id 
         where historia.cosm_id = {0}
         """.format(cosm_id)
 
@@ -561,7 +564,7 @@ class TConsultaMedicaDao(BaseDao):
                       'ciediagnostico',
                       'diagnosticos',
                       'ciekey',
-                      'cosm_odontograma', 'cosm_fechaedita', 'cosm_useredita')
+                      'cosm_odontograma', 'cosm_fechaedita', 'cosm_useredita','medico')
 
         datos_cita_medica = self.first(sql, tupla_desc)
 
@@ -728,6 +731,7 @@ class TConsultaMedicaDao(BaseDao):
             new_consultamedica.cosm_receta = datosconsulta['cosm_receta']
             new_consultamedica.cosm_indicsreceta = datosconsulta['cosm_indicsreceta']
             new_consultamedica.cosm_recomendaciones = datosconsulta['cosm_recomendaciones']
+            new_consultamedica.med_id = datosconsulta['med_id']
             new_consultamedica.cosm_fechaedita = datetime.now()
             new_consultamedica.cosm_useredita = useredita
             new_consultamedica.cosm_estado = 1
@@ -793,7 +797,7 @@ class TConsultaMedicaDao(BaseDao):
 
         tconsultamedica = TConsultaMedica()
         tconsultamedica.pac_id = per_id
-        tconsultamedica.med_id = usercrea
+        tconsultamedica.med_id = datosconsulta['med_id']
         tconsultamedica.cosm_fechacita = datetime.now()
         tconsultamedica.cosm_fechacrea = datetime.now()
         tconsultamedica.cosm_motivo = datosconsulta['cosm_motivo']

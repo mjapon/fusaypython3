@@ -94,15 +94,24 @@ class TOdAtencionesDao(BaseDao):
     def listar(self, pac_id):
         sql = """
         select a.ate_id, a.ate_fechacrea, a.user_crea, a.med_id, a.ate_diagnostico, a.ate_procedimiento, a.cta_id, 
-        a.pnt_id, a.ate_nro from todatenciones a          
+        a.pnt_id, a.ate_nro, cie.cie_key,cie.cie_valor from todatenciones a
+        left join public.tcie10 cie on  a.cta_id = cie.cie_id          
         where a.pac_id = {0} and a.ate_estado = 1 order by a.ate_nro desc
         """.format(pac_id)
 
         tupla_desc = (
             'ate_id', 'ate_fechacrea', 'user_crea', 'med_id', 'ate_diagnostico', 'ate_procedimiento', 'cta_id',
-            'pnt_id',
-            'ate_nro')
+            'pnt_id', 'ate_nro','cie_key','cie_valor')
         return self.all(sql, tupla_desc)
+
+    def update(self, form, user_update):
+        ate_id = form['ate_id']
+        if ate_id is not None:
+            todatencion = self.dbsession.query(TOdAtenciones).filter(TOdAtenciones.ate_id == ate_id).first()
+            if todatencion is not None:
+                todatencion.ate_diagnostico = form['ate_diagnostico']
+                todatencion.ate_procedimiento = form['ate_procedimiento']
+                self.dbsession.add(todatencion)
 
     def anular(self, ate_id, user_anula):
         odatencion = self.find_byid(ate_id)

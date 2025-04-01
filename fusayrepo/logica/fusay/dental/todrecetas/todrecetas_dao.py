@@ -24,7 +24,8 @@ class TOdRecetasDao(BaseDao):
             'rec_receta': '',
             'med_id': 0,
             'pac_id': 0,
-            'rec_estado': 1
+            'rec_estado': 1,
+            'rec_diagnostico': 0,
         }
 
     @staticmethod
@@ -47,6 +48,8 @@ class TOdRecetasDao(BaseDao):
         todreceta.med_id = form['med_id']
         todreceta.pac_id = form['pac_id']
         todreceta.rec_estado = form['rec_estado']
+        if 'rec_diagnostico' in form and int(form['rec_diagnostico'])>0:
+            todreceta.rec_diagnostico = int(form['rec_diagnostico'])
 
         self.dbsession.add(todreceta)
         self.dbsession.flush()

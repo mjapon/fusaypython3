@@ -43,3 +43,8 @@ class TodAtencionesRest(TokenView):
             form = self.get_request_json_body()
             atenciones_dao.anular(ate_id=form['ate_id'], user_anula=self.get_user_id())
             return {'status': 200, 'msg': 'Anulado existosamente'}
+        elif accion == 'update':
+            form = self.get_request_json_body()
+            atenciones_dao.update(form=form, user_update=self.get_user_id())
+            return {'status': 200, 'msg': 'Actualización existosa'}
+

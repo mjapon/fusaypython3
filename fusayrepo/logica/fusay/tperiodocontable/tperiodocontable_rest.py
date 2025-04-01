@@ -33,6 +33,9 @@ class TPeriodoContableRest(TokenView):
                 return {'existe': True, 'periodo': periodo_anterior, 'info_cta_util_acum': info_cta_util_acum}
             else:
                 return {'existe': False, 'info_cta_util_acum': info_cta_util_acum}
+        elif accion == 'ctadepacum':
+            info_cta_dep_acum = periododao.get_info_cta_depreciacion_acumulada()
+            return {'info_cta_dep_acum': info_cta_dep_acum}
 
     def collection_post(self):
         accion = self.get_rqpa()

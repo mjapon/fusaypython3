@@ -29,18 +29,24 @@ class TPeriodoContableDao(BaseDao):
         tupla_desc = ('pc_id', 'pc_desde', 'pc_hasta', 'pc_fechacrea')
         return self.first(sql, tupla_desc)
 
-    def get_info_cta_utilidades_acumuladas(self):
+    def aux_get_info_cta(self, ctaparamname):
         paramsdao = TParamsDao(self.dbsession)
-        cta_contab_result = paramsdao.get_param_value('cta_contresult_acum')
+        cta_contab_result = paramsdao.get_param_value(ctaparamname)
         # TODO: Validar existencia de parametro
         sql = """
-        select ic.ic_id, ic_code, ic_nombre, ic_code||' '||ic_nombre as codenombre, ic_padre, ic_haschild, 
-                    0.0 as total 
-                    from titemconfig ic where ic.ic_code = '{0}'
-        """.format(cta_contab_result)
+            select ic.ic_id, ic_code, ic_nombre, ic_code||' '||ic_nombre as codenombre, ic_padre, ic_haschild, 
+                        0.0 as total 
+                        from titemconfig ic where ic.ic_code = '{0}'
+            """.format(cta_contab_result)
 
         tupla = ('ic_id', 'ic_code', 'ic_nombre', 'codenombre', 'ic_padre', 'ic_haschild', 'total')
         return self.first(sql, tupla)
+
+    def get_info_cta_depreciacion_acumulada(self):
+        return self.aux_get_info_cta('cta_contdep_acum')
+
+    def get_info_cta_utilidades_acumuladas(self):
+        return self.aux_get_info_cta('cta_contresult_acum')
 
     def get_asientos_cierre(self, pc_id):
         sql = "select pc_id, pc_asientos_cierre from tperiodocontable where pc_id = {0}" \
