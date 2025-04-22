@@ -92,6 +92,8 @@ def validate_private_company_ruc(ruc):
         return False
 
     # Validate the first 9 digits using specific coefficients
+    # 08/01/2025 se comenta esta validación ya que el sri ha hecho en la generacion de rucs para sociedades
+    """
     coefficients = [4, 3, 2, 7, 6, 5, 4, 3, 2]
 
     total = 0
@@ -104,6 +106,9 @@ def validate_private_company_ruc(ruc):
     computed_check_digit = 11 - (total % 11)
     if computed_check_digit == 11:
         computed_check_digit = 0
-
+    
+    
     # Check if the computed check digit matches the given check digit
     return int(ruc[9]) == computed_check_digit
+    """
+    return True

@@ -39,11 +39,5 @@ def get_rxdoc(request):
     rxd_filename = datosdoc['rxd_filename']
     response = FileResponse(rxd_ruta, content_type=rxd_ext)
 
-    atach = 'inline'
-    """
-    atach = 'attachment'
-    if 'image' in rxd_ext:
-        atach = 'inline'
-    """
-    response.content_disposition = '{0}; filename="{1}"'.format(atach, rxd_filename)
+    response.content_disposition = 'inline; filename="{0}"'.format(rxd_filename)
     return response

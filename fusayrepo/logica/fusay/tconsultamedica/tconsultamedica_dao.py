@@ -10,6 +10,8 @@ from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tconsultamedica.tconsultamedica_model import TConsultaMedicaValores, TConsultaMedica
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
+from fusayrepo.logica.fusay.tmedicoconsulta.tmedicoconsulta_dao import TMedicoConsultaDao
+from fusayrepo.logica.fusay.tmedicoconsulta.tmedicoconsulta_model import TMedicoConsulta
 from fusayrepo.logica.fusay.tpersona.tpersona_dao import TPersonaDao
 from fusayrepo.utils import fechas, cadenas, ctes
 from sqlalchemy import and_
@@ -45,7 +47,8 @@ class TConsultaMedicaDao(BaseDao):
             'cosm_diagnosticoal': '',
             'cosm_fechaproxcita': '',
             'cosm_tipo': 1,
-            'cosm_odontograma': ''
+            'cosm_odontograma': '',
+            'medicos': []
         }
 
         return {
@@ -516,13 +519,11 @@ class TConsultaMedicaDao(BaseDao):
                     historia.cosm_odontograma,
                     historia.cosm_fechaedita,
                     historia.cosm_useredita,
-                    medicoper.per_nombres ||' '||medicoper.per_apellidos as medico
+                    get_medicos(historia.cosm_id) as medico
                       from tconsultamedica historia
         join tpersona paciente on historia.pac_id = paciente.per_id
         left join public.tcie10 cie on  historia.cosm_diagnostico = cie.cie_id
         left join public.tlistavalores lv on paciente.per_ocupacion = lv.lval_id
-        left join tmedico medico on historia.med_id = medico.med_id
-        left join tpersona medicoper on medico.per_id = medicoper.per_id 
         where historia.cosm_id = {0}
         """.format(cosm_id)
 
@@ -579,13 +580,15 @@ class TConsultaMedicaDao(BaseDao):
         # form_antecedentes = self.get_valores_adc_citamedica(1, cosm_id)
         form_examsfisicos = self.get_valores_adc_citamedica(3, cosm_id)
         form_revxsistemas = self.get_valores_adc_citamedica(2, cosm_id)
-
+        medicosdao = TMedicoConsultaDao(self.dbsession)
+        medicos = medicosdao.get_medicos_consulta(cosm_id)
         return {
             'paciente': form_paciente,
             'datosconsulta': form_datosconsulta,
             # 'antecedentes': form_antecedentes,
             'examsfisicos': form_examsfisicos,
-            'revxsistemas': form_revxsistemas
+            'revxsistemas': form_revxsistemas,
+            'medicos': medicos
         }
 
     def get_form_valores(self, catc_id):
@@ -739,16 +742,10 @@ class TConsultaMedicaDao(BaseDao):
             new_consultamedica.cosm_obsanula = None
 
             diagnosticos_array_aux = datosconsulta['diagnosticos']
-            # filtrar diagnosticos null
-            diagnosticos_array = []
-            for item in diagnosticos_array_aux:
-                if item is not None:
-                    diagnosticos_array.append(item)
+            diagnosticos_array = [item for item in diagnosticos_array_aux if item is not None]
 
             diagnosticos = self.procesar_array_diags(diagnosticos_array)
-            first_diagnostico = None
-            if diagnosticos_array is not None and len(diagnosticos_array) > 0:
-                first_diagnostico = self.get_cod_diagnostico(diagnosticos_array[0])
+            first_diagnostico = self.get_cod_diagnostico(diagnosticos_array[0]) if diagnosticos_array else None
 
             if not cadenas.es_nonulo_novacio(diagnosticos):
                 raise ErrorValidacionExc("Debe especificar el diagnóstico")
@@ -767,13 +764,19 @@ class TConsultaMedicaDao(BaseDao):
             self.dbsession.flush()
             cosm_id = new_consultamedica.cosm_id
 
-            # 3 Registro de antecendentes:
-            # Esto se registra como lista de valores
-            # antecedentes = form['antecedentes']
+            # Eliminar registros existentes de TMedicoConsulta
+            self.dbsession.query(TMedicoConsulta).filter(TMedicoConsulta.cosm_id == datosconsulta['cosm_id']).delete()
+
+            # Insertar nuevos registros de TMedicoConsulta
+            medicos = datosconsulta.get('medicos', [])
+            tmedicoconsulta_dao = TMedicoConsultaDao(self.dbsession)
+            for med_id in medicos:
+                tmedicoconsulta_dao.crear_medico_consulta(cosm_id=cosm_id, med_id=med_id, usercrea=useredita)
+
+            # Registro de antecedentes:
             examsfisicos = form['examsfisicos']
             revxsistemas = form['revxsistemas']
 
-            # self.registra_datosadc_consmedica(cosm_id, antecedentes)
             self.registra_datosadc_consmedica(cosm_id, examsfisicos)
             self.registra_datosadc_consmedica(cosm_id, revxsistemas)
 
@@ -843,6 +846,14 @@ class TConsultaMedicaDao(BaseDao):
         self.dbsession.flush()
         cosm_id = tconsultamedica.cosm_id
 
+        # Registrar medicos consulta        
+        medicos = datosconsulta.get('medicos', [])
+        if medicos is not None and len(medicos) > 0:
+            tmedicoconsulta_dao = TMedicoConsultaDao(self.dbsession)
+            for med_id in medicos:
+                tmedicoconsulta_dao.crear_medico_consulta(cosm_id=cosm_id, 
+                                                         med_id=med_id,
+                                                         usercrea=usercrea)
         # 3 Registro de antecendentes:
         # Esto se registra como lista de valores
         # antecedentes = form['antecedentes']
