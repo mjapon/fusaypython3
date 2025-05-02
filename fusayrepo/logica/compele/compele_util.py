@@ -5,8 +5,8 @@ Fecha de creacion 11/9/20
 """
 import logging
 
-# from cryptography.hazmat.backends import default_backend
-# from cryptography.hazmat.primitives.serialization import pkcs12
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.serialization import pkcs12
 
 from fusayrepo.logica.compele import ctes_facte
 from fusayrepo.logica.compele.gen_data import GenDataForFacte
@@ -235,7 +235,8 @@ class CompeleUtilDao(BaseDao):
             self.redispublis.publish_message(str_message)
 
         except Exception as ex:
-            log.error("Error al tratar de enviar mensaje (para envio nota cred) a la cola de comprobantes electronicos", ex)
+            log.error("Error al tratar de enviar mensaje (para envio nota cred) a la cola de comprobantes electronicos",
+                      ex)
 
     def enviar_nota_credito(self, trn_notacred, sec_codigo):
 
@@ -374,7 +375,6 @@ class CompeleUtilDao(BaseDao):
         with open(path_firma_digital, 'rb') as file:
             p12_data = file.read()
 
-        """
         private_key, certificate, additional_certificates = pkcs12.load_key_and_certificates(
             p12_data,
             clave_firma_digital.encode(),
@@ -383,7 +383,6 @@ class CompeleUtilDao(BaseDao):
 
         # Obtener la fecha de caducidad del certificado
         expiry_date = certificate.not_valid_after
-        """
 
-        #return expiry_date
-        return None
+        return expiry_date
+        #return None

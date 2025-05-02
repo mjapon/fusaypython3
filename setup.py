@@ -29,7 +29,8 @@ requires = [
     'requests',
     'redis',
     'twilio',
-    'python-dateutil'
+    'python-dateutil',
+    'cryptography==3.4.7'
 ]
 
 tests_require = [
