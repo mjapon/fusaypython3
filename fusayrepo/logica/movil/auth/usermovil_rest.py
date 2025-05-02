@@ -45,7 +45,7 @@ class TUserEmailRest(DbComunView):
                     'empresas': emp_schemas
                 }
         else:
-            return {'autenticado': autenticado}
+            return {'auth': False}
 
 
 @resource(collection_path='/api/movil/authEmail', path='/api/movil/authEmail/{email}', cors_origins=('*',))

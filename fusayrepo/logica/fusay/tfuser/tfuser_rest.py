@@ -50,6 +50,7 @@ class TFuserRest(DbComunView):
                 """
 
             if autenticado:
+                #user = fuserdao.find_by_email(us_email=cadenas.strip(form['username']))
                 user = fuserdao.get_user(us_cuenta=cadenas.strip(form['username']))
 
                 fusersecdao = TFuserSecDao(self.dbsession)

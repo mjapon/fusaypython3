@@ -295,7 +295,7 @@ class TBilleteraMovDao(BaseDao):
     def get_datos_mov(self, bmo_id):
         sql = """
         select mov.bmo_fechacrea, mov.bmo_fechatransacc, mov.bmo_id, mov.bmo_numero, mov.bmo_monto, mov.bmo_clase,
-               mov.trn_codigo, asi.trn_observ, mov.bmo_estado, mov.bmo_codadj,
+               mov.trn_codigo, asi.trn_observ, asi.trn_mayorizado, mov.bmo_estado, mov.bmo_codadj,
                case
                    when bmo_estado =0 then 'Pendiente'
                    when bmo_estado =1 then 'Confirmado'
@@ -320,7 +320,7 @@ class TBilleteraMovDao(BaseDao):
 
         tupla_desc = (
             'bmo_fechacrea', 'bmo_fechatransacc', 'bmo_id', 'bmo_numero', 'bmo_monto', 'bmo_clase', 'trn_codigo',
-            'trn_observ', 'bmo_estado', 'bmo_codadj', 'estado', 'clase', 'refusercrea', 'usercreacuenta', 'rxd_id',
+            'trn_observ', 'trn_mayorizado', 'bmo_estado', 'bmo_codadj', 'estado', 'clase', 'refusercrea', 'usercreacuenta', 'rxd_id',
             'rxd_filename', 'rxd_ext')
 
         datosmov = self.first(sql, tupla_desc)
