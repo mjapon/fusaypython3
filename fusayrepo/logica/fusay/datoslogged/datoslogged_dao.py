@@ -8,6 +8,7 @@ from datetime import datetime
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.fusay.tfuserrol.tfuserrol_dao import TFuserRolDao
+from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.logica.tempresa.empresa_dao import TEmpresaDao
 from fusayrepo.utils import fechas, ctes
 
@@ -20,11 +21,12 @@ class DataLoggedDao(BaseDao):
         fuserroldao = TFuserRolDao(self.dbsession)
         return fuserroldao.user_has_permiso(user_id=user_id, prm_abreviacion=permiso)
 
-    def get_datos_logged(self, user_id, emp_esquema):
+    def get_datos_logged(self, user_id, emp_esquema, sec_id):
         fechaactual = fechas.get_fecha_letras_largo(fecha=datetime.now())
 
         fuserroldao = TFuserRolDao(self.dbsession)
         permisos = fuserroldao.listar_permisos(user_id)
+        sec_calendar = TSeccionDao(self.dbsession).get_sec_calendar(sec_id)
 
         allaccesosdirmap = {
             'IG_LISTAR': [{
@@ -161,5 +163,6 @@ class DataLoggedDao(BaseDao):
             'menu': menu,
             'datosemp': datosemp,
             'vapp': version,
-            'emp': datosemp['emp_id']
+            'emp': datosemp['emp_id'],
+            'sec_calendar': sec_calendar
         }

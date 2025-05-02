@@ -770,7 +770,7 @@ class TConsultaMedicaDao(BaseDao):
             # Insertar nuevos registros de TMedicoConsulta
             medicos = datosconsulta.get('medicos', [])
             tmedicoconsulta_dao = TMedicoConsultaDao(self.dbsession)
-            for med_id in medicos:
+            for med_id in [med for med in medicos if med is not None]:
                 tmedicoconsulta_dao.crear_medico_consulta(cosm_id=cosm_id, med_id=med_id, usercrea=useredita)
 
             # Registro de antecedentes:

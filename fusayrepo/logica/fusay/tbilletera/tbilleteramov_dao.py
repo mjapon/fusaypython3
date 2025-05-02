@@ -188,6 +188,10 @@ class TBilleteraMovDao(BaseDao):
                                                    detalles=detalles)
         return trn_codigo_gen
 
+    def actualizar(self, formtosave, useredita):
+        self.anular(bmo_id=formtosave['bmo_id'],user_anula=useredita)
+        self.crear(formtosave=formtosave,usercrea=useredita)
+
     def crear(self, formtosave, usercrea):
         formbillmov = formtosave['form']
         formasiento = formtosave['formasiento']

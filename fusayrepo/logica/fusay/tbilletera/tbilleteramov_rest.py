@@ -58,6 +58,10 @@ class TBilleteraMovRest(TokenView):
             jsonbody = self.get_json_body()
             billeteramovdao.crear(formtosave=jsonbody, usercrea=self.get_user_id())
             return self.res200({'msg': 'Operación Exitosa'})
+        if accion == 'actualizar':
+            jsonbody = self.get_json_body()
+            billeteramovdao.actualizar(formtosave=jsonbody, useredita=self.get_user_id())
+            return self.res200({'msg': 'Operación Exitosa'})
         elif accion == 'anular':
             jsonbody = self.get_json_body()
             billeteramovdao.anular(bmo_id=jsonbody['codmov'], user_anula=self.get_user_id())

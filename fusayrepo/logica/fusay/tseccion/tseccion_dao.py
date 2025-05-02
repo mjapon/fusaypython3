@@ -32,3 +32,7 @@ class TSeccionDao(BaseDao):
     def get_sec_tipoamb(self, sec_id):
         sql = "select sec_tipoamb from tseccion where sec_id = {0}".format(sec_id)
         return self.first_col(sql, 'sec_tipoamb')
+
+    def get_sec_calendar(self, sec_id):
+        sql = "select sec_calendar from tseccion where sec_id = {0}".format(sec_id)
+        return self.first_col(sql, 'sec_calendar')
