@@ -153,7 +153,7 @@ class GeneraFacturaCompEle(BaseDao):
         numero_factura_modifica = datos_factura_anul['trn_compro']
         num_doc_modificado = et.SubElement(info_nota_credito, "numDocModificado")
         num_doc_modificado.text = "{0}-{1}-{2}".format(numero_factura_modifica[:3],
-                                                       numero_factura_modifica[3:6],numero_factura_modifica[6:])
+                                                       numero_factura_modifica[3:6], numero_factura_modifica[6:])
 
         fecha_emision_doc_sustento = et.SubElement(info_nota_credito, "fechaEmisionDocSustento")
         fecha_emision_doc_sustento.text = datos_factura_anul['trn_fecreg']
@@ -177,10 +177,25 @@ class GeneraFacturaCompEle(BaseDao):
         codigo_porcentaje.text = ctes_facte.CODIGO_IVA_15
 
         base_imponible = et.SubElement(total_impuesto, "baseImponible")
-        base_imponible.text = str(numeros.roundm2(totales['base_imp_iva_12']))
+        base_imponible.text = str(numeros.roundm2(totales['base_imp_iva_15']))
 
         valor_impuesto = et.SubElement(total_impuesto, "valor")
-        valor_impuesto.text = str(numeros.roundm2(totales['impuesto_iva_12']))
+        valor_impuesto.text = str(numeros.roundm2(totales['impuesto_iva_15']))
+
+        if totales['base_imp_iva_5'] > 0:
+            total_impuesto_5 = et.SubElement(total_con_impuestos, "totalImpuesto")
+
+            codigo_impuesto_item = et.SubElement(total_impuesto_5, "codigo")
+            codigo_impuesto_item.text = ctes_facte.CODIGO_IMPUESTO_IVA
+
+            codigo_porcentaje = et.SubElement(total_impuesto_5, "codigoPorcentaje")
+            codigo_porcentaje.text = ctes_facte.CODIGO_IVA_5
+
+            base_imponible = et.SubElement(total_impuesto_5, "baseImponible")
+            base_imponible.text = str(numeros.roundm2(totales['base_imp_iva_5']))
+
+            valor_impuesto = et.SubElement(total_impuesto_5, "valor")
+            valor_impuesto.text = str(numeros.roundm2(totales['impuesto_iva_5']))
 
         motivo = et.SubElement(info_nota_credito, "motivo")
         motivo.text = ctes_facte.MOTIVO_DEVOLUCION
@@ -235,7 +250,10 @@ class GeneraFacturaCompEle(BaseDao):
             if dai_impg > 0:
                 ivaval = numeros.get_valor_iva(subtforiva, dai_impg)
                 codigo_porcentaje_impuesto_item = et.SubElement(impuesto_item, "codigoPorcentaje")
-                codigo_porcentaje_impuesto_item.text = ctes_facte.CODIGO_IVA_15
+                if dai_impg == 0.05:
+                    codigo_porcentaje_impuesto_item.text = ctes_facte.CODIGO_IVA_5
+                else:
+                    codigo_porcentaje_impuesto_item.text = ctes_facte.CODIGO_IVA_15
                 tarifa_impuesto_item = et.SubElement(impuesto_item, "tarifa")
                 tarifa_impuesto_item.text = str(dai_impg_mult)
                 base_imponible_impuesto_item = et.SubElement(impuesto_item, "baseImponible")
@@ -356,10 +374,26 @@ class GeneraFacturaCompEle(BaseDao):
         codigo_porcentaje.text = ctes_facte.CODIGO_IVA_15
 
         base_imponible = et.SubElement(total_impuesto, "baseImponible")
-        base_imponible.text = str(numeros.roundm2(totales['base_imp_iva_12']))
+        base_imponible.text = str(numeros.roundm2(totales['base_imp_iva_15']))
 
         valor_impuesto = et.SubElement(total_impuesto, "valor")
-        valor_impuesto.text = str(numeros.roundm2(totales['impuesto_iva_12']))
+        valor_impuesto.text = str(numeros.roundm2(totales['impuesto_iva_15']))
+
+        # Se agrega iva 5 si existe
+        if totales['base_imp_iva_5'] > 0:
+            total_impuesto_5 = et.SubElement(total_con_impuestos, "totalImpuesto")
+
+            codigo_impuesto_item = et.SubElement(total_impuesto_5, "codigo")
+            codigo_impuesto_item.text = ctes_facte.CODIGO_IMPUESTO_IVA
+
+            codigo_porcentaje = et.SubElement(total_impuesto_5, "codigoPorcentaje")
+            codigo_porcentaje.text = ctes_facte.CODIGO_IVA_5
+
+            base_imponible = et.SubElement(total_impuesto_5, "baseImponible")
+            base_imponible.text = str(numeros.roundm2(totales['base_imp_iva_5']))
+
+            valor_impuesto = et.SubElement(total_impuesto_5, "valor")
+            valor_impuesto.text = str(numeros.roundm2(totales['impuesto_iva_5']))
 
         propina = et.SubElement(info_factura, "propina")
         propina.text = str(numeros.roundm2(datos_factura['propina']))
@@ -444,7 +478,10 @@ class GeneraFacturaCompEle(BaseDao):
             if dai_impg > 0:
                 ivaval = numeros.get_valor_iva(subtforiva, dai_impg)
                 codigo_porcentaje_impuesto_item = et.SubElement(impuesto_item, "codigoPorcentaje")
-                codigo_porcentaje_impuesto_item.text = ctes_facte.CODIGO_IVA_15
+                if dai_impg == 0.05:
+                    codigo_porcentaje_impuesto_item.text = ctes_facte.CODIGO_IVA_5
+                else:
+                    codigo_porcentaje_impuesto_item.text = ctes_facte.CODIGO_IVA_15
                 tarifa_impuesto_item = et.SubElement(impuesto_item, "tarifa")
                 tarifa_impuesto_item.text = str(dai_impg_mult)
                 base_imponible_impuesto_item = et.SubElement(impuesto_item, "baseImponible")

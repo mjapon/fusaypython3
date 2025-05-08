@@ -10,6 +10,7 @@ from functools import reduce
 
 from sqlalchemy.orm import make_transient
 
+from fusayrepo.logica.compele import ctes_facte
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tasiabono.tasiabono_dao import TAsiAbonoDao
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
@@ -197,13 +198,13 @@ class TasientoDao(AuxLogicAsiDao):
 
         sqltra = ''
         if int(tracod) == 0:
-            if int(tipo) == 1:#Ventas
+            if int(tipo) == 1:  # Ventas
                 sqltra = "and a.tra_codigo in (1,2)"
-            elif int(tipo) == 2:#Compras
+            elif int(tipo) == 2:  # Compras
                 sqltra = "and a.tra_codigo in (7)"
-            elif int(tipo) == 3:#Noas de credito
+            elif int(tipo) == 3:  # Noas de credito
                 sqltra = "and a.tra_codigo in (4)"
-            elif int(tipo) == 4:#Proformas
+            elif int(tipo) == 4:  # Proformas
                 sqltra = "and a.tra_codigo in (14)"
         else:
             sqltra = "and a.tra_codigo in ({0})".format(tracod)
@@ -399,6 +400,7 @@ class TasientoDao(AuxLogicAsiDao):
             'dai_ise': None,
             'dai_ice': None,
             'icdp_grabaiva': False,
+            'icdp_valoriva': 0,  # Se agrega este campo para registrar el monto del iva que debe registrar
             'icdp_modcontab': 0,
             'tipic_id': 0,
             'ice_stock': 0,
@@ -671,6 +673,10 @@ class TasientoDao(AuxLogicAsiDao):
         gdescuentos = 0.0
         gtotal = 0.0
         descglobal = 0.0
+        subtiva15 = 0.0
+        subtiva5 = 0.0
+        giva15 = 0.0
+        giva5 = 0.0
 
         for det in detalles:
             dt_cant = det['dt_cant']
@@ -685,15 +691,26 @@ class TasientoDao(AuxLogicAsiDao):
             subtforiva = (dt_cant * dt_precio) - (dt_decto_cant + dt_dectogen)
             ivaval = 0.0
             dt_dectogeniva = dt_dectogen
+            iva15 = 0.0
+            iva5 = 0.0
             if dai_impg > 0:
                 ivaval = numeros.get_valor_iva(subtforiva, dai_impg)
                 gsubtotal12 += subtforiva
                 dt_dectogeniva = numeros.sumar_iva(dt_dectogen, dai_impg)
+
+                if dai_impg == ctes_facte.VALOR_IVA_15:
+                    subtiva15 += subtforiva
+                    iva15 = ivaval
+                elif dai_impg == ctes_facte.VALOR_IVA_5:
+                    subtiva5 += subtforiva
+                    iva5 = ivaval
             else:
                 gsubtotal0 += subtotal
 
             ftotal = subtotal - (dt_decto_cant + dt_dectogen) + ivaval
             giva += ivaval
+            giva15 += iva15
+            giva5 += iva5
             gdescuentos += (dt_decto_cant + dt_dectogen)
             gtotal += ftotal
             gsubtotal += subtotal
@@ -702,8 +719,12 @@ class TasientoDao(AuxLogicAsiDao):
         return {
             'subtotal': numeros.roundm4(gsubtotal),
             'subtotal12': numeros.roundm4(gsubtotal12),
+            'subtotal15': numeros.roundm4(subtiva15),
+            'subtotal5': numeros.roundm4(subtiva5),
             'subtotal0': numeros.roundm4(gsubtotal0),
             'iva': numeros.roundm4(giva),
+            'iva15': numeros.roundm4(giva15),
+            'iva5': numeros.roundm4(giva5),
             'descuentos': numeros.roundm4(gdescuentos),
             'total': numeros.roundm2(gtotal),
             'descglobalin': numeros.roundm4(descglobal),

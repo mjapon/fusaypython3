@@ -83,6 +83,10 @@ class GenDataForFacte(BaseDao):
             'total_descuentos': totales['descuentos'],
             'base_imp_iva_12': totales['subtotal12'],
             'impuesto_iva_12': totales['iva'],
+            'base_imp_iva_15': totales['subtotal15'],
+            'impuesto_iva_15': totales['iva15'],
+            'base_imp_iva_5': totales['subtotal5'],
+            'impuesto_iva_5': totales['iva5'],
             'total': totales['total'],
             'pago_efectivo': totales['total'],
             'pago_credito': 0,  # TODO:

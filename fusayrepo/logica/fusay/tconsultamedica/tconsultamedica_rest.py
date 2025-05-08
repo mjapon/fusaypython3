@@ -9,6 +9,8 @@ from cornice.resource import resource
 
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
 from fusayrepo.logica.fusay.tconsultamedica.tconsultamedica_dao import TConsultaMedicaDao
+from fusayrepo.logica.fusay.tmedicoconsulta.tmedicoconsulta_dao import TMedicoConsultaDao
+from fusayrepo.logica.fusay.tmedicoconsulta.tmedicoconsulta_service import MedicoConsultaService
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
@@ -116,5 +118,15 @@ class TConsultaMedicaRest(TokenView):
             formdata = self.get_request_json_body()
             msg, cosm_id = tconsultam_dao.actualizar(form=formdata, useredita=self.get_user_id())
             return {'status': 200, 'msg': msg, 'ccm': cosm_id}
+        elif 'estadisticas' == accion:
+            filters = self.get_request_json_body()
+            mediconsultadao = MedicoConsultaService(self.dbsession)
+            resultados = mediconsultadao.build_report(desde=filters['desde'], hasta=filters['hasta'])
+            return {'status': 200, 'resultados': resultados}
+        elif 'detcitaslista' == accion:
+            filters = self.get_request_json_body()
+            mediconsultadao = TMedicoConsultaDao(self.dbsession)
+            detalles = mediconsultadao.find_detalles_atenciones(lista_id_consultas=filters['consultas'])
+            return {'status': 200, 'detalles': detalles}
         else:
             raise ErrorValidacionExc(u'Ninguna acción especificada')

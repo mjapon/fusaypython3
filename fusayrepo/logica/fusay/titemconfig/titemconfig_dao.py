@@ -78,18 +78,20 @@ class TItemConfigDao(BaseDao):
                        a.ic_code,
                        a.tipic_id,
                        td.icdp_grabaiva,
+                       coalesce(imp.imp_valor,0.0) as valor_iva,
                        case td.icdp_grabaiva when true then round(td.icdp_preciocompra,4) else icdp_preciocompra end as icdp_preciocompra, 
-                       case td.icdp_grabaiva when true then round(public.get_precio_venta_sin_iva(0.15,td.icdp_precioventa),4) else icdp_precioventa end as icdp_precioventa,
-                       case td.icdp_grabaiva when true then round(public.get_precio_venta_sin_iva(0.15,td.icdp_precioventamin),4) else icdp_precioventamin end as icdp_precioventamin,
+                       case td.icdp_grabaiva when true then round(public.get_precio_venta_sin_iva(imp.imp_valor,td.icdp_precioventa),4) else icdp_precioventa end as icdp_precioventa,
+                       case td.icdp_grabaiva when true then round(public.get_precio_venta_sin_iva(imp.imp_valor,td.icdp_precioventamin),4) else icdp_precioventamin end as icdp_precioventamin,
                        td.icdp_modcontab,
-                       case td.icdp_grabaiva when TRUE then round(public.poner_iva_gen(0.15,td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
+                       case td.icdp_grabaiva when TRUE then round(public.poner_iva_gen(imp.imp_valor,td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
                        case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventa),2) else td.icdp_precioventa end as icdp_precioventa_iva,
                        case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventamin),2) else td.icdp_precioventamin end as icdp_precioventamin_iva,
                        coalesce(ick.ice_stock, 0) ice_stock,
                        coalesce(mcd.cta_codigo, 0) cta_codigo,
                        coalesce(mcd.mcd_signo, 0) mcd_signo
                 from titemconfig a
-                join titemconfig_datosprod td on a.ic_id = td.ic_id                
+                join titemconfig_datosprod td on a.ic_id = td.ic_id  
+                join timpuestos imp on td.icdp_tipoiva = imp.imp_id              
                 join titemconfig_sec ics on ics.ic_id = a.ic_id and ics.sec_id = {sec_id}
                 left join titemconfig_stock ick on ick.ic_id = a.ic_id and ick.sec_id = {sec_id}
                 left join tmodelocontab mc on td.icdp_modcontab = mc.mc_id
@@ -98,7 +100,7 @@ class TItemConfigDao(BaseDao):
                 """.format(filtro=cadenas.strip_upper(filtro), limit=limit, sec_id=sec_id, tracod=tracod)
 
         tupla_desc = (
-            'ic_id', 'ic_nombre', 'ic_code', 'tipic_id', 'icdp_grabaiva', 'icdp_preciocompra',
+            'ic_id', 'ic_nombre', 'ic_code', 'tipic_id', 'icdp_grabaiva', 'valor_iva', 'icdp_preciocompra',
             'icdp_precioventa', 'icdp_precioventamin', 'icdp_modcontab', 'icdp_preciocompra_iva',
             'icdp_precioventa_iva', 'icdp_precioventamin_iva', 'ice_stock', 'cta_codigo', 'mcd_signo'
         )
@@ -140,16 +142,19 @@ class TItemConfigDao(BaseDao):
                td.icdp_preciocompra,
                td.icdp_precioventa,
                td.icdp_precioventamin,               
-               case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
+               coalesce(imp.imp_valor,0.0) as valor_iva,
+               case td.icdp_grabaiva when TRUE then round(public.poner_iva_gen(imp.imp_valor,td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
                case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventa),2) else td.icdp_precioventa end as icdp_precioventa_iva,
                case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventamin),2) else td.icdp_precioventamin end as icdp_precioventamin_iva
         from titemconfig a 
         join titemconfig_datosprod td on a.ic_id = td.ic_id
+        join timpuestos imp on td.icdp_tipoiva = imp.imp_id
         where a.ic_estado = 1 and a.ic_dental = true and (a.ic_code like '{0}%' or a.ic_nombre like '{0}%') order by a.ic_nombre limit {1}
         """.format(cadenas.strip_upper(filtro), limit)
 
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'icdp_grabaiva', 'icdp_preciocompra', 'icdp_precioventa',
-                      'icdp_precioventamin', 'icdp_preciocompra_iva', 'icdp_precioventa_iva', 'icdp_precioventamin_iva')
+                      'icdp_precioventamin', 'valor_iva', 'icdp_preciocompra_iva', 'icdp_precioventa_iva',
+                      'icdp_precioventamin_iva')
 
         return self.all(sql, tupla_desc)
 
@@ -159,17 +164,20 @@ class TItemConfigDao(BaseDao):
                        td.icdp_grabaiva,               
                        td.icdp_preciocompra,
                        td.icdp_precioventa,
-                       td.icdp_precioventamin,               
-                       case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
+                       td.icdp_precioventamin,
+                       coalesce(imp.imp_valor,0.0) as valor_iva,
+                       case td.icdp_grabaiva when TRUE then round(public.poner_iva_gen(imp.imp_valor,td.icdp_preciocompra),2) else td.icdp_preciocompra end as icdp_preciocompra_iva,
                        case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventa),2) else td.icdp_precioventa end as icdp_precioventa_iva,
                        case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventamin),2) else td.icdp_precioventamin end as icdp_precioventamin_iva
                 from titemconfig a 
                 join titemconfig_datosprod td on a.ic_id = td.ic_id
+                join timpuestos imp on td.icdp_tipoiva = imp.imp_id
                 where a.ic_estado = 1 and a.ic_dental = true  order by a.ic_nombre
                 """
 
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'icdp_grabaiva', 'icdp_preciocompra', 'icdp_precioventa',
-                      'icdp_precioventamin', 'icdp_preciocompra_iva', 'icdp_precioventa_iva', 'icdp_precioventamin_iva')
+                      'icdp_precioventamin', 'valor_iva', 'icdp_preciocompra_iva', 'icdp_precioventa_iva',
+                      'icdp_precioventamin_iva')
 
         return self.all(sql, tupla_desc)
 
@@ -207,6 +215,7 @@ class TItemConfigDao(BaseDao):
             'catic_id': 1,
             'ic_fechacrea': '',
             'icdp_grabaiva': False,
+            'icdp_tipoiva': 4,  # Por defecto el tipo de impuesto 4 es 0%
             'icdp_preciocompra': 0.0,
             'icdp_preciocompra_iva': 0.0,
             'icdp_precioventa': 0.0,
@@ -383,6 +392,7 @@ class TItemConfigDao(BaseDao):
         titemconfigdp = TItemConfigDatosProd()
         titemconfigdp.ic_id = ic_id
         titemconfigdp.icdp_grabaiva = icdp_grabaiva
+        titemconfigdp.icdp_tipoiva = form['icdp_tipoiva'] if 'icdp_tipoiva' in form else 4  # Por defecto le pongo iva 0
 
         icdp_fechacaducidad = form['icdp_fechacaducidad']
         if cadenas.es_nonulo_novacio(icdp_fechacaducidad):
@@ -509,6 +519,8 @@ class TItemConfigDao(BaseDao):
                 titemconfigdp.icdp_precioventa = icdp_precioventa
                 titemconfigdp.icdp_precioventamin = icdp_precioventamin
 
+                titemconfigdp.icdp_tipoiva = form['icdp_tipoiva'] if 'icdp_tipoiva' in form else 4
+
                 self.dbsession.add(titemconfigdp)
 
                 titemconfigauditdao = TItemConfigAuditDao(self.dbsession)
@@ -543,7 +555,9 @@ class TItemConfigDao(BaseDao):
                coalesce(td.icdp_modcontab,0) as icdp_modcontab,
                coalesce(mc.mc_nombre, 'Ninguno') as mc_nombre, 
                td.icdp_fechacaducidad,
-               td.icdp_grabaiva,               
+               td.icdp_grabaiva,   
+               td.icdp_tipoiva,
+               coalesce(imp.imp_valor,0.0) as valor_iva,                           
                round(td.icdp_preciocompra,4) as icdp_preciocompra,
                round(public.get_precio_venta_sin_iva(0.15,td.icdp_precioventa),4) as icdp_precioventasiniva,
                case td.icdp_grabaiva when TRUE then round(public.poner_iva_gen(0.15,td.icdp_preciocompra),4) else td.icdp_preciocompra end as icdp_preciocompra_iva,
@@ -554,6 +568,7 @@ class TItemConfigDao(BaseDao):
                coalesce(per.per_nombres,'') as proveedor
         from titemconfig a join tcatitemconfig t on a.catic_id = t.catic_id
         join titemconfig_datosprod td on a.ic_id = td.ic_id
+        join timpuestos imp on td.icdp_tipoiva = imp.imp_id
         join ttipoitemconfig tipo on a.tipic_id = tipo.tipic_id
         left join tmodelocontab mc on td.icdp_modcontab = mc.mc_id
         left join tpersona per on td.icdp_proveedor = per.per_id
@@ -562,7 +577,7 @@ class TItemConfigDao(BaseDao):
 
         tupla_desc = ('ic_id', 'ic_nombre', 'ic_code', 'tipic_id', 'ic_fechacrea', 'ic_nota', 'catic_id',
                       'catic_nombre', 'icdp_modcontab', 'mc_nombre', 'icdp_fechacaducidad', 'icdp_grabaiva',
-                      'icdp_preciocompra',
+                      'icdp_tipoiva', 'valor_iva', 'icdp_preciocompra',
                       'icdp_precioventasiniva', 'icdp_preciocompra_iva', 'icdp_precioventa', 'icdp_precioventamin',
                       'tipic_nombre', 'icdp_proveedor', 'proveedor')
 

@@ -15,12 +15,13 @@ class TImpuestoDao(BaseDao):
 
     def get_impuestos(self):
         sql = """
-        select imp_id, imp_tipo, imp_valor from timpuestos where imp_hasta is null; 
+        select imp_id, imp_tipo, imp_valor, round(imp_valor*100)||'%' as imp_name from timpuestos where imp_hasta is null order by imp_valor; 
         """
-        tupla_desc = ('imp_id', 'imp_tipo', 'imp_valor')
+        tupla_desc = ('imp_id', 'imp_tipo', 'imp_valor', 'imp_name')
 
         impuestos = self.all(sql, tupla_desc)
-        res = {'iva': 0.0, 'impserv': 0.0}
+        ivas = [imp for imp in impuestos if imp['imp_tipo'] == 1]
+        res = {'iva': 0.0, 'impserv': 0.0, 'ivas': ivas}
 
         for impuesto in impuestos:
             imp_tipo = impuesto['imp_tipo']
