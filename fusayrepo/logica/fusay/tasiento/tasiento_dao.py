@@ -405,7 +405,12 @@ class TasientoDao(AuxLogicAsiDao):
             'tipic_id': 0,
             'ice_stock': 0,
             'subtotal': 0.0,
+            'subtforiva': 0.0,
+            'subtforiva15': 0.0,
+            'subtforiva5': 0.0,
             'ivaval': 0.0,
+            'ivaval5': 0.0,
+            'ivaval15': 0.0,
             'total': 0.0
         }
 
