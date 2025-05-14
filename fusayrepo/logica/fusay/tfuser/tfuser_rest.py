@@ -171,5 +171,5 @@ class TFuserTokenRest(TokenView):
         elif accion == 'gmenu':
             fuserroldao = TFuserRolDao(self.dbsession)
             permisos = fuserroldao.listar_permisos(us_id)
-            menu = fuserroldao.build_menu(permisos)
+            menu = fuserroldao.build_menu(permisos,1)
             return {'status': 200, 'menu': menu}

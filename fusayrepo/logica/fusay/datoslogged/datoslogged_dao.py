@@ -68,7 +68,7 @@ class DataLoggedDao(BaseDao):
                 'label': 'Agenda',
                 'title': 'Administrar su agenda',
                 'icon': 'fas fa-calendar-check',
-                'route': 'agenda/1',
+                'route': 'agenda/' + (str(sec_calendar) if sec_calendar is not None else '1'),
                 'css': 'btn-outline-secondary'
             }],
             'CM_LISTAR': [{
@@ -143,7 +143,7 @@ class DataLoggedDao(BaseDao):
 
         accesosdir = []
 
-        menu = fuserroldao.build_menu(permisos)
+        menu = fuserroldao.build_menu(permisos, sec_calendar)
         tempresadao = TEmpresaDao(self.dbsession)
         datosemp = tempresadao.get_info_by_schema(emp_esquema)
 

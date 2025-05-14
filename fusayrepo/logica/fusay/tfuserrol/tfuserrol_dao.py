@@ -61,7 +61,7 @@ class TFuserRolDao(BaseDao):
         tupla_desc = ('prm_id', 'prm_abreviacion', 'prm_nombre')
         return self.all(sql, tupla_desc)
 
-    def build_menu(self, permisos):
+    def build_menu(self, permisos, sec_calendar):
 
         paramsdao = TParamsDao(self.dbsession)
         hasplanesvalue = paramsdao.get_param_value('EMP_HASPLANES')
@@ -158,7 +158,8 @@ class TFuserRolDao(BaseDao):
             'CM_LISTAR': {'label': 'Compras', 'icon': 'fa-solid fa-boxes-packing',
                           'items': compras_list},
             'REF_LISTAR': {'label': 'Referentes', 'icon': 'fa-solid fa-address-book', 'routerLink': ['/referentes']},
-            'AGN_LISTAR': {'label': 'Agenda', 'icon': 'fa-solid fa-calendar-check', 'routerLink': ['/agenda/1']},
+            'AGN_LISTAR': {'label': 'Agenda', 'icon': 'fa-solid fa-calendar-check',
+                           'routerLink': ['/agenda/' + (str(sec_calendar) if sec_calendar is not None else '1')]},
             'AGP_ADM': {'label': 'Cobro Agua', 'icon': 'fa-solid fa-faucet-drip', 'routerLink': ['/aguap/home']},
             'REP_ADM': {'label': 'Reportes', 'icon': 'fa-solid fa-chart-pie',
                         'routerLink': ['/reportes']},
