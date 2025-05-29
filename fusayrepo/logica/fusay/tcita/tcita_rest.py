@@ -25,6 +25,9 @@ class TCitaRest(TokenView):
         if accion == 'form':
             tcitalogic = TCitaLogic(self.request)
             return tcitalogic.get_form(tcitadao)
+        elif accion == 'workhours':
+            tcitalogic = TCitaLogic(self.request)
+            return tcitalogic.get_working_hours(tcitadao)
         elif accion == 'lstw':
             desde = self.get_request_param('desde')
             hasta = self.get_request_param('hasta')

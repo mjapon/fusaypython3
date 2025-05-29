@@ -73,6 +73,20 @@ class TCitaDao(BaseDao):
             'value': horanum
         }
 
+    def get_range_hours(self, tipocita):
+        tipcitadao = TTipoCitaDao(self.dbsession)
+        datostipocita = tipcitadao.get_datos_tipo(tipc_id=tipocita)
+        cstart = 8
+        cend = 19
+        if datostipocita is not None:
+            cstart = int(datostipocita.get('tipc_calini'))
+            cend = int(datostipocita.get('tipc_calfin'))
+        hours = []
+        for step in range(cstart, cend + 1):
+            hours.append(self.get_new_hora(horanum=step))
+
+        return {'cstart': cstart, 'cend': cend, 'hours': hours}
+
     def get_horas_for_form(self, tipocita):
         tipcitadao = TTipoCitaDao(self.dbsession)
         datostipocita = tipcitadao.get_datos_tipo(tipc_id=tipocita)
@@ -117,18 +131,64 @@ class TCitaDao(BaseDao):
         return res
 
     def get_lista_colores(self):
-        return [{'colora': '#C85632',
-                 'colorb': '#E14747'},
-                {'colora': '#7986CB',
-                 'colorb': '#039BE5'},
-                {'colora': '#3CA574',
-                 'colorb': '#C9C9C9'},
-                {'colora': '#CE7770',
-                 'colorb': '#F6BF26'},
-                {'colora': '#1A7A48',
-                 'colorb': '#6E759B'},
-                {'colora': '#882CA1',
-                 'colorb': '#C53836'}]
+        return [
+            {
+                'colora': '#C85632',
+                'colorb': '#E14747',
+                'colorc': '#C53836',
+                'titlea': 'Naranja Terracota',
+                'titleb': 'Rojo Coral',
+                'titlec': 'Rojo Ladrillo'
+            },
+            {
+                'colora': '#CE7770',
+                'colorb': '#FF9999',
+                'colorc': '#FF6600',
+                'titlea': 'Rosa Salmón',
+                'titleb': 'Rosa Claro',
+                'titlec': 'Naranja'
+            },
+            {
+                'colora': '#FFCC00',
+                'colorb': '#F6BF26',
+                'colorc': '#33CC66',
+                'titlea': 'Amarillo',
+                'titleb': 'Amarillo Dorado',
+                'titlec': 'Verde Claro'
+            },
+            {
+                'colora': '#3CA574',
+                'colorb': '#1A7A48',
+                'colorc': '#006633',
+                'titlea': 'Verde Esmeralda',
+                'titleb': 'Verde Bosque',
+                'titlec': 'Verde Oscuro'
+            },
+            {
+                'colora': '#33CCFF',
+                'colorb': '#039BE5',
+                'colorc': '#3366CC',
+                'titlea': 'Azul Claro',
+                'titleb': 'Azul Celeste',
+                'titlec': 'Azul Medio'
+            },
+            {
+                'colora': '#7986CB',
+                'colorb': '#6E759B',
+                'colorc': '#9999CC',
+                'titlea': 'Azul Lavanda',
+                'titleb': 'Azul Grisáceo',
+                'titlec': 'Lavanda'
+            },
+            {
+                'colora': '#882CA1',
+                'colorb': '#CC33FF',
+                'colorc': '#C9C9C9',
+                'titlea': 'Púrpura',
+                'titleb': 'Morado',
+                'titlec': 'Gris Claro'
+            }
+        ]
 
     def find_by_id(self, ct_id):
         return self.dbsession.query(TCita).filter(TCita.ct_id == ct_id).first()
@@ -230,8 +290,7 @@ class TCitaDao(BaseDao):
     def listar_validos(self, desde, hasta, ct_tipo=1):
         sql = """
         select a.ct_id, date(a.ct_fecha) as ct_fecha, a.ct_hora, a.ct_hora_fin, a.pac_id, a.ct_obs, a.med_id, a.ct_titulo,
-               per.per_nombres, per.per_apellidos, per.per_ciruc,
-        a.ct_color, a.ct_fechacrea, a.user_crea, a.ct_td from tcita a left join  tpersona per on
+               per.per_nombres, per.per_apellidos, per.per_ciruc, a.ct_color, a.ct_fechacrea, a.user_crea, a.ct_td from tcita a left join  tpersona per on
         a.pac_id = per.per_id where a.ct_estado in (0,1) and a.ct_tipo ={2} and  date(a.ct_fecha) between '{0}' and '{1}' order by a.ct_fecha
         """.format(fechas.format_cadena_db(desde), fechas.format_cadena_db(hasta), ct_tipo)
         tupla_desc = ('ct_id',

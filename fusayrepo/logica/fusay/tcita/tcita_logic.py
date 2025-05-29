@@ -7,8 +7,14 @@ class TCitaLogic(PyramidView):
         tipocita = self.get_request_param('tipocita')
         form = tcitadao.get_form(pac_id=pac_id)
         horas = tcitadao.get_horas_for_form(tipocita=tipocita)
+        rangeh = tcitadao.get_range_hours(tipocita=tipocita)
         colores = tcitadao.get_lista_colores()
-        return {'status': 200, 'form': form, 'horas': horas, 'colores': colores}
+        return {'status': 200, 'form': form, 'horas': horas, 'colores': colores, 'rangeh': rangeh}
+
+    def get_working_hours(self, tcitadao):
+        tipocita = self.get_request_param('tipocita')
+        rangeh = tcitadao.get_range_hours(tipocita=tipocita)
+        return {'status': 200, 'rangeh': rangeh}
 
     def do_save(self, userid, tcitadao):
         form = self.get_request_json_body()
