@@ -277,8 +277,16 @@ class GeneraFacturaCompEle(BaseDao):
             'xml': xml_str
         }
 
+    def get_forma_pago(self, pagos_db):
+        codigo_forma_pago = ctes_facte.PAGO_SIN_UTILIZACION_SIS_FINANCIERO
+        if pagos_db is not None and len(pagos_db) == 1:
+            type_pay = pagos_db[0].get('ic_clasecc')
+            if type_pay is not None and type_pay != 'E':
+                codigo_forma_pago = ctes_facte.PAGO_OTROS_CON_UTILIZACION_SIS_FINANCIERO
+        return codigo_forma_pago
+
     def generar_factura(self, ambiente_value, datos_factura, datos_alm_matriz,
-                        totales, detalles_db,
+                        totales, detalles_db, pagos_db=None,
                         tipo_emision_value=1):
 
         root = et.Element('factura')
@@ -409,10 +417,11 @@ class GeneraFacturaCompEle(BaseDao):
 
         # total_pago_efectivo_value = numeros.roundm2(totales['pago_efectivo'])
         # total_pago_credito_value = numeros.roundm2(totales['pago_credito'])
+        codigo_forma_pago = self.get_forma_pago(pagos_db)
 
         pago_efectivo = et.SubElement(pagos, "pago")
         codigo_forma_pago_efec = et.SubElement(pago_efectivo, "formaPago")
-        codigo_forma_pago_efec.text = ctes_facte.PAGO_SIN_UTILIZACION_SIS_FINANCIERO
+        codigo_forma_pago_efec.text = codigo_forma_pago
 
         total_forma_pago_efec = et.SubElement(pago_efectivo, "total")
         total_forma_pago_efec.text = str(importe_total_value)
