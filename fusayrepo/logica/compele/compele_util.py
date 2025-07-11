@@ -303,8 +303,7 @@ class CompeleUtilDao(BaseDao):
 
         tra_codigo = datos_factura['tra_codigo']
         if tra_codigo == ctes.TRA_COD_NOTA_CREDITO:
-            self.enviar_nota_credito(trn_notacred=trn_codigo, sec_codigo=sec_codigo)
-            return
+            return self.enviar_nota_credito(trn_notacred=trn_codigo, sec_codigo=sec_codigo)
 
         datos_alm_matriz = gen_data.get_datos_alm_matriz(sec_codigo=sec_codigo)
 

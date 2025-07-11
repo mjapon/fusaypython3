@@ -162,7 +162,7 @@ class GeneraFacturaCompEle(BaseDao):
         total_sin_impuestos.text = str(numeros.roundm2(totales['total_sin_impuesto']))
 
         valor_modificacion = et.SubElement(info_nota_credito, "valorModificacion")
-        valor_modificacion.text = str(numeros.roundm2(totales['total_sin_impuesto']))
+        valor_modificacion.text = str(numeros.roundm2(totales['total']))
 
         moneda = et.SubElement(info_nota_credito, "moneda")
         moneda.text = ctes_facte.MONEDA
