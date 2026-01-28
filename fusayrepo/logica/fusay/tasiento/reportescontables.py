@@ -124,7 +124,7 @@ class ReportesContablesDao(BaseDao):
 
         sql_union_cta_result = ""
         if cta_contab_result is not None:
-            sql_union_cta_result = """
+            sql_union_cta_result = """ and mcd.cta_id not in (select ic.ic_id from cajainti.titemconfig ic where ic.ic_code = '{1}')
             union all select ic.ic_id, {0} total from titemconfig ic where
             ic.ic_code = '{1}'
             """.format(resultado_ejercicio * -1, cta_contab_result)
@@ -149,6 +149,9 @@ class ReportesContablesDao(BaseDao):
                    hasta=fechas.format_cadena_db(hasta),
                    sec_id=sec_id)
         tupla_desc = ('ic_id', 'ic_code', 'ic_nombre', 'codenombre', 'ic_padre', 'ic_haschild', 'total')
+
+        # log.error('mj, sql')
+        # log.error(sql)
 
         result = self.all(sql, tupla_desc)
 
