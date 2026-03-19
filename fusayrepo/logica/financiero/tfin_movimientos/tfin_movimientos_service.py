@@ -30,18 +30,21 @@ def crea_asidetalle(formdet, valor, cta_codigo, debito):
 class TFinMovimientosService(BaseDao):
 
     def generar_asiento(self, mov_id, sec_codigo, usercrea):
-        paramservice = TParamService(self.dbsession)
-        ctas_movs = paramservice.get_ctas_contables_for_movs_caja()
-
-        check_exist_param('nc_debe', ctas_movs, ctes.CTA_CONTABLE_MOV_NC_DEBE)
-        check_exist_param('nc_haber', ctas_movs, ctes.CTA_CONTABLE_MOV_NC_HABER)
-        check_exist_param('nd_debe', ctas_movs, ctes.CTA_CONTABLE_MOV_ND_DEBE)
-        check_exist_param('nd_haber', ctas_movs, ctes.CTA_CONTABLE_MOV_ND_HABER)
-
         tfinmovsdao = TFinMovimientosDao(self.dbsession)
         mov_details = tfinmovsdao.get_mov_details(mov_id=mov_id)
+
         if mov_details is None:
             raise ErrorValidacionExc('No pude recuperar información de movimiento')
+
+        tipo_cuenta_id = mov_details['tc_id']
+
+        paramservice = TParamService(self.dbsession)
+        ctas_movs = paramservice.get_ctas_contables_for_movs_caja(prefijo=tipo_cuenta_id)
+
+        check_exist_param('nc_debe', ctas_movs, f"{tipo_cuenta_id}_{ctes.CTA_CONTABLE_MOV_NC_DEBE}")
+        check_exist_param('nc_haber', ctas_movs, f"{tipo_cuenta_id}_{ctes.CTA_CONTABLE_MOV_NC_HABER}")
+        check_exist_param('nd_debe', ctas_movs, f"{tipo_cuenta_id}_{ctes.CTA_CONTABLE_MOV_ND_DEBE}")
+        check_exist_param('nd_haber', ctas_movs, f"{tipo_cuenta_id}_{ctes.CTA_CONTABLE_MOV_ND_HABER}")
 
         mov_deb_cred = mov_details['mov_deb_cred']
         mov_total_transa = mov_details['mov_total_transa']

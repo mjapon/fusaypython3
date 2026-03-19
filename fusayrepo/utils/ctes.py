@@ -75,9 +75,9 @@ MODULOS_REPORTES_DICT = {1: 'CONTABILIDAD',
                          3: 'MODULO'}
 
 # Nombre de los parametros para la creacion de asientos contables en depositos o retiros
-CTA_CONTABLE_MOV_NC_DEBE = 'cj_cta_mov_nc_debe'
-CTA_CONTABLE_MOV_NC_HABER = 'cj_cta_mov_nc_haber'
-CTA_CONTABLE_MOV_ND_DEBE = 'cj_cta_mov_nd_debe'
-CTA_CONTABLE_MOV_ND_HABER = 'cj_cta_mov_nd_haber'
+CTA_CONTABLE_MOV_NC_DEBE = 'cj_ctamnc_debe'
+CTA_CONTABLE_MOV_NC_HABER = 'cj_ctamnc_haber'
+CTA_CONTABLE_MOV_ND_DEBE = 'cj_ctamnd_debe'
+CTA_CONTABLE_MOV_ND_HABER = 'cj_ctamnd_haber'
 
 PERMISO_APP_CONFIG = 'APP_CONFIG'

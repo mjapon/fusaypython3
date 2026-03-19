@@ -49,11 +49,11 @@ class TFinMovimientosDao(BaseDao):
     def get_mov_details(self, mov_id):
         sql = """
         select mov.mov_id, mov.mov_deb_cred, mov.mov_total_transa, mov.mov_saldo_transa,
-        cta.per_id from tfin_movimientos mov 
+        cta.per_id, cta.tc_id from tfin_movimientos mov 
         join tfin_cuentas cta on mov.cue_id = cta.cue_id
         where mov.mov_id = {0} and mov.mov_estado = 1
         """.format(mov_id)
-        tupla_desc = ('mov_id', 'mov_deb_cred', 'mov_total_transa', 'mov_saldo_transa', 'per_id')
+        tupla_desc = ('mov_id', 'mov_deb_cred', 'mov_total_transa', 'mov_saldo_transa', 'per_id', 'tc_id')
         return self.first(sql, tupla_desc)
 
     def contar_grid_movimientos(self, cue_id, filtro_fechas):

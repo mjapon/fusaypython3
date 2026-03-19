@@ -24,31 +24,29 @@ class TParamService(BaseDao):
             tparamsdao = TParamsDao(self.dbsession)
             tparamsdao.update_param_value(form['tprm_id'], form, userupd)
 
-    def get_ctas_contables_for_movs_caja(self):
+    def get_ctas_contables_for_movs_caja(self, prefijo):
 
         paramdao = TParamsDao(self.dbsession)
-        abreviaciones = [ctes.CTA_CONTABLE_MOV_NC_DEBE, ctes.CTA_CONTABLE_MOV_NC_HABER,
-                         ctes.CTA_CONTABLE_MOV_ND_DEBE, ctes.CTA_CONTABLE_MOV_ND_HABER]
-        paramsvalue = paramdao.get_params_value(abreviaciones=abreviaciones)
-        resultmap = {
-            'nc_debe': '',
-            'nc_haber': '',
-            'nd_debe': '',
-            'nd_haber': '',
+        mapeo_claves = {
+            f"{prefijo}_{cta}": nombre
+            for cta, nombre in [
+                (ctes.CTA_CONTABLE_MOV_NC_DEBE, 'nc_debe'),
+                (ctes.CTA_CONTABLE_MOV_NC_HABER, 'nc_haber'),
+                (ctes.CTA_CONTABLE_MOV_ND_DEBE, 'nd_debe'),
+                (ctes.CTA_CONTABLE_MOV_ND_HABER, 'nd_haber')
+            ]
         }
+
+        abreviaciones_combinadas = list(mapeo_claves.keys())
+        paramsvalue = paramdao.get_params_value(abreviaciones=abreviaciones_combinadas)
+        
+        resultmap = {nombre: "" for nombre in mapeo_claves.values()}
 
         if paramsvalue is not None:
             for it in paramsvalue:
                 tprm_abrev = it['tprm_abrev']
-                tprm_val = it['tprm_val']
-                if tprm_abrev == ctes.CTA_CONTABLE_MOV_NC_DEBE:
-                    resultmap['nc_debe'] = tprm_val
-                elif tprm_abrev == ctes.CTA_CONTABLE_MOV_NC_HABER:
-                    resultmap['nc_haber'] = tprm_val
-                elif tprm_abrev == ctes.CTA_CONTABLE_MOV_ND_DEBE:
-                    resultmap['nd_debe'] = tprm_val
-                elif tprm_abrev == ctes.CTA_CONTABLE_MOV_ND_HABER:
-                    resultmap['nd_haber'] = tprm_val
+                if tprm_abrev in mapeo_claves:
+                    resultmap[mapeo_claves[tprm_abrev]] = it['tprm_val']
 
         return resultmap
 
