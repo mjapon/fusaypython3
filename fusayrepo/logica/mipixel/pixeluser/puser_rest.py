@@ -14,7 +14,7 @@ from cornice.resource import resource
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tpxuser', path='/api/tpxuser/{pxus_id}', cors_origins=('*',))
+@resource(collection_path='/api/tpxuser', path='/api/tpxuser/{pxus_id}')
 class TPxUserRest(FusayPublicView):
 
     def collection_post(self):

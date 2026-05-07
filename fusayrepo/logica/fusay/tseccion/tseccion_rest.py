@@ -17,7 +17,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tseccion', path='/api/tseccion/{sec_id}', cors_origins=('*',))
+@resource(collection_path='/api/tseccion', path='/api/tseccion/{sec_id}')
 class TSeccionRest(TokenView):
 
     def collection_get(self):

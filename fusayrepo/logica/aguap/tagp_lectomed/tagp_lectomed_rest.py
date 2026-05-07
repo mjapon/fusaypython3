@@ -14,7 +14,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tagplectomed', path='/api/tagplectomed/{lmd_id}', cors_origins=('*',))
+@resource(collection_path='/api/tagplectomed', path='/api/tagplectomed/{lmd_id}')
 class LectoMedAguaRest(TokenView):
 
     def collection_get(self):

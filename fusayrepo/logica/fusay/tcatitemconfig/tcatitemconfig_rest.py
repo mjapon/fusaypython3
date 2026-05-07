@@ -13,7 +13,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/categorias', path='/api/categorias/{catic_id}', cors_origins=('*',))
+@resource(collection_path='/api/categorias', path='/api/categorias/{catic_id}')
 class TCatItemConfigRest(TokenView):
 
     def collection_get(self):

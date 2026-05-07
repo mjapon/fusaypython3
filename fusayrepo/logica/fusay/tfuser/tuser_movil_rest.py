@@ -17,7 +17,7 @@ from fusayrepo.utils.generatokenutil import GeneraTokenUtil
 from fusayrepo.utils.pyramidutil import DbComunView
 
 
-@resource(collection_path='/api/movil/tfuser', path='/api/movil/tfuser/{us_id}', cors_origins=('*',))
+@resource(collection_path='/api/movil/tfuser', path='/api/movil/tfuser/{us_id}')
 class TFuserMovilRest(DbComunView):
 
     def collection_get(self):

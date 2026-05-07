@@ -14,7 +14,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/fin/movs', path='/api/fin/movs/{movid}', cors_origins=('*',))
+@resource(collection_path='/api/fin/movs', path='/api/fin/movs/{movid}')
 class TFinMovimientosRest(TokenView):
 
     def collection_get(self):

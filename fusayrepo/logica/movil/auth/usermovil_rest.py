@@ -9,7 +9,7 @@ from fusayrepo.utils.pyramidutil import DbComunView
 from cornice.resource import resource
 
 
-@resource(collection_path='/api/movil/auth', path='/api/movil/auth/{email}', cors_origins=('*',))
+@resource(collection_path='/api/movil/auth', path='/api/movil/auth/{email}')
 class TUserEmailRest(DbComunView):
 
     def collection_post(self):
@@ -48,7 +48,7 @@ class TUserEmailRest(DbComunView):
             return {'auth': False}
 
 
-@resource(collection_path='/api/movil/authEmail', path='/api/movil/authEmail/{email}', cors_origins=('*',))
+@resource(collection_path='/api/movil/authEmail', path='/api/movil/authEmail/{email}')
 class TUEmailRest(DbComunView):
 
     def collection_post(self):

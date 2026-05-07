@@ -13,7 +13,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/todantecedentes', path='/api/todantecedentes/{od_antid}', cors_origins=('*',))
+@resource(collection_path='/api/todantecedentes', path='/api/todantecedentes/{od_antid}')
 class TOdAntecedentesRest(TokenView):
 
     def collection_get(self):

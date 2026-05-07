@@ -17,7 +17,7 @@ from fusayrepo.utils.pyramidutil import TokenView, FusayPublicView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/titemconfig', path='/api/titemconfig/{ic_id}', cors_origins=('*',))
+@resource(collection_path='/api/titemconfig', path='/api/titemconfig/{ic_id}')
 class TItemConfigRest(TokenView):
 
     def collection_get(self):
@@ -163,7 +163,7 @@ class TItemConfigRest(TokenView):
             return {'status': 200, 'datosprod': res, 'secciones': secciones}
 
 
-@resource(collection_path='/api/public/titemconfig', path='/api/public/titemconfig/{ic_id}', cors_origins=('*',))
+@resource(collection_path='/api/public/titemconfig', path='/api/public/titemconfig/{ic_id}')
 class PublicItemConfigRest(FusayPublicView):
 
     def collection_get(self):

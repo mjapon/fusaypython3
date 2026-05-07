@@ -14,7 +14,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/ttpdv', path='/api/ttpdv/{tdv_codigo}', cors_origins=('*',))
+@resource(collection_path='/api/ttpdv', path='/api/ttpdv/{tdv_codigo}')
 class TtpdvRest(TokenView):
 
     def collection_get(self):

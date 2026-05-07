@@ -13,7 +13,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path="/api/compele", path="/api/compele/{trn_cod}", cors_origins=('*',))
+@resource(collection_path="/api/compele", path="/api/compele/{trn_cod}")
 class GenCompeleRest(TokenView):
 
     def collection_get(self):

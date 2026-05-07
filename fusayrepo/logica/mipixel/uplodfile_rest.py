@@ -16,7 +16,7 @@ from fusayrepo.utils.pyramidutil import FusayPublicView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/public/uploadfile', path='/api/public/uploadfile/{upload_id}', cors_origins=('*',))
+@resource(collection_path='/api/public/uploadfile', path='/api/public/uploadfile/{upload_id}')
 class UploadView(FusayPublicView):
 
     def collection_post(self):

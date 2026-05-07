@@ -13,7 +13,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path="/api/fin/pago", path='/api/fin/pago/{pg_id}', cors_origins=('*',))
+@resource(collection_path="/api/fin/pago", path='/api/fin/pago/{pg_id}')
 class TFinPagosCredRest(TokenView):
 
     def collection_get(self):

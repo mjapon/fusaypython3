@@ -8,13 +8,14 @@ import logging
 from cornice.resource import resource
 
 from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
+from fusayrepo.logica.fusay.tasicredito.tasicred_cxp_provs import CuentasPorPagarProvsService
 from fusayrepo.utils import cadenas
 from fusayrepo.utils.pyramidutil import TokenView
 
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tasicredito', path='/api/tasicredito/{trn_codigo}', cors_origins=('*',))
+@resource(collection_path='/api/tasicredito', path='/api/tasicredito/{trn_codigo}')
 class TAsiCreditoRest(TokenView):
 
     def collection_get(self):
@@ -67,6 +68,25 @@ class TAsiCreditoRest(TokenView):
             codref = self.get_request_param('ref')
             form = tasicredao.get_form(clase=clase, per_codigo=codref, sec_codigo=self.get_sec_id())
             return self.res200({'form': form})
+        elif accion == 'report_cxp_provs':
+            desde = self.get_request_param('desde')
+            hasta = self.get_request_param('hasta')
+            prov = self.get_request_param('prov')
+            first = self.get_request_param('first')
+            limit = self.get_request_param('limit')
+            doexp = self.get_request_param('doexp')  # Indica si se debe buscar para exportacion de datos
+
+            if not cadenas.es_nonulo_novacio(first):
+                first = 0
+            if not cadenas.es_nonulo_novacio(limit):
+                limit = 50
+
+            report_serv = CuentasPorPagarProvsService(self.dbsession)
+            if doexp == '1':
+                data = report_serv.get_report_for_export(from_date=desde, to_date=hasta, provider_code=prov, limit=limit)
+            else:
+                data = report_serv.get_report(from_date=desde, to_date=hasta, provider_code=prov, first=first, limit=limit)
+            return self.res200({'report': data})
 
     def collection_post(self):
         accion = self.get_rqpa()

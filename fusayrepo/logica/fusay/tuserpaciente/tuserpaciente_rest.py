@@ -14,7 +14,7 @@ from fusayrepo.utils.pyramidutil import FusayPublicView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path="/api/public/tpacienteuser", path="/api/public/tpacienteuser/{up_id}", cors_origins=('*',))
+@resource(collection_path="/api/public/tpacienteuser", path="/api/public/tpacienteuser/{up_id}")
 class TUserPacienteRest(FusayPublicView):
 
     def post(self):

@@ -15,7 +15,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tbilletera', path='/api/tbilletera/{bil_id}', cors_origins=('*',))
+@resource(collection_path='/api/tbilletera', path='/api/tbilletera/{bil_id}')
 class TBilleteraRest(TokenView):
 
     def collection_get(self):

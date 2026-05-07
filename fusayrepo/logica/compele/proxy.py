@@ -34,3 +34,14 @@ class ProxyClient(BaseDao):
         # print(type(res))
 
         return res
+
+    def enviar_y_autorizar(self, claveacceso, comprobante, ambiente, info_adicional="", ruc_empresa=""):
+        """
+        String claveAcceso, String comprobante, Integer ambiente,
+            String infoAdicional, String rucEmpresa
+        """
+
+        client = self.get_soap_client()
+        res = client.service.validarComprobante(claveacceso, comprobante, ambiente, info_adicional, ruc_empresa)
+        return res
+

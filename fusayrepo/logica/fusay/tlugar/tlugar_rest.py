@@ -13,7 +13,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tlugar', path='/api/tconsultam/{cosm_id}', cors_origins=('*',))
+@resource(collection_path='/api/tlugar', path='/api/tconsultam/{cosm_id}')
 class TLugarRest(TokenView):
 
     def collection_get(self):

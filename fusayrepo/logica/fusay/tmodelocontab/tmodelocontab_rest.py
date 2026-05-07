@@ -13,7 +13,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tmodelocontab', path='/api/tmodelocontab/{mc_id}', cors_origins=('*',))
+@resource(collection_path='/api/tmodelocontab', path='/api/tmodelocontab/{mc_id}')
 class TModelocontabRest(TokenView):
 
     def collection_get(self):

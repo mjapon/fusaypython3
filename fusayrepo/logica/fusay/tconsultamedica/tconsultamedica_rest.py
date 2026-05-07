@@ -16,7 +16,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tconsultam', path='/api/tconsultam/{cosm_id}', cors_origins=('*',))
+@resource(collection_path='/api/tconsultam', path='/api/tconsultam/{cosm_id}')
 class TConsultaMedicaRest(TokenView):
 
     def collection_get(self):

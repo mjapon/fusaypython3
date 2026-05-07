@@ -13,7 +13,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tsuscripcion', path='/api/tsuscripcion/{sus_id}', cors_origins=('*',))
+@resource(collection_path='/api/tsuscripcion', path='/api/tsuscripcion/{sus_id}')
 class TSuscripcionRest(TokenView):
 
     def collection_get(self):

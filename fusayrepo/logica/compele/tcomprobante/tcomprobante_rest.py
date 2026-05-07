@@ -14,7 +14,7 @@ from fusayrepo.utils.pyramidutil import FacteView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tfacte', path='/api/tfacte/{trn_codigo}', cors_origins=('*',))
+@resource(collection_path='/api/tfacte', path='/api/tfacte/{trn_codigo}')
 class FacteComprobRest(FacteView):
 
     def collection_get(self):

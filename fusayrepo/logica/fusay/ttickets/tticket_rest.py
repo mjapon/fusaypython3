@@ -18,7 +18,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tticket', path='/api/tticket/{tk_id}', cors_origins=('*',))
+@resource(collection_path='/api/tticket', path='/api/tticket/{tk_id}')
 class TTicketRest(TokenView):
 
     def collection_get(self):

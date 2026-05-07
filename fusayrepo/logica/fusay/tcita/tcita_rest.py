@@ -16,7 +16,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tcita', path='/api/tcita/{ct_id}', cors_origins=('*',))
+@resource(collection_path='/api/tcita', path='/api/tcita/{ct_id}')
 class TCitaRest(TokenView):
 
     def collection_get(self):

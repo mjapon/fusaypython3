@@ -18,7 +18,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/todplantrata', path='/api/todplantrata/{pnt_id}', cors_origins=('*',))
+@resource(collection_path='/api/todplantrata', path='/api/todplantrata/{pnt_id}')
 class TodPlanTrantamientoRest(TokenView):
 
     def collection_get(self):

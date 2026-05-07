@@ -14,7 +14,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/datosinitlogged', path='/api/datosinitlogged/{user}', cors_origins=('*',))
+@resource(collection_path='/api/datosinitlogged', path='/api/datosinitlogged/{user}')
 class DatosLoggedRest(TokenView):
 
     def collection_get(self):

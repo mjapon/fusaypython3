@@ -15,7 +15,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tasiabono', path='/api/tasiabono/{trn_codigo}', cors_origins=('*',))
+@resource(collection_path='/api/tasiabono', path='/api/tasiabono/{trn_codigo}')
 class TAsiAbonoRest(TokenView):
 
     def collection_get(self):

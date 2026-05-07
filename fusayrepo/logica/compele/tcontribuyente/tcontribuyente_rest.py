@@ -14,7 +14,7 @@ from fusayrepo.utils.pyramidutil import DbComunView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tcontrib', path='/api/tcontrib/{cnt_id}', cors_origins=('*',))
+@resource(collection_path='/api/tcontrib', path='/api/tcontrib/{cnt_id}')
 class FacteContribRest(DbComunView):
 
     def collection_post(self):

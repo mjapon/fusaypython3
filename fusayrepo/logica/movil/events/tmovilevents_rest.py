@@ -6,7 +6,7 @@ from fusayrepo.logica.fusay.tcita.tcita_logic import TCitaLogic
 from fusayrepo.utils.pyramidutil import TokenMovilView
 
 
-@resource(collection_path='/api/movil/tcita', path='/api/movil/tcita/{ct_id}', cors_origins=('*',))
+@resource(collection_path='/api/movil/tcita', path='/api/movil/tcita/{ct_id}')
 class TMovilEventsRest(TokenMovilView):
 
     def collection_get(self):

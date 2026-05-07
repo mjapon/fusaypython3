@@ -14,7 +14,6 @@ from fusayrepo.logica.fusay.tasiento.auxlogicchangesec import AuxLogigChangeSecc
 from fusayrepo.logica.fusay.tasiento.librodiario_dao import LibroDiarioDao
 from fusayrepo.logica.fusay.tasiento.reportescontables import ReportesContablesDao
 from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
-from fusayrepo.logica.fusay.tseccion.tseccion_dao import TSeccionDao
 from fusayrepo.logica.fusay.ttpdv.ttpdv_dao import TtpdvDao
 from fusayrepo.logica.fusay.ttransacc.ttransacc_dao import TTransaccDao
 from fusayrepo.logica.fusay.ttransaccpago.ttransaccpago_dao import TTransaccPagoDao
@@ -25,7 +24,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tasiento', path='/api/tasiento/{trn_codigo}', cors_origins=('*',))
+@resource(collection_path='/api/tasiento', path='/api/tasiento/{trn_codigo}')
 class TAsientoRest(TokenView):
 
     def collection_get(self):

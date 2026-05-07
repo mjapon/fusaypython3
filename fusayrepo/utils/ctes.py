@@ -15,7 +15,7 @@ APP_FMT_FECHA_HORA = APP_FMT_FECHA + ' ' + APP_FMT_HORA
 APP_FMT_FECHA_DB = "%Y-%m-%d"
 MONEDA = "DOLAR"
 MOTIVO_NC = u"DEVOLUCIÓN"
-IVA = 0.12
+IVA = 0.12# Nunca cambiar esta constante, en la base de datos simpre se esta registrando quitando este valor de iva, luego para los calculos se toma el valor de iva correspondiente (actual)
 NDECIMALESPRECIOS_VIEW = 4
 NDECIMALESPRECIOS_DB = 6
 

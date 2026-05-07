@@ -18,7 +18,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tagpcobro', path='/api/tagpcobro/{mdg_id}', cors_origins=('*',))
+@resource(collection_path='/api/tagpcobro', path='/api/tagpcobro/{mdg_id}')
 class TagpCobroRest(TokenView):
 
     def collection_get(self):

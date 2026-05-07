@@ -15,7 +15,7 @@ from fusayrepo.utils.pyramidutil import FusayPublicView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/fusay/events', path='/api/fusay/events/{ev_id}', cors_origins=('*',))
+@resource(collection_path='/api/fusay/events', path='/api/fusay/events/{ev_id}')
 class TFusayEventsRest(FusayPublicView):
 
     def get(self):

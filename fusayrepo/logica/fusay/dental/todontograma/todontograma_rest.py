@@ -13,7 +13,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/todontograma', path='/api/todontograma/{od_id}', cors_origins=('*',))
+@resource(collection_path='/api/todontograma', path='/api/todontograma/{od_id}')
 class TOdontogramaRest(TokenView):
 
     def collection_get(self):

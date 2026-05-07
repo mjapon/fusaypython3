@@ -13,7 +13,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/todrxdocs', path='/api/todrxdocs/{rxd_id}', cors_origins=('*',))
+@resource(collection_path='/api/todrxdocs', path='/api/todrxdocs/{rxd_id}')
 class TodRxDocsRest(TokenView):
 
     def collection_get(self):

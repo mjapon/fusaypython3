@@ -12,7 +12,7 @@ from cornice.resource import resource
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tpixel', path='/api/tpixel/{px_id}', cors_origins=('*',))
+@resource(collection_path='/api/tpixel', path='/api/tpixel/{px_id}')
 class PixelRest(TokenView):
 
     def collection_post(self):

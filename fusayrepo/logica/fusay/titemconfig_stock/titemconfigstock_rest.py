@@ -13,7 +13,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path="/api/titemconfigsotck", path="/api/titemconfigstock/{ice_id}", cors_origins=('*',))
+@resource(collection_path="/api/titemconfigsotck", path="/api/titemconfigstock/{ice_id}")
 class TItemConfigStockRest(TokenView):
 
     def collection_get(self):

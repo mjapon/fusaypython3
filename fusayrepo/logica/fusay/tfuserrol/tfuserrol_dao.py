@@ -178,9 +178,12 @@ class TFuserRolDao(BaseDao):
         if 'CXC_LISTAR' in permisos_set:
             ventas_list.append({'label': 'Cuentas por cobrar', 'icon': 'fa-solid fa-person-arrow-down-to-line',
                                 'routerLink': ['/cuentasxcp/1']})
+
         if 'CXP_LISTAR' in permisos_set:
             compras_list.append({'label': 'Cuentas por pagar', 'icon': 'fa-solid fa-person-arrow-up-from-line',
                                  'routerLink': ['/cuentasxcp/2']})
+            compras_list.append({'label': 'Cuentas por pagar proveedores', 'icon': 'fa-solid fa-person-arrow-up-from-line',
+                                 'routerLink': ['/cuentas-por-pagar']})
         if 'PROF_ADMIN' in permisos_set:
             ventas_list.append({'label': 'Proformas', 'icon': 'fa-solid fa-file-invoice',
                                 'routerLink': ['/trndocs/4']})

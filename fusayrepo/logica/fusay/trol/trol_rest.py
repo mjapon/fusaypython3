@@ -13,7 +13,7 @@ from cornice.resource import resource
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/trol', path='/api/trol/{rl_id}', cors_origins=('*',))
+@resource(collection_path='/api/trol', path='/api/trol/{rl_id}')
 class TRolRest(TokenView):
 
     def collection_get(self):

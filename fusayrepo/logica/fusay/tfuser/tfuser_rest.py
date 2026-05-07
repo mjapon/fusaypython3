@@ -21,7 +21,7 @@ from fusayrepo.utils.pyramidutil import DbComunView, TokenView
 log = logging.getLogger(__name__)
 
 
-@resource(collection_path='/api/tfuser', path='/api/tfuser/{us_id}', cors_origins=('*',))
+@resource(collection_path='/api/tfuser', path='/api/tfuser/{us_id}')
 class TFuserRest(DbComunView):
 
     def collection_post(self):
@@ -87,7 +87,7 @@ class TFuserRest(DbComunView):
                 return {'autenticado': autenticado}
 
 
-@resource(collection_path='/api/tfusertoken', path='/api/tfusertoken/{us_id}', cors_origins=('*',))
+@resource(collection_path='/api/tfusertoken', path='/api/tfusertoken/{us_id}')
 class TFuserTokenRest(TokenView):
 
     def collection_post(self):

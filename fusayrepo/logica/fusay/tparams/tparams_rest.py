@@ -3,7 +3,7 @@ from fusayrepo.utils.pyramidutil import TokenView
 from cornice.resource import resource
 
 
-@resource(collection_path='/api/params', path='/api/params/{tprm_id}', cors_origins=('*',))
+@resource(collection_path='/api/params', path='/api/params/{tprm_id}')
 class TParamsRest(TokenView):
 
     def collection_get(self):
