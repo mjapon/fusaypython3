@@ -470,8 +470,11 @@ class TItemConfigDao(BaseDao):
             icdp_preciocompra = form['icdp_preciocompra']
             icdp_precioventa = form['icdp_precioventa']
             icdp_precioventamin = form['icdp_precioventamin']
+            if not cadenas.es_nonulo_novacio(icdp_precioventamin):
+                icdp_precioventamin = 0.0
 
             icdp_grabaiva = form['icdp_grabaiva']
+
             if icdp_grabaiva:
                 # El precio de compra y de venta se le debe quitar el iva
                 # icdp_preciocompra = ivautil.redondear_precio_db(ivautil.quitar_iva(icdp_preciocompra))
@@ -537,6 +540,9 @@ class TItemConfigDao(BaseDao):
                         titemconfigauditdao.crear_audit_precioventa(ic_id=ic_id, user_crea=user_actualiza, sec_id=0,
                                                                     val_antes=str(valantes),
                                                                     val_despues=str(valdespues))
+                if not cadenas.es_nonulo_novacio(curr_precioventamin):
+                    curr_precioventamin = 0.0
+
                 if float(numeros.roundm2(curr_precioventamin)) != float(
                         numeros.roundm2(titemconfigdp.icdp_precioventamin)):
                     titemconfigauditdao.crear_audit_precioventamin(ic_id=ic_id, user_crea=user_actualiza, sec_id=0,
