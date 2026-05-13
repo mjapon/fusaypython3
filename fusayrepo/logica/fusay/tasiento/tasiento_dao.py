@@ -773,6 +773,7 @@ class TasientoDao(AuxLogicAsiDao):
         self.chk_sum_debe_haber(detalles)
 
         creditodao = TAsicreditoDao(self.dbsession)
+        cre_codigo = None
         for detalle in detalles:
             dt_valor = float(detalle['dt_valor'])
             if dt_valor > 0.0:
@@ -783,9 +784,9 @@ class TasientoDao(AuxLogicAsiDao):
                     cre_tipo = creditodao.get_cre_tipo(ic_clasecc)
                     formcre = creditodao.get_form_asi(dt_codigo=dt_codigo, trn_fecreg=formcab['trn_fecreg'],
                                                       monto_cred=dt_valor, cre_tipo=cre_tipo)
-                    creditodao.crear(form=formcre)
+                    cre_codigo = creditodao.crear(form=formcre)
 
-        return trn_codigo
+        return trn_codigo, cre_codigo
 
     def crear_asiento(self, formcab, formref, usercrea, detalles, roundvalor=True, update_datosref=True):
         persodao = TPersonaDao(self.dbsession)

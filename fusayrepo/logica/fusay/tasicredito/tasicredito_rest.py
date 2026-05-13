@@ -7,8 +7,8 @@ import logging
 
 from cornice.resource import resource
 
-from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.logica.fusay.tasicredito.tasicred_cxp_provs import CuentasPorPagarProvsService
+from fusayrepo.logica.fusay.tasicredito.tasicredito_dao import TAsicreditoDao
 from fusayrepo.utils import cadenas
 from fusayrepo.utils.pyramidutil import TokenView
 
@@ -83,10 +83,31 @@ class TAsiCreditoRest(TokenView):
 
             report_serv = CuentasPorPagarProvsService(self.dbsession)
             if doexp == '1':
-                data = report_serv.get_report_for_export(from_date=desde, to_date=hasta, provider_code=prov, limit=limit)
+                data = report_serv.get_report_for_export(from_date=desde, to_date=hasta, provider_code=prov,
+                                                         limit=limit)
             else:
-                data = report_serv.get_report(from_date=desde, to_date=hasta, provider_code=prov, first=first, limit=limit)
+                data = report_serv.get_report(from_date=desde, to_date=hasta, provider_code=prov, first=first,
+                                              limit=limit)
             return self.res200({'report': data})
+        elif accion == 'gridprov':
+            limit = self.get_request_param('limit')
+            first = self.get_request_param('first')
+            tipopago = self.get_request_param('tipopago')
+            prov = self.get_request_param('prov')
+            doexp = self.get_request_param('doexp')
+
+            tipopagoint = 0
+            if cadenas.es_nonulo_novacio(tipopago):
+                tipopagoint = int(tipopago)
+
+            report_serv = CuentasPorPagarProvsService(self.dbsession)
+            data = report_serv.find(provider_code=prov, tipopago=tipopagoint, first=first, limit=limit)
+            return self.res200({'grid': data})
+        elif accion == "detailscredprov":
+            codcredprov = self.get_request_param('credprov')
+            report_serv = CuentasPorPagarProvsService(self.dbsession)
+            result = report_serv.find_details(crpr_codigo=codcredprov)
+            return self.res200({'details': result})
 
     def collection_post(self):
         accion = self.get_rqpa()
@@ -96,3 +117,15 @@ class TAsiCreditoRest(TokenView):
             trn_codigo_gen = tasicredao.create_from_referente(formtosave=formtosave, usercrea=self.get_user_id())
             msg = 'Operación exitosa'
             return self.res200({'trncod': trn_codigo_gen, 'msg': msg})
+        elif accion == 'crea_deudas_provs':
+            report_serv = CuentasPorPagarProvsService(self.dbsession)
+            form = self.get_json_body()
+            result = report_serv.crear_asientos_cuenta_por_pagar(lista_data=form['items'],
+                                                                 user_crea=self.get_user_id(),
+                                                                 sec_id=self.get_sec_id(),
+                                                                 sales_from=form['from'],
+                                                                 sales_to=form['to'], )
+            if result:
+                return self.res200({'msg': 'Cuentas por pagar registradas exitósamente'})
+            else:
+                return self.res400({'msg': 'No se crearon cuenta por pagar, favor revisar los datos'})

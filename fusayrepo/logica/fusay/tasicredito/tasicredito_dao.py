@@ -322,10 +322,10 @@ class TAsicreditoDao(BaseDao):
 
         formasiento['detalles'] = detalles
 
-        trn_codigo_gen = tasientodao.crear_asiento_cxcp_fromref(formcab=formasiento['formasiento'],
-                                                                formref=formasiento['formref'],
-                                                                usercrea=usercrea,
-                                                                detalles=formasiento['detalles'])
+        trn_codigo_gen, cre_codigo = tasientodao.crear_asiento_cxcp_fromref(formcab=formasiento['formasiento'],
+                                                                            formref=formasiento['formref'],
+                                                                            usercrea=usercrea,
+                                                                            detalles=formasiento['detalles'])
         return trn_codigo_gen
 
     def abonar_credito(self, dt_codcred, monto_abono):

@@ -28,6 +28,14 @@ class TModelocontabDao(BaseDao):
         tupla_desc = ('cta_codigo', 'mcd_signo')
         return self.first(sql, tupla_desc)
 
+    def get_datos_modelocontable_sec(self, mc_id, tra_codigo, sec_codigo):
+        sql = """
+        select cta_codigo, mcd_signo from tmodelocontabdet where tra_codigo = {0} and mc_id = {1} and sec_codigo = {2}
+        """.format(tra_codigo, mc_id, sec_codigo)
+
+        tupla_desc = ('cta_codigo', 'mcd_signo')
+        return self.first(sql, tupla_desc)
+
     def get_itemconfig_with_mc(self, ic_id, tra_codigo, sec_codigo):
         sql = """
         select mcd.cta_codigo, mcd.mcd_signo, mcd.mc_id from
