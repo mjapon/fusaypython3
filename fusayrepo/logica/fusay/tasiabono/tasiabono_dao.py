@@ -26,8 +26,9 @@ class TAsiAbonoDao(BaseDao):
 
         self.dbsession.add(tasiabono)
         tasicreditodao = TAsicreditoDao(self.dbsession)
-        saldpend = tasicreditodao.abonar_credito(dt_codcred=dt_codcre, monto_abono=monto_abono)
-        return saldpend
+        tasicreditodao.abonar_credito(dt_codcred=dt_codcre, monto_abono=monto_abono)
+        self.flush()
+        return tasiabono.abo_codigo
 
     def get_modelo_contable(self, tra_codigo, sec_codigo):
         sql = """
@@ -98,17 +99,14 @@ class TAsiAbonoDao(BaseDao):
         return abonos, totalabonos
 
     def anular(self, abo_codigo, user_anula, obs_anula):
-        sql = """
-        select abo.abo_codigo, abo.dt_codigo, abo.dt_codcre, 
+        sql = """select abo.abo_codigo, abo.dt_codigo, abo.dt_codcre, 
         asiabo.trn_codigo as trn_cod_abo,
         detcred.dt_valor as dt_valor_cred,
          detabo.dt_valor as dt_valor_abo from tasiabono abo
         join tasidetalle detabo on abo.dt_codigo = detabo.dt_codigo
         join tasidetalle detcred on abo.dt_codcre = detcred.dt_codigo 
         join tasiento asiabo on asiabo.trn_codigo =  detabo.trn_codigo
-         where abo.abo_codigo = {0}        
-        
-        """.format(abo_codigo)
+         where abo.abo_codigo = {0}""".format(abo_codigo)
 
         tupla_desc = ('abo_codigo', 'dt_codigo', 'dt_codcre', 'trn_cod_abo', 'dt_valor_cred', 'dt_valor_abo')
 
@@ -120,7 +118,7 @@ class TAsiAbonoDao(BaseDao):
 
         tasicreditodao = TAsicreditoDao(self.dbsession)
         tasicreditodao.anular_abono(dt_codcred=dt_codcre, monto_abono_anular=dt_valor_abo,
-                                    monto_total_cred=dt_valorcred)
+                                    monto_total_cred=dt_valorcred, user_anula=user_anula, abo_codigo=abo_codigo)
 
         from fusayrepo.logica.fusay.tasiento.tasiento_dao import TasientoDao
         tasientodao = TasientoDao(self.dbsession)

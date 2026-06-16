@@ -8,6 +8,7 @@ import logging
 
 from fusayrepo.logica.dao.base import BaseDao
 from fusayrepo.logica.excepciones.validacion import ErrorValidacionExc
+from fusayrepo.logica.fusay.tasiabono.tasiabono_provs_dao import AbonosProveedoresDAO
 from fusayrepo.logica.fusay.tasicredito.tasicredito_model import TAsicredito
 from fusayrepo.logica.fusay.tgrid.tgrid_dao import TGridDao
 from fusayrepo.logica.fusay.titemconfig.titemconfig_dao import TItemConfigDao
@@ -352,7 +353,7 @@ class TAsicreditoDao(BaseDao):
 
         return tasicredito.cre_saldopen
 
-    def anular_abono(self, dt_codcred, monto_abono_anular, monto_total_cred):
+    def anular_abono(self, dt_codcred, monto_abono_anular, monto_total_cred, user_anula, abo_codigo):
         tasicredito = self.dbsession.query(TAsicredito).filter(TAsicredito.dt_codigo == dt_codcred).first()
         if tasicredito is not None:
             cre_saldopen = tasicredito.cre_saldopen
@@ -366,29 +367,33 @@ class TAsicreditoDao(BaseDao):
             tasicredito.cre_saldopen = new_saldopen
             self.dbsession.add(tasicredito)
 
+            # En caso de existir abonos de proveedores tambien se manda a anular los registros de ventas del abono para que se puedan reutilziar en pgos
+            abop_proveedores = AbonosProveedoresDAO(self.dbsession)
+            abop_proveedores.anular_abono_proveedor(tasicredito.cre_codigo, abo_codigo, user_anula)
+
     def get_datos_credito(self, cre_codigo):
         sql = """
-        select cred.cre_codigo,
-               cred.dt_codigo,
-               cred.cre_fecini,
-            cred.cre_fecven,
-            cred.cre_intere,
-            cred.cre_intmor,
-            cred.cre_compro,
-            cred.cre_codban,
-            cred.cre_saldopen,
-            detcred.dt_valor,
-            detcred.cta_codigo,
-            detcred.trn_codigo,
-            cred.cre_tipo,                        
-            ic.ic_clasecc,
-               tasi.trn_compro,
-               tasi.trn_fecha,
-               tasi.trn_fecreg,
-               tasi.trn_observ,
-               per.per_id,
-               per.per_nombres||' '||per.per_apellidos as referente,
-               per.per_ciruc
+        select  cred.cre_codigo,
+                cred.dt_codigo,
+                cred.cre_fecini,
+                cred.cre_fecven,
+                cred.cre_intere,
+                cred.cre_intmor,
+                cred.cre_compro,
+                cred.cre_codban,
+                cred.cre_saldopen,
+                detcred.dt_valor,
+                detcred.cta_codigo,
+                detcred.trn_codigo,
+                cred.cre_tipo,                        
+                ic.ic_clasecc,
+                tasi.trn_compro,
+                tasi.trn_fecha,
+                tasi.trn_fecreg,
+                tasi.trn_observ,
+                per.per_id,
+                per.per_nombres||' '||per.per_apellidos as referente,
+                per.per_ciruc
                from tasicredito cred
         join tasidetalle detcred on cred.dt_codigo = detcred.dt_codigo
         join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo 
@@ -535,6 +540,73 @@ class TAsicreditoDao(BaseDao):
             data['count'] = count
 
         return data
+
+    def list_accounts_payable_by_provider_codes(self, provider_code_list):
+        """
+        Retorna el detalle de cuentas por pagar de los proveedores indicados tal que su saldo pendiente sea mayor a cero
+        Los objectos retornados tiene la estructura:
+        y se retorna adiconalmenta la informacion de articulo y codigos de facturas de compra
+        {'codprov', 'saldopend', 'deudatotal'}
+        """
+
+        if provider_code_list is not None and len(provider_code_list) > 0:
+            provs = ",".join([str(it) for it in provider_code_list])
+        else:
+            return []
+
+        sql = f"""
+        select 
+               tasi.per_codigo codprov,
+               per.per_nombres||' '||per.per_apellidos as nomprov,
+               cred.cre_codigo cre_codigo,
+               string_agg(detarts.art_codigo::text, ',') articulos
+        from tasicredito cred
+        join tasidetalle detcred on cred.dt_codigo = detcred.dt_codigo
+        join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo and tasi.trn_pagpen = 'F' 
+             and tasi.trn_docpen = 'F' and tasi.trn_valido = 0        
+        join tasidetalle detarts on detarts.trn_codigo = tasi.trn_codigo  and detarts.dt_tipoitem = 1
+        join tpersona per on tasi.per_codigo = per.per_id     
+        where tasi.tra_codigo = 7 and tasi.per_codigo in ({provs}) and cred.cre_tipo = 2 and cred.cre_saldopen > 0
+        group by tasi.per_codigo, per.per_nombres, per.per_apellidos, cred.cre_codigo
+        """
+
+        tupla_desc = ('codprov', 'nomprov', 'cre_codigo', 'articulos')
+        result = self.all(sql, tupla_desc)
+
+        # Falta agregar estas columnas
+        cod_creditos_set = set()
+        for row in result:
+            cod_creditos_set.add(row['cre_codigo'])
+
+        if cod_creditos_set is not None and len(cod_creditos_set) > 0:
+            sql_creditos = """
+            select  cred.cre_codigo,
+                cred.cre_saldopen saldopend,
+                detcred.dt_valor deudatotal,
+                'Cred('||cred.cre_codigo||') del '||TO_CHAR(tasi.trn_fecha, 'DD/MM/YYYY')||', Saldo Pend:'||round(cred.cre_saldopen,2) as credtext
+               from tasicredito cred
+        join tasidetalle detcred on cred.dt_codigo = detcred.dt_codigo
+        join tasiento tasi on detcred.trn_codigo = tasi.trn_codigo 
+        join tpersona per on tasi.per_codigo = per.per_id
+        join titemconfig ic on detcred.cta_codigo = ic.ic_id 
+        where cred.cre_codigo in ({0})
+            """.format(",".join([str(cred) for cred in cod_creditos_set]))
+            tupla_desc_creditos = ('cre_codigo', 'saldopend', 'deudatotal', 'credtext')
+
+            datos_creditos = self.all(sql_creditos, tupla_desc_creditos)
+            datos_creditos_map = {}
+            for row in datos_creditos:
+                datos_creditos_map[row['cre_codigo']] = row
+
+            for row in result:
+                cre_codigo_it = row['cre_codigo']
+                if cre_codigo_it in datos_creditos_map:
+                    datos_credito_it = datos_creditos_map.get(cre_codigo_it)
+                    row['saldopend'] = datos_credito_it['saldopend']
+                    row['deudatotal'] = datos_credito_it['deudatotal']
+                    row['credtext'] = datos_credito_it['credtext']
+
+        return result
 
     def listar_creditos(self, per_codigo, tipopago=1, clase=1, sec_codigo=0):
         tracodin = "1,2"

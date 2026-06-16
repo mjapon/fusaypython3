@@ -23,15 +23,16 @@ log = logging.getLogger(__name__)
 
 class TItemConfigDao(BaseDao):
 
-    def listar(self, filtro, sec_id, codcat):
+    def listar(self, filtro, sec_id, codcat, provid):
         tgrid_dao = TGridDao(self.dbsession)
-        swherecat = ' '
+        filtros = ["(ic.ic_code like '{0}%' or ic.ic_nombre like '%{0}%')".format(cadenas.strip_upper(filtro))]
         if codcat is not None and int(codcat) > 0:
-            swherecat = ' and ic.catic_id = {0}'.format(codcat)
+            filtros.append('ic.catic_id = {0}'.format(codcat))
 
-        swhere = u" (ic.ic_code like '{0}%' or ic.ic_nombre like '%{0}%') {1}".format(
-            cadenas.strip_upper(filtro), swherecat
-        )
+        if provid is not None and int(provid) > 0:
+            filtros.append('dp.icdp_proveedor = {0}'.format(provid))
+
+        swhere = ' and '.join(filtros)
 
         data = tgrid_dao.run_grid(grid_nombre='productos', where=swhere, order='ic_nombre', sec_id=sec_id)
 
