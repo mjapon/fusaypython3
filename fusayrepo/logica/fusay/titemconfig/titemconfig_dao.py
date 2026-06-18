@@ -566,7 +566,7 @@ class TItemConfigDao(BaseDao):
                td.icdp_tipoiva,
                coalesce(imp.imp_valor,0.0) as valor_iva,                           
                round(td.icdp_preciocompra,4) as icdp_preciocompra,
-               round(public.get_precio_venta_sin_iva(coalesce(imp.imp_valor,0.15),td.icdp_precioventa),4) as icdp_precioventasiniva,
+               td.icdp_precioventa as icdp_precioventasiniva,
                case td.icdp_grabaiva when TRUE then round(public.poner_iva_gen(coalesce(imp.imp_valor,0.15),td.icdp_preciocompra),4) else td.icdp_preciocompra end as icdp_preciocompra_iva,
                case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventa),2) else td.icdp_precioventa end as icdp_precioventa,
                case td.icdp_grabaiva when TRUE then round(poner_iva(td.icdp_precioventamin),2) else td.icdp_precioventamin end as icdp_precioventamin,
