@@ -29,7 +29,7 @@ class TItemConfigDao(BaseDao):
         if codcat is not None and int(codcat) > 0:
             filtros.append('ic.catic_id = {0}'.format(codcat))
 
-        if provid is not None and int(provid) > 0:
+        if provid is not None and int(provid) != 0:
             filtros.append('dp.icdp_proveedor = {0}'.format(provid))
 
         swhere = ' and '.join(filtros)
